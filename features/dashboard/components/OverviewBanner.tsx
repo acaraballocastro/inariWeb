@@ -8,14 +8,8 @@ export function OverviewBanner() {
         <h2 className="mt-4 font-serif text-2xl tracking-[-0.03em] sm:text-[26px]">Every detail, thoughtfully in place.</h2>
         <p className="mt-2 text-[10px] text-[#85867c]">A new day of exceptional experiences across Japan.</p>
       </div>
-      <div className="relative min-h-[155px] overflow-hidden">
-        <Image
-          src="/images/kyoto-hero.png"
-          alt="Kyoto temple at sunset"
-          width={900}
-          height={520}
-          className="h-full w-full object-cover"
-        />
+      <div className="relative min-h-[155px]">
+        <Image src="/images/kyoto-hero.png" alt="Kyoto temple at sunset" fill sizes="(min-width: 768px) 35vw, 100vw" className="object-cover" />
       </div>
     </section>
   );
