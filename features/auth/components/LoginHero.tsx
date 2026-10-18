@@ -3,14 +3,16 @@ import Image from "next/image";
 export function LoginHero() {
   return (
     <aside className="relative hidden min-h-dvh min-w-0 overflow-hidden bg-[#d7d1c5] lg:block">
-      <Image
-        src="/images/kyoto-hero.png"
-        alt="Templo tradicional japonés entre árboles otoñales en Kioto"
-        fill
-        priority
-        sizes="(min-width: 1024px) 50vw, 0px"
-        className="object-cover"
-      />
+      <div className="absolute inset-0">
+        <Image
+          src="/images/kyoto-hero.png"
+          alt="Templo tradicional japonés entre árboles otoñales en Kioto"
+          width={1200}
+          height={1400}
+          priority
+          className="h-full w-full object-cover"
+        />
+      </div>
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/5" />
 
