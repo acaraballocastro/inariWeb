@@ -1,7 +1,5 @@
-export default function Home() {
-  return (
-    <main>
-      <div>Hello world!</div>
-    </main>
-  );
+import { LoginScreen } from "@/features/auth/components/LoginScreen";
+
+export default function HomePage() {
+  return <LoginScreen />;
 }
