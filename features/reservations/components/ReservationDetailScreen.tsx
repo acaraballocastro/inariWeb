@@ -1,149 +1,123 @@
+"use client";
+
 import Link from "next/link";
+import { FormEvent, useEffect, useState } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
+import { listZones, type Zone } from "@/features/catalogs/api";
+import { confirmReservationPayment, getReservationDetail, updateSignatureStatus, updateVoucherStatus, listAgencies, listCustomers, updateReservation, type Agency, type ReservationCustomer, type ReservationCustomerInput, type ReservationDetail, type ReservationTourDay } from "@/features/reservations/api";
+import { CustomerPicker, toCustomerInputs } from "@/features/reservations/components/CustomerPicker";
+import { createTourDay } from "@/features/tours/api";
+import { TourDayForm, emptyTourDayDraft, toTourDayInput } from "@/features/tours/components/TourDayForm";
+import { formatDuration, formatJst } from "@/lib/datetime";
 
-const tourDays = [
-  {
-    date: "18 Oct",
-    title: "Kyoto's eastern lanes",
-    time: "09:30 – 16:00",
-    location: "Higashiyama, Kyoto",
-    details: "Kiyomizu-dera · Ninenzaka · Tea tasting",
-  },
-  {
-    date: "20 Oct",
-    title: "Quiet gardens of Arashiyama",
-    time: "09:00 – 15:30",
-    location: "Arashiyama, Kyoto",
-    details: "Bamboo grove · Tenryu-ji · Riverside walk",
-  },
+const initialReservationDraft = { title: "", description: "", agency_id: "", total_people_count: "", start_date: "", end_date: "", quote_number: "", file_number: "" };
+
+const reservationSteps = [
+  { status: "PAYMENT_PENDING", label: "Confirm payment", error: "No se pudo confirmar el pago.", run: confirmReservationPayment },
+  { status: "VOUCHER_PENDING", label: "Mark voucher sent", error: "No se pudo actualizar el voucher.", run: (code: string) => updateVoucherStatus(code, "SENT") },
+  { status: "SIGNATURE_PENDING", label: "Mark contract signed", error: "No se pudo actualizar la firma.", run: (code: string) => updateSignatureStatus(code, "SIGNED") },
 ];
 
-export function ReservationDetailScreen() {
+export function ReservationDetailScreen({ code }: { code: string }) {
+  const [detail, setDetail] = useState<ReservationDetail | null>(null);
+  const [error, setError] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [draft, setDraft] = useState({ title: "", description: "", agency_id: "", total_people_count: "", start_date: "", end_date: "", quote_number: "", file_number: "" });
+  const [agencies, setAgencies] = useState<Agency[]>([]);
+  const [customers, setCustomers] = useState<ReservationCustomer[]>([]);
+  const [draftCustomers, setDraftCustomers] = useState<ReservationCustomerInput[]>([]);
+
+  useEffect(() => {
+    listAgencies().then((items) => setAgencies(items ?? [])).catch(() => setAgencies([]));
+    listCustomers().then(setCustomers).catch(() => setCustomers([]));
+  }, []);
+
+  useEffect(() => {
+    getReservationDetail(code).then((result) => { setDetail(result); setDraftCustomers(toCustomerInputs(result.customers)); setDraft({ title: result.reservation.title ?? "", description: result.reservation.description ?? "", agency_id: result.reservation.agency_id ?? "", total_people_count: String(result.reservation.total_people_count ?? 0), start_date: toDateInput(result.reservation.start_date), end_date: toDateInput(result.reservation.end_date), quote_number: result.reservation.quote_number ?? "", file_number: result.reservation.file_number ?? "" }); }).catch((requestError) => setError(requestError instanceof Error ? requestError.message : "No se pudo cargar la reserva."));
+  }, [code]);
+
+  async function handleSave(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!detail || !draft.title.trim() || !draft.start_date || !draft.end_date || draft.start_date > draft.end_date || Number(draft.total_people_count) < 1) { setError("Completa título, fechas válidas y pasajeros."); return; }
+    setIsSaving(true); setError("");
+    try { await updateReservation(code, { ...draft, title: draft.title.trim(), customers: draftCustomers, total_people_count: Number(draft.total_people_count), start_date: `${draft.start_date}T00:00:00Z`, end_date: `${draft.end_date}T00:00:00Z` }); const [refreshed, customerItems] = await Promise.all([getReservationDetail(code), listCustomers().catch(() => customers)]); setDetail(refreshed); setCustomers(customerItems); setDraftCustomers(toCustomerInputs(refreshed.customers)); setIsEditing(false); } catch (requestError) { setError(requestError instanceof Error ? requestError.message : "No se pudo actualizar la reserva."); } finally { setIsSaving(false); }
+  }
+
+  // Manual steps after the guide confirms, handled per reservation:
+  // payment -> voucher -> signature -> confirmed.
+  const nextStep = detail ? reservationSteps.find((step) => detail.tour_days.some((day) => day.status === step.status)) : undefined;
+
+  async function handleNextStep() {
+    if (!nextStep) return;
+    setIsSaving(true); setError("");
+    try { await nextStep.run(code); setDetail(await getReservationDetail(code)); } catch (requestError) { setError(requestError instanceof Error ? requestError.message : nextStep.error); } finally { setIsSaving(false); }
+  }
+
   return (
     <main className="min-h-dvh bg-[#f1f0ec] text-[#292b26]">
       <div className="mx-auto flex min-h-dvh w-full max-w-[1600px]">
         <DashboardSidebar activeItem="Reservations" />
-
         <div className="min-w-0 flex-1">
           <DashboardHeader breadcrumb="Workspace / Reservations / Detail" />
-
-          <div className="px-5 pb-10 sm:px-8 lg:px-10">
-            <div className="mx-auto max-w-[1190px]">
-              <header className="pb-5 pt-8 sm:pt-10">
-                <Link href="/reservations" className="inline-flex bg-[#e9e5d7] px-3 py-2 text-[9px] text-[#5d5e55] transition-colors hover:bg-[#ded8c7]">
-                  ← Reservations
-                </Link>
-                <p className="mt-6 text-[9px] font-semibold tracking-[0.2em] text-[#9b8353]">RESERVATION / DETAILS</p>
-                <h1 className="mt-3 font-serif text-3xl tracking-[-0.04em] sm:text-[36px]">Kyoto, beyond the ordinary</h1>
-                <div className="mt-4 flex items-center gap-3 text-[9px] text-[#98978c]">
-                  <span>IN-2026-1042</span>
-                  <span className="bg-[#e9e5d7] px-3 py-1 text-[#77786f]">Confirmed</span>
-                </div>
-              </header>
-
-              <div className="grid gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.72fr)]">
-                <div className="space-y-5">
-                  <ReservationInformation />
-                  <RelatedTourDays />
-                </div>
-                <div className="space-y-5">
-                  <DocumentsPanel />
-                  <ClientReferences />
-                  <ReservationActivity />
-                </div>
-              </div>
-            </div>
-          </div>
+          <div className="px-5 pb-10 sm:px-8 lg:px-10"><div className="mx-auto max-w-[1190px]">
+            <Link href="/reservations" className="mt-8 inline-flex bg-[#e9e5d7] px-3 py-2 text-[9px] text-[#5d5e55] hover:bg-[#ded8c7]">Back to reservations</Link>
+            {error && <p role="alert" className="mt-6 text-[10px] text-[#9b6f37]">{error}</p>}
+            {!detail && !error && <p className="mt-6 text-[10px] text-[#85867c]">Loading reservation...</p>}
+            {detail && <>
+              <header className="border-b border-[#deddd6] pb-6 pt-6"><p className="text-[9px] font-semibold tracking-[0.2em] text-[#9b8353]">RESERVATION / DETAILS</p><h1 className="mt-3 font-serif text-3xl tracking-[-0.04em] sm:text-[36px]">{detail.reservation.title ?? "Untitled reservation"}</h1><div className="mt-4 flex flex-wrap items-center gap-3 text-[9px] text-[#98978c]"><span>{detail.reservation.code ?? detail.reservation.id}</span><span className="bg-[#e9e5d7] px-3 py-1 text-[#77786f]">{formatStatus(detail.reservation.status)}</span>{nextStep && <button type="button" disabled={isSaving} onClick={handleNextStep} className="h-8 bg-[#292b26] px-3 text-white hover:bg-[#41443b] disabled:opacity-60">{isSaving ? "Saving..." : nextStep.label}</button>}</div></header>
+              <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.72fr)]"><div className="space-y-5"><ReservationInformation detail={detail} agencies={agencies} customers={customers} draftCustomers={draftCustomers} onCustomersChange={setDraftCustomers} isEditing={isEditing} draft={draft} onEdit={() => setIsEditing(true)} onChange={setDraft} onSave={handleSave} onCancel={() => { setIsEditing(false); setDraftCustomers(toCustomerInputs(detail.customers)); }} isSaving={isSaving} /><RelatedTourDays detail={detail} onCreated={() => getReservationDetail(code).then(setDetail)} /></div><div className="space-y-5"><DocumentsPanel reservation={detail.reservation} /><ClientReferences reservation={detail.reservation} /><CustomersPanel customers={detail.customers ?? []} /></div></div>
+            </>}
+          </div></div>
         </div>
       </div>
     </main>
   );
 }
 
-function ReservationInformation() {
-  return (
-    <section className="bg-white p-5 sm:p-6">
-      <h2 className="font-serif text-xl">Reservation information</h2>
-      <p className="mt-4 text-[8px] font-semibold tracking-[0.2em] text-[#9b8353]">ABOUT THIS JOURNEY</p>
-      <p className="mt-3 text-[11px] leading-relaxed text-[#85867c]">A considered autumn journey through Kyoto&apos;s historic streets, temple gardens and quiet tea houses.</p>
-
-      <div className="mt-5 grid gap-x-10 gap-y-5 sm:grid-cols-2">
-        <DetailItem label="Agency" value="Maple Travel" />
-        <DetailItem label="Guests" value="8" />
-        <DetailItem label="Quote number" value="QT-68314" />
-        <DetailItem label="File number" value="MF-29801" />
-        <DetailItem label="Client contact" value="Naomi Laurent" />
-        <DetailItem label="Start date" value="Sun 18 October" />
-        <DetailItem label="End date" value="Wed 21 October" />
-      </div>
-    </section>
-  );
+function ReservationInformation({ detail, agencies, customers, draftCustomers, onCustomersChange, isEditing, draft, onEdit, onChange, onSave, onCancel, isSaving }: { detail: ReservationDetail; agencies: Agency[]; customers: ReservationCustomer[]; draftCustomers: ReservationCustomerInput[]; onCustomersChange: (customers: ReservationCustomerInput[]) => void; isEditing: boolean; draft: typeof initialReservationDraft; onEdit: () => void; onChange: (draft: typeof initialReservationDraft) => void; onSave: (event: FormEvent<HTMLFormElement>) => void; onCancel: () => void; isSaving: boolean }) {
+  const reservation = detail.reservation;
+  const agencyOptions = agencies.filter((agency) => agency.is_active || agency.id === reservation.agency_id);
+  const agencyName = reservation.agency_id ? agencies.find((agency) => agency.id === reservation.agency_id)?.name ?? "Unknown agency" : "No agency";
+  return <section className="bg-white p-5 sm:p-6"><div className="flex items-start justify-between gap-4"><h2 className="font-serif text-xl">Reservation information</h2>{!isEditing && <button type="button" onClick={onEdit} className="h-9 border border-[#deddd6] px-3 text-[9px] hover:bg-[#f8f7f3]">Edit</button>}</div>{isEditing ? <form onSubmit={onSave} className="mt-5 grid gap-4 sm:grid-cols-2"><label className="text-[9px]">Title<input value={draft.title} onChange={(event) => onChange({ ...draft, title: event.target.value })} className="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px]" /></label><label className="text-[9px]">Agency<select value={draft.agency_id} onChange={(event) => onChange({ ...draft, agency_id: event.target.value })} className="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px]"><option value="">No agency assigned</option>{agencyOptions.map((agency) => <option key={agency.id} value={agency.id}>{agency.name}</option>)}</select></label><label className="text-[9px]">Guests<input type="number" min="1" value={draft.total_people_count} onChange={(event) => onChange({ ...draft, total_people_count: event.target.value })} className="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px]" /></label><label className="text-[9px]">Start date<input type="date" value={draft.start_date} onChange={(event) => onChange({ ...draft, start_date: event.target.value })} className="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px]" /></label><label className="text-[9px]">End date<input type="date" value={draft.end_date} onChange={(event) => onChange({ ...draft, end_date: event.target.value })} className="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px]" /></label><label className="text-[9px]">Quote number<input value={draft.quote_number} onChange={(event) => onChange({ ...draft, quote_number: event.target.value })} className="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px]" /></label><label className="text-[9px]">File number<input value={draft.file_number} onChange={(event) => onChange({ ...draft, file_number: event.target.value })} className="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px]" /></label><div className="sm:col-span-2"><CustomerPicker customers={customers} value={draftCustomers} onChange={onCustomersChange} disabled={isSaving} inputClass="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px]" labelClass="block text-[9px]" /></div><label className="text-[9px] sm:col-span-2">Description<textarea value={draft.description} onChange={(event) => onChange({ ...draft, description: event.target.value })} className="mt-2 min-h-20 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 py-2 text-[10px]" /></label><div className="flex gap-2 sm:col-span-2"><button type="submit" disabled={isSaving} className="h-9 bg-[#292b26] px-4 text-[9px] text-white disabled:opacity-60">{isSaving ? "Saving..." : "Save changes"}</button><button type="button" onClick={onCancel} className="h-9 border border-[#deddd6] px-4 text-[9px]">Cancel</button></div></form> : <><p className="mt-4 text-[8px] font-semibold tracking-[0.2em] text-[#9b8353]">ABOUT THIS JOURNEY</p><p className="mt-3 text-[11px] leading-relaxed text-[#85867c]">{reservation.description || "No description provided."}</p><div className="mt-5 grid gap-x-10 gap-y-5 sm:grid-cols-2"><DetailItem label="Agency" value={agencyName} /><DetailItem label="Guests" value={String(reservation.total_people_count ?? 0)} /><DetailItem label="Quote number" value={reservation.quote_number || "Not provided"} /><DetailItem label="File number" value={reservation.file_number || "Not provided"} /><DetailItem label="Start date" value={formatDate(reservation.start_date)} /><DetailItem label="End date" value={formatDate(reservation.end_date)} /></div></>}
+  </section>;
 }
 
-function DetailItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#9b8353]">{label}</p>
-      <p className="mt-2 text-[11px] text-[#55574f]">{value}</p>
-    </div>
-  );
+function DetailItem({ label, value }: { label: string; value: string }) { return <div><p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#9b8353]">{label}</p><p className="mt-2 break-words text-[11px] text-[#55574f]">{value}</p></div>; }
+
+function DocumentsPanel({ reservation }: { reservation: ReservationDetail["reservation"] }) { return <section className="bg-white p-5 sm:p-6"><h2 className="font-serif text-xl">Documents</h2><DetailItem label="Voucher" value={formatStatus(reservation.voucher_status)} /><div className="mt-5"><DetailItem label="Client signature" value={formatStatus(reservation.signature_status)} /></div></section>; }
+
+function ClientReferences({ reservation }: { reservation: ReservationDetail["reservation"] }) { return <section className="bg-white p-5 sm:p-6"><h2 className="font-serif text-xl">Client references</h2><div className="mt-5 space-y-4 text-[10px] text-[#85867c]"><div className="flex justify-between gap-4"><span>Quote</span><strong className="font-normal text-[#55574f]">{reservation.quote_number || "Not provided"}</strong></div><div className="flex justify-between gap-4"><span>File</span><strong className="font-normal text-[#55574f]">{reservation.file_number || "Not provided"}</strong></div></div></section>; }
+
+function CustomersPanel({ customers }: { customers: ReservationDetail["customers"] }) { return <section className="bg-white p-5 sm:p-6"><h2 className="font-serif text-xl">Customers</h2>{customers.length === 0 ? <p className="mt-4 text-[10px] text-[#85867c]">No customers linked.</p> : <div className="mt-4 divide-y divide-[#ecebe5]">{customers.map((customer) => <div key={customer.id} className="py-3 text-[10px]"><p>{customer.full_name}</p><p className="mt-1 text-[8px] text-[#85867c]">{customer.email || "No email"} · {customer.phone || "No phone"}</p></div>)}</div>}</section>; }
+
+function RelatedTourDays({ detail, onCreated }: { detail: ReservationDetail; onCreated: () => Promise<void> }) {
+  const tourDays: ReservationTourDay[] = detail.tour_days ?? [];
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [draft, setDraft] = useState(emptyTourDayDraft);
+
+  useEffect(() => { listZones().then((items) => setZones(items ?? [])).catch(() => setZones([])); }, []);
+
+  function openForm() {
+    setDraft({ ...emptyTourDayDraft, start_datetime: `${toDateInput(detail.reservation.start_date)}T09:00`, people_count: detail.reservation.total_people_count ? String(detail.reservation.total_people_count) : "" });
+    setError(""); setIsCreating(true);
+  }
+
+  async function handleCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const result = toTourDayInput(draft);
+    if ("error" in result) { setError(result.error); return; }
+    setIsSaving(true); setError("");
+    try { await createTourDay(detail.reservation.id, result.input); await onCreated(); setIsCreating(false); } catch (requestError) { setError(requestError instanceof Error ? requestError.message : "Could not create the tour day."); } finally { setIsSaving(false); }
+  }
+
+  return <section className="bg-white p-5 sm:p-6"><div className="flex items-start justify-between gap-4"><div><h2 className="font-serif text-xl">Related tour days</h2><p className="mt-3 text-[10px] text-[#85867c]">Operational days linked to this reservation.</p></div>{!isCreating && <button type="button" onClick={openForm} className="h-9 shrink-0 bg-[#292b26] px-3 text-[9px] text-white hover:bg-[#41443b]">+ Add tour day</button>}</div>{error && <p role="alert" className="mt-4 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-[10px] text-[#9b6f37]">{error}</p>}{isCreating && <div className="mt-5 border-b border-[#ecebe5] pb-5"><TourDayForm draft={draft} zones={zones} onChange={setDraft} onSubmit={handleCreate} onCancel={() => setIsCreating(false)} isSaving={isSaving} submitLabel="Create tour day" /></div>}{tourDays.length === 0 ? <p className="mt-5 text-[10px] text-[#85867c]">No tour days linked.</p> : <div className="mt-5 divide-y divide-[#ecebe5]">{tourDays.map((day) => <Link key={day.id} href={`/tours/${day.id}`} className="grid gap-3 py-4 hover:bg-[#fbfaf7] sm:grid-cols-[100px_minmax(0,1fr)_auto] sm:items-start"><p className="text-[10px] text-[#55574f]">{formatDate(day.start_datetime)}</p><div><p className="text-[10px] font-medium">{day.title || day.code || "Untitled tour day"}</p><p className="mt-2 text-[8px] text-[#85867c]">{formatDuration(day.duration) || "Duration not provided"}</p><p className="mt-1 text-[8px] text-[#85867c]">Zone · {zones.find((zone) => zone.id === day.zone_id)?.name ?? (day.zone_id || "Unassigned")}</p><p className="mt-1 text-[8px] text-[#85867c]">Guide ID · {day.guide_id || "Unassigned"}</p></div><span className="bg-[#e9e5d7] px-3 py-2 text-center text-[8px] text-[#77786f]">{formatStatus(day.status)}</span></Link>)}</div>}</section>;
 }
 
-function DocumentsPanel() {
-  return (
-    <section className="bg-white p-5 sm:p-6">
-      <h2 className="font-serif text-xl">Documents</h2>
-      <DetailItem label="Voucher" value="Generated" />
-      <div className="mt-5"><DetailItem label="Client signature" value="Signed" /></div>
-    </section>
-  );
-}
-
-function ClientReferences() {
-  return (
-    <section className="bg-white p-5 sm:p-6">
-      <h2 className="font-serif text-xl">Client references</h2>
-      <div className="mt-5 space-y-4 text-[10px] text-[#85867c]">
-        <div className="flex justify-between gap-4"><span>Quote</span><strong className="font-normal text-[#55574f]">QT-68314</strong></div>
-        <div className="flex justify-between gap-4"><span>File</span><strong className="font-normal text-[#55574f]">MF-29801</strong></div>
-      </div>
-    </section>
-  );
-}
-
-function RelatedTourDays() {
-  return (
-    <section className="bg-white p-5 sm:p-6">
-      <h2 className="font-serif text-xl">Related tour days</h2>
-      <p className="mt-3 text-[10px] text-[#85867c]">A considered itinerary, arranged day by day.</p>
-      <div className="mt-5 divide-y divide-[#ecebe5]">
-        {tourDays.map((day) => (
-          <article key={day.date} className="grid gap-3 py-4 sm:grid-cols-[75px_minmax(0,1fr)_88px_auto] sm:items-start">
-            <p className="text-[10px] text-[#55574f]">{day.date}</p>
-            <div><Link href="/tours/kyoto-eastern-lanes" className="text-[10px] font-medium hover:text-[#9b8353]">{day.title}</Link><p className="mt-2 text-[8px] text-[#85867c]">{day.time}</p><p className="mt-1 text-[8px] text-[#85867c]">{day.location}</p><p className="mt-1 text-[8px] text-[#85867c]">{day.details}</p></div>
-            <div><p className="text-[8px] font-semibold tracking-[0.18em] text-[#9b8353]">GUIDE</p><p className="mt-2 text-[9px] text-[#85867c]">Yuki Tanaka</p></div>
-            <span className="bg-[#e9e5d7] px-3 py-2 text-center text-[8px] text-[#77786f]">Accepted</span>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ReservationActivity() {
-  const items = [
-    ["08:42", "Reservation updated", "Guest count confirmed at 8 travelers."],
-    ["09:05", "Guide accepted", "Yuki Tanaka accepted the assigned Kyoto tour."],
-    ["09:22", "Voucher generated", "Client voucher prepared for review."],
-  ];
-
-  return (
-    <section className="bg-white p-5 sm:p-6">
-      <h2 className="font-serif text-xl">Recent activity</h2>
-      <div className="mt-4 space-y-4">
-        {items.map(([time, title, detail]) => <div key={time} className="grid grid-cols-[32px_1fr] gap-3 text-[9px]"><span className="text-[#9b8353]">{time}</span><div><p>{title}</p><p className="mt-1 leading-relaxed text-[#85867c]">{detail}</p><p className="mt-1 text-[8px] text-[#aaa99f]">By Operations team</p></div></div>)}
-      </div>
-    </section>
-  );
-}
+function toDateInput(value: string) { return value.slice(0, 10); }
+function formatDate(value: string) { return formatJst(value, { day: "2-digit", month: "short", year: "numeric" }); }
+function formatStatus(value: string) { return value.replaceAll("_", " "); }
