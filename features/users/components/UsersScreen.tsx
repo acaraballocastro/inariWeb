@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
-import { createUser, deactivateUser, listUsers, updateUser, type User, type UserRole } from "@/features/users/api";
+import { createUser, deactivateUser, listUsers, resendInvitation, updateUser, type User, type UserRole } from "@/features/users/api";
 
 export function UsersScreen() {
   const [users, setUsers] = useState<User[]>([]);
@@ -13,6 +13,7 @@ export function UsersScreen() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [formError, setFormError] = useState("");
+  const [notice, setNotice] = useState("");
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [newUser, setNewUser] = useState({ name: "", email: "", phone: "", role: "GUIDE" as UserRole });
 
@@ -30,6 +31,7 @@ export function UsersScreen() {
   async function handleCreateUser(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError("");
+    setNotice("");
     if (!newUser.name.trim() || !newUser.email.trim() || !newUser.phone.trim()) {
       setFormError("Completa nombre, email y teléfono.");
       return;
@@ -37,7 +39,8 @@ export function UsersScreen() {
     setIsCreating(true);
     try {
       const response = await createUser(newUser);
-      setUsers((currentUsers) => [...currentUsers, response.User]);
+      setUsers((currentUsers) => [...currentUsers, { ...response.User, invitation_pending: true }]);
+      setNotice(`Invitation sent to ${response.User.email} with a temporary password.`);
       setNewUser({ name: "", email: "", phone: "", role: "GUIDE" });
       setShowCreateForm(false);
     } catch (requestError) {
@@ -55,6 +58,20 @@ export function UsersScreen() {
       setEditingUserId(null);
     } catch (requestError) {
       setFormError(requestError instanceof Error ? requestError.message : "No se pudo actualizar el usuario.");
+    }
+  }
+
+  async function handleResendInvitation(user: User) {
+    if (!window.confirm(`Send ${user.name} a new invitation? The temporary password sent before will stop working.`)) return;
+    setFormError("");
+    setNotice("");
+    try {
+      await resendInvitation(user.id);
+      setNotice(`New invitation sent to ${user.email} with a new temporary password.`);
+    } catch (requestError) {
+      setFormError(requestError instanceof Error ? requestError.message : "No se pudo reenviar la invitación.");
+      // The user may have chosen a password meanwhile: refresh the list.
+      listUsers().then(setUsers).catch(() => undefined);
     }
   }
 
@@ -91,12 +108,12 @@ export function UsersScreen() {
                   <div><h2 className="font-serif text-xl">Workspace access</h2><p className="mt-2 text-[9px] text-[#96968b]">Roles and recent activity across your team</p></div>
                   <button type="button" onClick={() => setShowCreateForm((current) => !current)} className="h-9 bg-[#292b26] px-4 text-[9px] font-medium text-white hover:bg-[#3a3d34]">+ Add user</button>
                 </div>
-                {showCreateForm && <form onSubmit={handleCreateUser} className="mt-5 grid gap-3 border-b border-[#ecebe5] pb-5 sm:grid-cols-2 lg:grid-cols-5"><input aria-label="Name" value={newUser.name} onChange={(event) => setNewUser({ ...newUser, name: event.target.value })} placeholder="Name" className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none" /><input aria-label="Email" type="email" value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} placeholder="Email" className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none" /><input aria-label="Phone" value={newUser.phone} onChange={(event) => setNewUser({ ...newUser, phone: event.target.value })} placeholder="Phone" className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none" /><select aria-label="Role" value={newUser.role} onChange={(event) => setNewUser({ ...newUser, role: event.target.value as UserRole })} className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px]"><option value="GUIDE">Guide</option><option value="ADMIN">Admin</option></select><button type="submit" disabled={isCreating} className="h-9 bg-[#e9e5d7] px-3 text-[9px] disabled:opacity-60">{isCreating ? "Creating..." : "Create"}</button>{formError && <p role="alert" className="text-[10px] text-[#9b6f37] sm:col-span-2 lg:col-span-5">{formError}</p>}</form>}
+                {notice && <p role="status" className="mt-5 border border-[#e3e1da] bg-[#f8f7f3] p-3 text-[10px] text-[#55574f]">{notice}</p>}{showCreateForm && <form onSubmit={handleCreateUser} className="mt-5 grid gap-3 border-b border-[#ecebe5] pb-5 sm:grid-cols-2 lg:grid-cols-5"><input aria-label="Name" value={newUser.name} onChange={(event) => setNewUser({ ...newUser, name: event.target.value })} placeholder="Name" className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none" /><input aria-label="Email" type="email" value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} placeholder="Email" className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none" /><input aria-label="Phone" value={newUser.phone} onChange={(event) => setNewUser({ ...newUser, phone: event.target.value })} placeholder="Phone" className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none" /><select aria-label="Role" value={newUser.role} onChange={(event) => setNewUser({ ...newUser, role: event.target.value as UserRole })} className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px]"><option value="GUIDE">Guide</option><option value="ADMIN">Admin</option></select><button type="submit" disabled={isCreating} className="h-9 bg-[#e9e5d7] px-3 text-[9px] disabled:opacity-60">{isCreating ? "Creating..." : "Create"}</button>{formError && <p role="alert" className="text-[10px] text-[#9b6f37] sm:col-span-2 lg:col-span-5">{formError}</p>}</form>}
                 <div className="mt-5 flex gap-3"><label className="flex-1 text-[9px]"><span className="mb-2 block">Search users</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, email or role..." className="h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none placeholder:text-[#aaa99f] focus:border-[#b5a786]" /></label><button type="button" onClick={() => setQuery("")} className="mt-[19px] h-9 border border-[#deddd6] px-3 text-[9px] hover:bg-[#f8f7f3]">Reset</button></div>
                 {isLoading && <p className="mt-6 text-[10px] text-[#85867c]">Loading users...</p>}
                 {error && <p role="alert" className="mt-6 text-[10px] text-[#9b6f37]">{error}</p>}
                 {!isLoading && !error && filteredUsers.length === 0 && <p className="mt-6 text-[10px] text-[#85867c]">No users found.</p>}
-                {!isLoading && !error && filteredUsers.length > 0 && <UserTable users={filteredUsers} editingUserId={editingUserId} onEdit={setEditingUserId} onSave={handleUpdateUser} onDeactivate={handleDeactivateUser} />}
+                {!isLoading && !error && filteredUsers.length > 0 && <UserTable users={filteredUsers} editingUserId={editingUserId} onEdit={setEditingUserId} onSave={handleUpdateUser} onDeactivate={handleDeactivateUser} onResendInvitation={handleResendInvitation} />}
                 <p className="mt-5 text-[9px] text-[#96968b]">{filteredUsers.length} users shown · Access managed by operations</p>
               </section>
               <footer className="pt-8 text-[9px] tracking-[0.03em] text-[#a09f94]">DEMO WORKSPACE · Sample operational data · Not connected to live services</footer>
@@ -108,12 +125,12 @@ export function UsersScreen() {
   );
 }
 
-function UserTable({ users: items, editingUserId, onEdit, onSave, onDeactivate }: { users: User[]; editingUserId: string | null; onEdit: (id: string | null) => void; onSave: (user: User) => void; onDeactivate: (user: User) => void }) {
-  return <div className="mt-6 overflow-x-auto"><div className="min-w-[760px]"><div className="grid grid-cols-[minmax(220px,1.5fr)_minmax(190px,1.2fr)_minmax(125px,0.9fr)_110px_80px_105px] gap-3 border-b border-[#ecebe5] pb-3 text-[8px] font-semibold tracking-[0.16em] text-[#a19a87]"><span>USER</span><span>EMAIL</span><span>ROLE</span><span>CREATED</span><span>STATUS</span><span>ACTIONS</span></div><div className="divide-y divide-[#f0efe9]">{items.map((user) => editingUserId === user.id ? <EditableUserRow key={user.id} user={user} onCancel={() => onEdit(null)} onSave={onSave} /> : <div key={user.id} className="grid grid-cols-[minmax(220px,1.5fr)_minmax(190px,1.2fr)_minmax(125px,0.9fr)_110px_80px_105px] items-center gap-3 py-4 text-[9px] hover:bg-[#fbfaf7]"><div className="flex items-center gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e9e5d7] text-[8px] text-[#77786f]">{user.name.split(" ").map((part) => part[0]).join("")}</span><span className="text-[10px]">{user.name}</span></div><span className="text-[8px] text-[#85867c]">{user.email}</span><span>{user.role}</span><span className="text-[8px] text-[#85867c]">{new Date(user.created_at).toLocaleDateString()}</span><span className={`px-2 py-1 text-center text-[8px] ${user.is_active ? "bg-[#eef0e9] text-[#68705d]" : "bg-[#f2e8d8] text-[#9b6f37]"}`}>{user.is_active ? "Active" : "Inactive"}</span><span className="flex gap-2 text-[8px]"><button type="button" onClick={() => onEdit(user.id)} className="underline underline-offset-2">Edit</button>{user.is_active && <button type="button" onClick={() => onDeactivate(user)} className="text-[#9b6f37] underline underline-offset-2">Deactivate</button>}</span></div>)}</div></div></div>;
+function UserTable({ users: items, editingUserId, onEdit, onSave, onDeactivate, onResendInvitation }: { users: User[]; editingUserId: string | null; onEdit: (id: string | null) => void; onSave: (user: User) => void; onDeactivate: (user: User) => void; onResendInvitation: (user: User) => void }) {
+  return <div className="mt-6 overflow-x-auto"><div className="min-w-[760px]"><div className="grid grid-cols-[minmax(220px,1.5fr)_minmax(190px,1.2fr)_minmax(125px,0.9fr)_110px_80px_150px] gap-3 border-b border-[#ecebe5] pb-3 text-[8px] font-semibold tracking-[0.16em] text-[#a19a87]"><span>USER</span><span>EMAIL</span><span>ROLE</span><span>CREATED</span><span>STATUS</span><span>ACTIONS</span></div><div className="divide-y divide-[#f0efe9]">{items.map((user) => editingUserId === user.id ? <EditableUserRow key={user.id} user={user} onCancel={() => onEdit(null)} onSave={onSave} /> : <div key={user.id} className="grid grid-cols-[minmax(220px,1.5fr)_minmax(190px,1.2fr)_minmax(125px,0.9fr)_110px_80px_150px] items-center gap-3 py-4 text-[9px] hover:bg-[#fbfaf7]"><div className="flex items-center gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e9e5d7] text-[8px] text-[#77786f]">{user.name.split(" ").map((part) => part[0]).join("")}</span><span className="text-[10px]">{user.name}</span></div><span className="text-[8px] text-[#85867c]">{user.email}</span><span>{user.role}</span><span className="text-[8px] text-[#85867c]">{new Date(user.created_at).toLocaleDateString()}</span><span className={`px-2 py-1 text-center text-[8px] ${!user.is_active ? "bg-[#f2e8d8] text-[#9b6f37]" : user.invitation_pending ? "bg-[#e9e5d7] text-[#77786f]" : "bg-[#eef0e9] text-[#68705d]"}`}>{!user.is_active ? "Inactive" : user.invitation_pending ? "Invited" : "Active"}</span><span className="flex flex-wrap gap-x-2 gap-y-1 text-[8px]"><button type="button" onClick={() => onEdit(user.id)} className="underline underline-offset-2">Edit</button>{user.is_active && user.invitation_pending && <button type="button" onClick={() => onResendInvitation(user)} className="underline underline-offset-2">Resend invite</button>}{user.is_active && <button type="button" onClick={() => onDeactivate(user)} className="text-[#9b6f37] underline underline-offset-2">Deactivate</button>}</span></div>)}</div></div></div>;
 }
 
 function EditableUserRow({ user, onCancel, onSave }: { user: User; onCancel: () => void; onSave: (user: User) => void }) {
   const [draft, setDraft] = useState(user);
   const inputClass = "h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-2.5 text-[9px] text-[#292b26] outline-none transition-colors focus:border-[#b5a786]";
-  return <div className="grid grid-cols-[minmax(220px,1.5fr)_minmax(190px,1.2fr)_minmax(125px,0.9fr)_110px_80px_105px] items-center gap-3 bg-white py-3 text-[9px]"><input aria-label="Edit name" placeholder="Name" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className={inputClass} /><input aria-label="Edit email" type="email" placeholder="Email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} className={inputClass} /><select aria-label="Edit role" value={draft.role} onChange={(event) => setDraft({ ...draft, role: event.target.value as UserRole })} className={`${inputClass} appearance-none`}><option value="GUIDE">Guide</option><option value="ADMIN">Admin</option></select><span /><span /><span className="flex items-center gap-1.5 text-[8px]"><button type="button" onClick={() => onSave(draft)} className="h-9 bg-[#292b26] px-2.5 font-medium text-white hover:bg-[#3a3d34]">Save</button><button type="button" onClick={onCancel} className="h-9 border border-[#deddd6] bg-white px-2.5 text-[#77786f] hover:bg-[#f8f7f3]">Cancel</button></span></div>;
+  return <div className="grid grid-cols-[minmax(220px,1.5fr)_minmax(190px,1.2fr)_minmax(125px,0.9fr)_110px_80px_150px] items-center gap-3 bg-white py-3 text-[9px]"><input aria-label="Edit name" placeholder="Name" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className={inputClass} /><input aria-label="Edit email" type="email" placeholder="Email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} className={inputClass} /><select aria-label="Edit role" value={draft.role} onChange={(event) => setDraft({ ...draft, role: event.target.value as UserRole })} className={`${inputClass} appearance-none`}><option value="GUIDE">Guide</option><option value="ADMIN">Admin</option></select><span /><span /><span className="flex items-center gap-1.5 text-[8px]"><button type="button" onClick={() => onSave(draft)} className="h-9 bg-[#292b26] px-2.5 font-medium text-white hover:bg-[#3a3d34]">Save</button><button type="button" onClick={onCancel} className="h-9 border border-[#deddd6] bg-white px-2.5 text-[#77786f] hover:bg-[#f8f7f3]">Cancel</button></span></div>;
 }

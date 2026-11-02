@@ -79,6 +79,10 @@ export function LoginPanel() {
           <button type="submit" disabled={isSubmitting} className="mt-4 flex min-h-11 w-full items-center justify-center rounded-[3px] bg-[#252821] px-4 text-xs font-medium text-white transition-colors hover:bg-[#3a3d34] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#252821]">
             {isSubmitting ? "Signing in..." : "Sign in"}
           </button>
+
+          <Link href="/forgot-password" className="mt-3 inline-block text-[10px] text-[#77796f] underline underline-offset-4 hover:text-[#282a25]">
+            Forgot your password?
+          </Link>
         </form>
 
         <p className="mt-4 max-w-[380px] text-[11px] leading-relaxed text-[#77796f]">

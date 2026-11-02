@@ -27,6 +27,7 @@ export function GuidesScreen() {
   const [zones, setZones] = useState<GuideZone[]>([]);
   const [editingGuideId, setEditingGuideId] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
+  const [notice, setNotice] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newGuide, setNewGuide] = useState({ name: "", email: "", phone: "", maxToursPerDay: "1", languages: [] as GuideLanguage[], zones: [] as GuideZone[] });
@@ -75,6 +76,7 @@ export function GuidesScreen() {
   async function handleCreateGuide(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setActionError("");
+    setNotice("");
     if (!newGuide.name.trim() || !newGuide.email.trim() || !newGuide.phone.trim() || Number(newGuide.maxToursPerDay) < 1) {
       setActionError("Completa nombre, email, teléfono y capacidad diaria.");
       return;
@@ -93,6 +95,7 @@ export function GuidesScreen() {
         zones: newGuide.zones,
       });
       setGuides((currentGuides) => [...currentGuides, mapGuide(detail)]);
+      setNotice(`Invitation sent to ${createdUser.User.email} with a temporary password.`);
       setNewGuide({ name: "", email: "", phone: "", maxToursPerDay: "1", languages: [], zones: [] });
       setShowCreateForm(false);
     } catch (requestError) {
@@ -146,6 +149,7 @@ export function GuidesScreen() {
                 {isLoading && <p className="mt-6 text-[10px] text-[#85867c]">Loading guides...</p>}
                 {error && <p role="alert" className="mt-6 text-[10px] text-[#9b6f37]">{error}</p>}
                 {actionError && <p role="alert" className="mt-6 text-[10px] text-[#9b6f37]">{actionError}</p>}
+                {notice && <p role="status" className="mt-6 border border-[#e3e1da] bg-[#f8f7f3] p-3 text-[10px] text-[#55574f]">{notice}</p>}
                 {!isLoading && !error && filteredGuides.length === 0 && <p className="mt-6 text-[10px] text-[#85867c]">No guides found.</p>}
                 {!isLoading && !error && filteredGuides.length > 0 && <GuideTable guides={filteredGuides} languages={languages} zones={zones} editingGuideId={editingGuideId} onEdit={setEditingGuideId} onSave={handleUpdateGuide} />}
                 <p className="mt-5 text-[9px] text-[#96968b]">{filteredGuides.length} guides shown · Search uses live directory data</p>

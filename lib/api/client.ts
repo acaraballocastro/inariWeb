@@ -79,6 +79,14 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
     const code = typeof body === "object" && body !== null && "code" in body && typeof body.code === "string"
       ? body.code
       : undefined;
+    // A user still on the temporary password may only change it.
+    if (code === "PASSWORD_CHANGE_REQUIRED" && typeof window !== "undefined") {
+      const session = getSession();
+      if (session) saveSession({ ...session, mustChangePassword: true });
+      // request() runs outside components, with no router: a full navigation is intended.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      if (window.location.pathname !== "/change-password") window.location.assign("/change-password");
+    }
     throw new ApiError(message, response.status, code);
   }
 

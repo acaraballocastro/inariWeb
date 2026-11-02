@@ -10,6 +10,8 @@ export type User = {
   role: UserRole;
   is_active: boolean;
   created_at: string;
+  /** True while the user has not chosen a password: the invitation can be sent again. Only in the users list. */
+  invitation_pending?: boolean;
 };
 
 export type CreateUserInput = {
@@ -44,6 +46,11 @@ export function createUser(input: CreateUserInput) {
 
 export function updateUser(id: string, input: UpdateUserInput) {
   return request<User>(`/users/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+}
+
+/** Emails a new temporary password to a user who has not chosen a password yet. */
+export function resendInvitation(id: string) {
+  return request<UserCredentials>(`/users/${id}/invitation`, { method: "POST" });
 }
 
 export function deactivateUser(id: string) {

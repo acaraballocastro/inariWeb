@@ -63,7 +63,7 @@ export function ChangePasswordScreen() {
         <p className="mt-2 text-[8px] tracking-[0.5em] text-[#9b8353]">TOURS</p>
         <p className="mt-12 text-[9px] font-semibold tracking-[0.18em] text-[#9b8353]">SECURITY / REQUIRED</p>
         <h1 className="mt-4 font-serif text-3xl tracking-[-0.04em]">Choose a new password</h1>
-        <p className="mt-3 text-[11px] leading-relaxed text-[#85867c]">Your workspace administrator created your account with a temporary password.</p>
+        <p className="mt-3 text-[11px] leading-relaxed text-[#85867c]">Your account uses a temporary password. Enter the one from your invitation email and choose your own to continue.</p>
         <form onSubmit={handleSubmit} className="mt-6">
           <label className="block text-[10px] text-[#77796f]">Current password<input type="password" autoComplete="current-password" value={oldPassword} onChange={(event) => setOldPassword(event.target.value)} className="mt-2 h-10 w-full border border-[#e3e1da] bg-white px-3 text-xs outline-none focus:border-[#b5a786]" /></label>
           <label className="mt-4 block text-[10px] text-[#77796f]">New password<input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className="mt-2 h-10 w-full border border-[#e3e1da] bg-white px-3 text-xs outline-none focus:border-[#b5a786]" /></label>

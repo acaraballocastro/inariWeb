@@ -36,3 +36,18 @@ export async function logout() {
     clearSession();
   }
 }
+
+/** Asks for a password reset email. The backend answers the same whether the account exists or not. */
+export async function requestPasswordReset(email: string) {
+  await request<void>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  await request<void>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+}
