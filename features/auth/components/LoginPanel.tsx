@@ -4,6 +4,15 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { login } from "@/features/auth/api";
+import { ApiError } from "@/lib/api/client";
+
+function loginErrorMessage(requestError: unknown) {
+  if (requestError instanceof ApiError) {
+    if (requestError.code === "TOO_MANY_REQUESTS") return "Demasiados intentos fallidos. Espera unos minutos o usa \"Forgot your password?\".";
+    if (requestError.code === "TEMPORARY_PASSWORD_EXPIRED") return "Tu contraseña temporal ha caducado. Pide al administrador una nueva invitación o usa \"Forgot your password?\".";
+  }
+  return requestError instanceof Error ? requestError.message : "No se pudo iniciar sesión.";
+}
 
 export function LoginPanel() {
   const router = useRouter();
@@ -26,7 +35,7 @@ export function LoginPanel() {
       const session = await login(email.trim(), password);
       router.replace(session.mustChangePassword ? "/change-password" : "/dashboard");
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "No se pudo iniciar sesión.");
+      setError(loginErrorMessage(requestError));
     } finally {
       setIsSubmitting(false);
     }

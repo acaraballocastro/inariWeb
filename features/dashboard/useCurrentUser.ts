@@ -2,18 +2,18 @@
 
 import { useEffect, useState } from "react";
 
-import { getUser, type User } from "@/features/users/api";
+import { getMe } from "@/features/auth/api";
+import type { User } from "@/features/users/api";
 import { getSession } from "@/lib/api/client";
 
 export function useCurrentUser() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const session = getSession();
-    if (!session) return;
+    if (!getSession()) return;
 
     let active = true;
-    getUser(session.userId)
+    getMe()
       .then((result) => { if (active) setUser(result); })
       .catch(() => {});
     return () => { active = false; };

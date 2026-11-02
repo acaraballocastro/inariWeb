@@ -42,10 +42,24 @@ export function getSession(): Session | null {
 
 export function saveSession(session: Session) {
   window.localStorage.setItem(sessionStorageKey, JSON.stringify(session));
+  window.dispatchEvent(new Event(sessionChangeEvent));
 }
 
 export function clearSession() {
   window.localStorage.removeItem(sessionStorageKey);
+  window.dispatchEvent(new Event(sessionChangeEvent));
+}
+
+/** Fired on this tab when the session changes ("storage" only fires on the other tabs). */
+export const sessionChangeEvent = "inari:session";
+
+/** The stored session as text, for useSyncExternalStore (a stable snapshot). */
+export function readStoredSession() {
+  return typeof window === "undefined" ? null : window.localStorage.getItem(sessionStorageKey);
+}
+
+export function isAdmin(session: Session | null) {
+  return session?.role === "ADMIN";
 }
 
 export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {

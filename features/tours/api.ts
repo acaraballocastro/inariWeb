@@ -53,11 +53,18 @@ export type UpdateTourDayInput = TourDayFormInput & {
   voucher_status?: string;
 };
 
+export type TourDayFilter = { from?: string; to?: string; status?: string[]; guideId?: string; zoneId?: string; reservationId?: string };
+
 // `from` / `to` accept RFC3339 timestamps or YYYY-MM-DD dates; `to` is exclusive.
-export function listTourDays(range: { from?: string; to?: string } = {}) {
+// A guide only gets their own days: the API forces `guide_id`.
+export function listTourDays(filter: TourDayFilter = {}) {
   const params = new URLSearchParams();
-  if (range.from) params.set("from", range.from);
-  if (range.to) params.set("to", range.to);
+  if (filter.from) params.set("from", filter.from);
+  if (filter.to) params.set("to", filter.to);
+  if (filter.status?.length) params.set("status", filter.status.join(","));
+  if (filter.guideId) params.set("guide_id", filter.guideId);
+  if (filter.zoneId) params.set("zone_id", filter.zoneId);
+  if (filter.reservationId) params.set("reservation_id", filter.reservationId);
   const query = params.size ? `?${params}` : "";
   return request<TourDay[] | null>(`/tour-days${query}`).then((items) => items ?? []);
 }
@@ -89,6 +96,44 @@ export function cancelTourDay(id: string) {
 export function confirmTourDay(id: string) {
   return request<void>(`/tour-days/${encodeURIComponent(id)}/confirm`, { method: "PATCH" });
 }
+
+/** The assigned guide turns down a preassignment: the day goes back to PENDING_ASSIGNMENT. */
+export function rejectTourDay(id: string) {
+  return request<void>(`/tour-days/${encodeURIComponent(id)}/reject`, { method: "PATCH" });
+}
+
+export function completeTourDay(id: string) {
+  return request<void>(`/tour-days/${encodeURIComponent(id)}/complete`, { method: "PATCH" });
+}
+
+export function forceMajeureTourDay(id: string, reason: string) {
+  return request<void>(`/tour-days/${encodeURIComponent(id)}/force-majeure`, { method: "PATCH", body: JSON.stringify({ reason }) });
+}
+
+/** One change in the timeline of a reservation or tour day, most recent first. */
+export type HistoryEntry = {
+  type: "RESERVATION_STATUS" | "TOUR_DAY_STATUS" | "TOUR_DAY_ASSIGNMENT";
+  tour_day_id: string | null;
+  tour_day_code: string | null;
+  previous_status: string | null;
+  new_status: string | null;
+  /** ASSIGNED, UNASSIGNED or REJECTED, in assignment entries. */
+  action: string | null;
+  guide_id: string | null;
+  guide_name: string | null;
+  /** ADMIN, GUIDE or SYSTEM. */
+  changed_by: string | null;
+  changed_by_user_id: string | null;
+  changed_by_name: string | null;
+  reason: string | null;
+  created_at: string;
+};
+
+export function getTourDayHistory(id: string) {
+  return request<HistoryEntry[] | null>(`/tour-days/${encodeURIComponent(id)}/history`).then((items) => items ?? []);
+}
+
+export const finalTourDayStatuses = ["COMPLETED", "CANCELLED", "FORCE_MAJEURE_CANCELLED"];
 
 export function assignGuide(tourDayIds: string[], guideId: string) {
   return request<void>("/tour-days/assign-guide", { method: "PATCH", body: JSON.stringify({ tour_day_ids: tourDayIds, guide_id: guideId }) });

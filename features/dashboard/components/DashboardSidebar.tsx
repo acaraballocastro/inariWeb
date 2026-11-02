@@ -2,42 +2,84 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { getSession } from "@/lib/api/client";
-import { logout } from "@/features/auth/api";
+import { usePathname, useRouter } from "next/navigation";
+import { getSession, isAdmin, type Session } from "@/lib/api/client";
+import { useSession } from "@/lib/api/useSession";
+import { logout, logoutEverywhere } from "@/features/auth/api";
 
-const navigation = [
+type NavItem = { label: string; href: string };
+type NavSection = { title: string; items: NavItem[] };
+
+const adminNavigation: NavItem[] = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Reservations", href: "/reservations" },
   { label: "Calendar", href: "/calendar" },
-  { label: "Assignments", href: "#assignments" },
-  { label: "Incidents", href: "#incidents" },
+  { label: "Assignments", href: "/assignments" },
+  { label: "Incidents", href: "/incidents" },
+  { label: "Notifications", href: "/notifications" },
 ];
 
-const sections = [
-  { title: "Content", items: ["Itineraries", "Activities", "Places", "Languages", "Zones"] },
-  { title: "Management", items: ["Guides", "Users", "Tour Templates"] },
-  { title: "Documents", items: ["Vouchers", "Signatures"] },
+// Items without a route yet are placeholders for upcoming backend features.
+const adminSections: NavSection[] = [
+  { title: "Content", items: [{ label: "Itineraries", href: "#itineraries" }, { label: "Activities", href: "/activities" }, { label: "Places", href: "/places" }, { label: "Languages", href: "/languages" }, { label: "Zones", href: "/zones" }] },
+  { title: "Management", items: [{ label: "Guides", href: "/guides" }, { label: "Users", href: "/users" }, { label: "Agencies", href: "/agencies" }, { label: "Customers", href: "/customers" }, { label: "Tour Templates", href: "#tour-templates" }, { label: "System", href: "/system" }] },
+  { title: "Documents", items: [{ label: "Vouchers", href: "#vouchers" }, { label: "Signatures", href: "#signatures" }] },
 ];
 
-export function DashboardSidebar({ activeItem = "Dashboard" }: { activeItem?: string }) {
+const guideNavigation: NavItem[] = [
+  { label: "Dashboard", href: "/dashboard" },
+  { label: "Availability", href: "/availability" },
+  { label: "Incidents", href: "/incidents" },
+  { label: "Notifications", href: "/notifications" },
+];
+
+// A guide only reaches their own days, incidents and availability; the rest of the API answers 403.
+const guidePaths = ["/dashboard", "/tours/", "/incidents", "/availability", "/notifications"];
+
+export function navigationFor(session: Session | null): { navigation: NavItem[]; sections: NavSection[] } {
+  if (!session) return { navigation: [], sections: [] };
+  return isAdmin(session) ? { navigation: adminNavigation, sections: adminSections } : { navigation: guideNavigation, sections: [] };
+}
+
+export function useSignOut() {
   const router = useRouter();
 
-  useEffect(() => {
-    const session = getSession();
-    if (!session) {
-      router.replace("/");
-      return;
-    }
-    if (session.mustChangePassword) {
-      router.replace("/change-password");
-    }
-  }, [router]);
-
-  async function handleSignOut() {
+  async function signOut() {
     await logout();
     router.replace("/");
   }
+
+  async function signOutEverywhere() {
+    if (!window.confirm("Sign out on every device where you are signed in, this one included?")) return;
+    await logoutEverywhere();
+    router.replace("/");
+  }
+
+  return { signOut, signOutEverywhere };
+}
+
+export function DashboardSidebar({ activeItem = "Dashboard" }: { activeItem?: string }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const session = useSession();
+  const { signOut, signOutEverywhere } = useSignOut();
+
+  useEffect(() => {
+    const current = getSession();
+    if (!current) {
+      router.replace("/");
+      return;
+    }
+    if (current.mustChangePassword) {
+      router.replace("/change-password");
+      return;
+    }
+    if (!isAdmin(current) && !guidePaths.some((path) => pathname.startsWith(path))) {
+      router.replace("/dashboard");
+    }
+  }, [router, pathname]);
+
+  const { navigation, sections } = navigationFor(session);
 
   return (
     <aside className="hidden w-[220px] shrink-0 border-r border-[#deddd6] bg-[#f5f4f0] px-5 py-7 lg:block xl:w-[250px] xl:px-7">
@@ -46,40 +88,48 @@ export function DashboardSidebar({ activeItem = "Dashboard" }: { activeItem?: st
         <span className="mt-2 block text-[7px] tracking-[0.5em] text-[#9b8353]">TOURS</span>
       </Link>
 
-      <nav className="mt-9" aria-label="Main navigation">
-        <div className="space-y-1">
-          {navigation.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`block px-3 py-2 text-[11px] transition-colors ${
-                item.label === activeItem ? "bg-[#e9e5d7] font-medium" : "text-[#66685f] hover:bg-[#ecebe5]"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-
-        {sections.map((section) => (
-          <div key={section.title} className="mt-7">
-            <p className="px-3 text-[8px] font-semibold tracking-[0.2em] text-[#aaa28f]">{section.title}</p>
-            <div className="mt-2 space-y-1">
-              {section.items.map((item) => (
-                <Link key={item} href={item === "Guides" ? "/guides" : item === "Users" ? "/users" : item === "Languages" ? "/languages" : item === "Zones" ? "/zones" : item === "Places" ? "/places" : `#${item.toLowerCase().replaceAll(" ", "-")}`} className={`block px-3 py-1.5 text-[11px] ${item === activeItem ? "font-medium text-[#292b26]" : "text-[#77786f] hover:text-[#292b26]"}`}>
-                  {item}
-                </Link>
-              ))}
-            </div>
-          </div>
-        ))}
-      </nav>
+      <NavigationLinks navigation={navigation} sections={sections} activeItem={activeItem} />
 
       <div className="mt-10 border-t border-[#deddd6] pt-5">
         <p className="text-[8px] font-semibold tracking-[0.2em] text-[#aaa28f]">JAPAN OPERATIONS</p>
-        <p className="mt-2 text-[10px] text-[#77786f]">Autumn season · 2026</p>
-        <button type="button" onClick={handleSignOut} className="mt-4 text-[9px] text-[#77786f] underline underline-offset-4 hover:text-[#292b26]">Sign out</button>
+        <p className="mt-2 text-[10px] text-[#77786f]">{session && !isAdmin(session) ? "Guide workspace" : "Autumn season · 2026"}</p>
+        <button type="button" onClick={signOut} className="mt-4 text-[9px] text-[#77786f] underline underline-offset-4 hover:text-[#292b26]">Sign out</button>
+        <button type="button" onClick={signOutEverywhere} className="mt-2 block text-[9px] text-[#77786f] underline underline-offset-4 hover:text-[#292b26]">Sign out on all devices</button>
       </div>
     </aside>
+  );
+}
+
+export function NavigationLinks({ navigation, sections, activeItem, onNavigate }: { navigation: NavItem[]; sections: NavSection[]; activeItem?: string; onNavigate?: () => void }) {
+  return (
+    <nav className="mt-9" aria-label="Main navigation">
+      <div className="space-y-1">
+        {navigation.map((item) => (
+          <Link
+            key={item.label}
+            href={item.href}
+            onClick={onNavigate}
+            className={`block px-3 py-2 text-[11px] transition-colors ${
+              item.label === activeItem ? "bg-[#e9e5d7] font-medium" : "text-[#66685f] hover:bg-[#ecebe5]"
+            }`}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </div>
+
+      {sections.map((section) => (
+        <div key={section.title} className="mt-7">
+          <p className="px-3 text-[8px] font-semibold tracking-[0.2em] text-[#aaa28f]">{section.title}</p>
+          <div className="mt-2 space-y-1">
+            {section.items.map((item) => (
+              <Link key={item.label} href={item.href} onClick={onNavigate} className={`block px-3 py-1.5 text-[11px] ${item.label === activeItem ? "font-medium text-[#292b26]" : "text-[#77786f] hover:text-[#292b26]"}`}>
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      ))}
+    </nav>
   );
 }

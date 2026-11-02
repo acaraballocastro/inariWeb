@@ -49,3 +49,30 @@ export function updateZone(id: string, input: { name: string; type: string; is_a
 export function deleteZone(id: string) {
   return request<void>(`/zones/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
+
+export type Activity = {
+  id: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string | null;
+};
+
+export type ActivityInput = { name: string; description: string | null; is_active?: boolean };
+
+export function listAllActivities() {
+  return request<Activity[] | null>("/activities").then((items) => items ?? []);
+}
+
+export function createActivity(input: ActivityInput) {
+  return request<void>("/activities", { method: "POST", body: JSON.stringify(input) });
+}
+
+export function updateActivity(id: string, input: ActivityInput) {
+  return request<void>(`/activities/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify({ ...input, id }) });
+}
+
+export function deleteActivity(id: string) {
+  return request<void>(`/activities/${encodeURIComponent(id)}`, { method: "DELETE" });
+}

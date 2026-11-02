@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
-import { createUser, deactivateUser, listUsers, resendInvitation, updateUser, type User, type UserRole } from "@/features/users/api";
+import { closeUserSessions, createUser, deactivateUser, deleteUserPermanently, listUsers, resendInvitation, updateUser, type User, type UserRole } from "@/features/users/api";
 
 export function UsersScreen() {
   const [users, setUsers] = useState<User[]>([]);
@@ -75,8 +75,34 @@ export function UsersScreen() {
     }
   }
 
+  async function handleCloseSessions(user: User) {
+    if (!window.confirm(`Sign ${user.name} out on every device? They can sign in again with their password.`)) return;
+    setFormError("");
+    setNotice("");
+    try {
+      await closeUserSessions(user.id);
+      setNotice(`${user.name} was signed out on every device.`);
+    } catch (requestError) {
+      setFormError(requestError instanceof Error ? requestError.message : "No se pudieron cerrar las sesiones.");
+    }
+  }
+
+  async function handleDeletePermanently(user: User) {
+    if (!window.confirm(`Delete ${user.name} permanently? Their personal data is erased and cannot be recovered; the history keeps "Deleted ${user.role === "GUIDE" ? "guide" : "user"}" in their place.`)) return;
+    setFormError("");
+    setNotice("");
+    try {
+      await deleteUserPermanently(user.id);
+      setUsers((currentUsers) => currentUsers.filter((currentUser) => currentUser.id !== user.id));
+      setNotice(`${user.name} was deleted permanently.`);
+    } catch (requestError) {
+      setFormError(requestError instanceof Error ? requestError.message : "No se pudo borrar el usuario.");
+    }
+  }
+
   async function handleDeactivateUser(user: User) {
-    if (!window.confirm(`Deactivate ${user.name}?`)) return;
+    const days = user.role === "GUIDE" ? " Their tour days not yet paid will go back to pending assignment." : "";
+    if (!window.confirm(`Deactivate ${user.name}?${days}`)) return;
     try {
       await deactivateUser(user.id);
       setUsers((currentUsers) => currentUsers.map((currentUser) => currentUser.id === user.id ? { ...currentUser, is_active: false } : currentUser));
@@ -113,7 +139,7 @@ export function UsersScreen() {
                 {isLoading && <p className="mt-6 text-[10px] text-[#85867c]">Loading users...</p>}
                 {error && <p role="alert" className="mt-6 text-[10px] text-[#9b6f37]">{error}</p>}
                 {!isLoading && !error && filteredUsers.length === 0 && <p className="mt-6 text-[10px] text-[#85867c]">No users found.</p>}
-                {!isLoading && !error && filteredUsers.length > 0 && <UserTable users={filteredUsers} editingUserId={editingUserId} onEdit={setEditingUserId} onSave={handleUpdateUser} onDeactivate={handleDeactivateUser} onResendInvitation={handleResendInvitation} />}
+                {!isLoading && !error && filteredUsers.length > 0 && <UserTable users={filteredUsers} editingUserId={editingUserId} onEdit={setEditingUserId} onSave={handleUpdateUser} onDeactivate={handleDeactivateUser} onResendInvitation={handleResendInvitation} onCloseSessions={handleCloseSessions} onDeletePermanently={handleDeletePermanently} />}
                 <p className="mt-5 text-[9px] text-[#96968b]">{filteredUsers.length} users shown · Access managed by operations</p>
               </section>
               <footer className="pt-8 text-[9px] tracking-[0.03em] text-[#a09f94]">DEMO WORKSPACE · Sample operational data · Not connected to live services</footer>
@@ -125,8 +151,8 @@ export function UsersScreen() {
   );
 }
 
-function UserTable({ users: items, editingUserId, onEdit, onSave, onDeactivate, onResendInvitation }: { users: User[]; editingUserId: string | null; onEdit: (id: string | null) => void; onSave: (user: User) => void; onDeactivate: (user: User) => void; onResendInvitation: (user: User) => void }) {
-  return <div className="mt-6 overflow-x-auto"><div className="min-w-[760px]"><div className="grid grid-cols-[minmax(220px,1.5fr)_minmax(190px,1.2fr)_minmax(125px,0.9fr)_110px_80px_150px] gap-3 border-b border-[#ecebe5] pb-3 text-[8px] font-semibold tracking-[0.16em] text-[#a19a87]"><span>USER</span><span>EMAIL</span><span>ROLE</span><span>CREATED</span><span>STATUS</span><span>ACTIONS</span></div><div className="divide-y divide-[#f0efe9]">{items.map((user) => editingUserId === user.id ? <EditableUserRow key={user.id} user={user} onCancel={() => onEdit(null)} onSave={onSave} /> : <div key={user.id} className="grid grid-cols-[minmax(220px,1.5fr)_minmax(190px,1.2fr)_minmax(125px,0.9fr)_110px_80px_150px] items-center gap-3 py-4 text-[9px] hover:bg-[#fbfaf7]"><div className="flex items-center gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e9e5d7] text-[8px] text-[#77786f]">{user.name.split(" ").map((part) => part[0]).join("")}</span><span className="text-[10px]">{user.name}</span></div><span className="text-[8px] text-[#85867c]">{user.email}</span><span>{user.role}</span><span className="text-[8px] text-[#85867c]">{new Date(user.created_at).toLocaleDateString()}</span><span className={`px-2 py-1 text-center text-[8px] ${!user.is_active ? "bg-[#f2e8d8] text-[#9b6f37]" : user.invitation_pending ? "bg-[#e9e5d7] text-[#77786f]" : "bg-[#eef0e9] text-[#68705d]"}`}>{!user.is_active ? "Inactive" : user.invitation_pending ? "Invited" : "Active"}</span><span className="flex flex-wrap gap-x-2 gap-y-1 text-[8px]"><button type="button" onClick={() => onEdit(user.id)} className="underline underline-offset-2">Edit</button>{user.is_active && user.invitation_pending && <button type="button" onClick={() => onResendInvitation(user)} className="underline underline-offset-2">Resend invite</button>}{user.is_active && <button type="button" onClick={() => onDeactivate(user)} className="text-[#9b6f37] underline underline-offset-2">Deactivate</button>}</span></div>)}</div></div></div>;
+function UserTable({ users: items, editingUserId, onEdit, onSave, onDeactivate, onResendInvitation, onCloseSessions, onDeletePermanently }: { users: User[]; editingUserId: string | null; onEdit: (id: string | null) => void; onSave: (user: User) => void; onDeactivate: (user: User) => void; onResendInvitation: (user: User) => void; onCloseSessions: (user: User) => void; onDeletePermanently: (user: User) => void }) {
+  return <div className="mt-6 overflow-x-auto"><div className="min-w-[760px]"><div className="grid grid-cols-[minmax(220px,1.5fr)_minmax(190px,1.2fr)_minmax(125px,0.9fr)_110px_80px_150px] gap-3 border-b border-[#ecebe5] pb-3 text-[8px] font-semibold tracking-[0.16em] text-[#a19a87]"><span>USER</span><span>EMAIL</span><span>ROLE</span><span>CREATED</span><span>STATUS</span><span>ACTIONS</span></div><div className="divide-y divide-[#f0efe9]">{items.map((user) => editingUserId === user.id ? <EditableUserRow key={user.id} user={user} onCancel={() => onEdit(null)} onSave={onSave} /> : <div key={user.id} className="grid grid-cols-[minmax(220px,1.5fr)_minmax(190px,1.2fr)_minmax(125px,0.9fr)_110px_80px_150px] items-center gap-3 py-4 text-[9px] hover:bg-[#fbfaf7]"><div className="flex items-center gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#e9e5d7] text-[8px] text-[#77786f]">{user.name.split(" ").map((part) => part[0]).join("")}</span><span className="text-[10px]">{user.name}</span></div><span className="text-[8px] text-[#85867c]">{user.email}</span><span>{user.role}</span><span className="text-[8px] text-[#85867c]">{new Date(user.created_at).toLocaleDateString()}</span><span className={`px-2 py-1 text-center text-[8px] ${!user.is_active ? "bg-[#f2e8d8] text-[#9b6f37]" : user.invitation_pending ? "bg-[#e9e5d7] text-[#77786f]" : "bg-[#eef0e9] text-[#68705d]"}`}>{!user.is_active ? "Inactive" : user.invitation_pending ? "Invited" : "Active"}</span><span className="flex flex-wrap gap-x-2 gap-y-1 text-[8px]"><button type="button" onClick={() => onEdit(user.id)} className="underline underline-offset-2">Edit</button>{user.is_active && user.invitation_pending && <button type="button" onClick={() => onResendInvitation(user)} className="underline underline-offset-2">Resend invite</button>}{user.is_active && !user.invitation_pending && <button type="button" onClick={() => onCloseSessions(user)} className="underline underline-offset-2">Sign out</button>}{user.is_active && <button type="button" onClick={() => onDeactivate(user)} className="text-[#9b6f37] underline underline-offset-2">Deactivate</button>}{!user.is_active && <button type="button" onClick={() => onDeletePermanently(user)} className="text-[#9b6f37] underline underline-offset-2">Delete permanently</button>}</span></div>)}</div></div></div>;
 }
 
 function EditableUserRow({ user, onCancel, onSave }: { user: User; onCancel: () => void; onSave: (user: User) => void }) {

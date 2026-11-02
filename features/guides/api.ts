@@ -71,6 +71,11 @@ export function getGuideByUser(userId: string) {
   return request<{ id: string; user_id: string; max_tours_per_day: number; created_at: string }>(`/guides/user/${userId}`);
 }
 
+/** Creates the guide's user (with the invitation email), guide record, languages and zones in one transaction. */
+export function createGuide(input: UpdateGuideInput) {
+  return request<GuideDetail>("/guides", { method: "POST", body: JSON.stringify(input) });
+}
+
 export function updateGuide(id: string, input: UpdateGuideInput) {
   return request<GuideDetail>(`/guides/${id}`, { method: "PATCH", body: JSON.stringify(input) });
 }

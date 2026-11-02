@@ -53,6 +53,16 @@ export function resendInvitation(id: string) {
   return request<UserCredentials>(`/users/${id}/invitation`, { method: "POST" });
 }
 
+/** Signs the user out on every device; they can sign in again. */
+export function closeUserSessions(id: string) {
+  return request<void>(`/users/${id}/sessions`, { method: "DELETE" });
+}
+
+/** Erases a deactivated user's personal data for good; the history keeps a "Deleted guide/user" in their place. */
+export function deleteUserPermanently(id: string) {
+  return request<void>(`/users/${id}/permanently`, { method: "DELETE" });
+}
+
 export function deactivateUser(id: string) {
   return request<void>(`/users/${id}`, { method: "DELETE" });
 }

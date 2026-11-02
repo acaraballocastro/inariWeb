@@ -11,7 +11,7 @@ type StopDraft = { start_time: string; end_time: string; type: string; place_id:
 
 const inputClass = "mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]";
 
-export function ItineraryEditor({ tourDay, places, activities, onCountChange }: { tourDay: TourDay; places: ItineraryPlace[]; activities: ItineraryActivity[]; onCountChange?: (count: number) => void }) {
+export function ItineraryEditor({ tourDay, places, activities, onCountChange, readOnly = false }: { tourDay: TourDay; places: ItineraryPlace[]; activities: ItineraryActivity[]; onCountChange?: (count: number) => void; readOnly?: boolean }) {
   const [items, setItems] = useState<ItineraryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -113,17 +113,17 @@ export function ItineraryEditor({ tourDay, places, activities, onCountChange }: 
             <span className="text-[10px] text-[#9b8353]">{formatClock(item.start_time)}{item.end_time ? ` – ${formatClock(item.end_time)}` : ""}</span>
             <span className="relative mt-1 flex h-3 w-3 items-center justify-center rounded-full border border-[#b5a786]" aria-hidden="true" />
             <div className="min-w-0"><h3 className="text-[11px]">{describeStop(item)}</h3><p className="mt-1 text-[9px] text-[#9b8353]">{item.type ? formatType(item.type) : "Stop"}</p>{item.notes && <p className="mt-2 text-[10px] leading-relaxed text-[#85867c]">{item.notes}</p>}</div>
-            <div className="flex items-start gap-1 text-[9px]">
+            {!readOnly && <div className="flex items-start gap-1 text-[9px]">
               <button type="button" aria-label="Move up" disabled={isSaving || editingId !== null || index === 0} onClick={() => handleMove(index, -1)} className="h-8 w-8 border border-[#deddd6] hover:bg-[#f8f7f3] disabled:opacity-40">↑</button>
               <button type="button" aria-label="Move down" disabled={isSaving || editingId !== null || index === items.length - 1} onClick={() => handleMove(index, 1)} className="h-8 w-8 border border-[#deddd6] hover:bg-[#f8f7f3] disabled:opacity-40">↓</button>
               <button type="button" disabled={isSaving || editingId !== null} onClick={() => { setError(""); setEditingId(item.id); setDraft(toStopDraft(item)); }} className="h-8 border border-[#deddd6] px-3 hover:bg-[#f8f7f3] disabled:opacity-40">Edit</button>
               <button type="button" disabled={isSaving || editingId !== null} onClick={() => handleDelete(item)} className="h-8 border border-[#deddd6] px-3 text-[#9b6f37] hover:bg-[#fbf6ef] disabled:opacity-40">Remove</button>
-            </div>
+            </div>}
           </article>
         ))}
         {editingId === "new" && stopForm("Add stop")}
       </div>
-      {editingId === null && !isLoading && <button type="button" onClick={startCreating} className="mt-4 h-9 border border-[#deddd6] px-3 text-[9px] hover:bg-[#f8f7f3]">+ Add stop</button>}
+      {!readOnly && editingId === null && !isLoading && <button type="button" onClick={startCreating} className="mt-4 h-9 border border-[#deddd6] px-3 text-[9px] hover:bg-[#f8f7f3]">+ Add stop</button>}
     </div>
   );
 }

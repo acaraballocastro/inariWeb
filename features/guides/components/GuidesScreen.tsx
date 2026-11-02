@@ -4,9 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
-import { getGuideByUser, listGuides, listLanguages, listZones, updateGuide, type GuideDetail, type GuideLanguage, type GuideZone } from "@/features/guides/api";
+import { createGuide, listGuides, listLanguages, listZones, updateGuide, type GuideDetail, type GuideLanguage, type GuideZone } from "@/features/guides/api";
 import { RelationSelector } from "@/features/guides/components/RelationSelector";
-import { createUser } from "@/features/users/api";
 
 type Guide = {
   id: string;
@@ -84,9 +83,7 @@ export function GuidesScreen() {
 
     setIsCreating(true);
     try {
-      const createdUser = await createUser({ name: newGuide.name.trim(), email: newGuide.email.trim(), phone: newGuide.phone.trim(), role: "GUIDE" });
-      const createdGuide = await getGuideByUser(createdUser.User.id);
-      const detail = await updateGuide(createdGuide.id, {
+      const detail = await createGuide({
         name: newGuide.name.trim(),
         email: newGuide.email.trim(),
         phone: newGuide.phone.trim(),
@@ -95,7 +92,7 @@ export function GuidesScreen() {
         zones: newGuide.zones,
       });
       setGuides((currentGuides) => [...currentGuides, mapGuide(detail)]);
-      setNotice(`Invitation sent to ${createdUser.User.email} with a temporary password.`);
+      setNotice(`Invitation sent to ${newGuide.email.trim()} with a temporary password.`);
       setNewGuide({ name: "", email: "", phone: "", maxToursPerDay: "1", languages: [], zones: [] });
       setShowCreateForm(false);
     } catch (requestError) {

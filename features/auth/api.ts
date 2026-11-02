@@ -1,4 +1,14 @@
-import { clearSession, request, saveSession, type Session } from "@/lib/api/client";
+import { clearSession, getSession, request, saveSession, type Session } from "@/lib/api/client";
+import { forgetDevice } from "@/features/notifications/push";
+import type { User } from "@/features/users/api";
+
+/** The signed-in user, for any role. The role that counts is the one in the database, so the session follows it. */
+export async function getMe() {
+  const user = await request<User>("/auth/me");
+  const session = getSession();
+  if (session && session.role !== user.role) saveSession({ ...session, role: user.role });
+  return user;
+}
 
 export type LoginResponse = {
   token: string;
@@ -29,8 +39,19 @@ export async function changePassword(userId: string, oldPassword: string, newPas
   });
 }
 
+/** Signs the user out on every device, this one included. */
+export async function logoutEverywhere() {
+  try {
+    await forgetDevice();
+    await request<void>("/auth/logout-all", { method: "POST" });
+  } finally {
+    clearSession();
+  }
+}
+
 export async function logout() {
   try {
+    await forgetDevice();
     await request<void>("/auth/logout", { method: "POST" });
   } finally {
     clearSession();

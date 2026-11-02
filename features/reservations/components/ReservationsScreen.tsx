@@ -529,6 +529,7 @@ function CreateReservationModal({
   const [endDate, setEndDate] = useState("");
   const [quoteNumber, setQuoteNumber] = useState("");
   const [fileNumber, setFileNumber] = useState("");
+  const [offerToZoneGuides, setOfferToZoneGuides] = useState(true);
   const [customers, setCustomers] = useState<ReservationCustomer[]>([]);
   const [selectedCustomers, setSelectedCustomers] = useState<
     ReservationCustomerInput[]
@@ -615,20 +616,13 @@ function CreateReservationModal({
       ...(fileNumber.trim()
         ? { file_number: fileNumber.trim() }
         : {}),
+      offer_to_zone_guides: offerToZoneGuides,
     };
 
     setIsSubmitting(true);
 
     try {
-      // The API helper accepts the creation fields and sends customers: [].
-      // Quote/file numbers are excluded by its current function signature.
-      const {
-        quote_number: _quoteNumber,
-        file_number: _fileNumber,
-        ...creationPayload
-      } = payload;
-
-      const detail = await createReservation(creationPayload);
+      const detail = await createReservation(payload);
       setCreatedReservation(detail.reservation);
       setStep(2);
     } catch (requestError: unknown) {
@@ -838,6 +832,19 @@ function CreateReservationModal({
                 placeholder="Optional"
                 className={inputClass}
               />
+            </label>
+
+            <label className="flex items-start gap-2 text-[10px] text-[#65665d] sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={offerToZoneGuides}
+                onChange={(event) => setOfferToZoneGuides(event.target.checked)}
+                className="mt-0.5"
+              />
+              <span>
+                Notify the guides of each zone about days without guide
+                <span className="mt-1 block text-[9px] text-[#96968b]">Turn it off when the guide is already agreed: nobody else is told about these days.</span>
+              </span>
             </label>
           </div>
 

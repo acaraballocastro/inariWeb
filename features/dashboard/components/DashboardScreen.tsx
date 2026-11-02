@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 
+import { isAdmin } from "@/lib/api/client";
+import { useSession } from "@/lib/api/useSession";
 import { loadDashboard, operationsTimeZone, type DashboardData } from "../api";
 import { useCurrentUser } from "../useCurrentUser";
 import { DashboardHeader } from "./DashboardHeader";
 import { DashboardSidebar } from "./DashboardSidebar";
+import { GuideDashboard } from "./GuideDashboard";
 import { OverviewBanner } from "./OverviewBanner";
 import { RecentActivity } from "./RecentActivity";
 import { SchedulePanel } from "./SchedulePanel";
@@ -14,24 +17,29 @@ import { UpcomingTours } from "./UpcomingTours";
 
 export function DashboardScreen() {
   const user = useCurrentUser();
+  const session = useSession();
+  // Nothing loads until the session is read, so a guide never asks for the admin data.
+  const role = session?.role ?? null;
   // Read the clock after mount so the prerender doesn't freeze a stale date.
   const [now, setNow] = useState<Date | null>(null);
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!role) return;
     let active = true;
     const current = new Date();
 
-    loadDashboard(current)
-      .then((result) => { if (active) setData(result); })
+    // A guide's tours load in GuideDashboard; here only the clock is set.
+    (role === "ADMIN" ? loadDashboard(current) : Promise.resolve(null))
+      .then((result) => { if (active && result) setData(result); })
       .catch((requestError: unknown) => {
         if (active) setError(requestError instanceof Error ? requestError.message : "Could not load the dashboard.");
       })
       .finally(() => { if (active) setNow(current); });
 
     return () => { active = false; };
-  }, []);
+  }, [role]);
 
   return (
     <main className="min-h-dvh bg-[#f1f0ec] text-[#292b26]">
@@ -51,9 +59,11 @@ export function DashboardScreen() {
                   {now ? `${greeting(now)}${user ? `, ${user.name.split(/\s+/)[0]}` : ""}.` : ""}
                 </h1>
                 <p className="mt-2 text-[11px] text-[#85867c]">
-                  Here&apos;s what needs your attention today.
+                  {session && !isAdmin(session) ? "Your tours and the ones waiting for your answer." : "Here\u2019s what needs your attention today."}
                 </p>
               </header>
+
+              {session && !isAdmin(session) ? <GuideDashboard now={now} /> : <>
 
               {error && <p className="mb-5 bg-[#f4e4df] px-4 py-3 text-[10px] text-[#8a3b2c]">{error}</p>}
 
@@ -73,6 +83,7 @@ export function DashboardScreen() {
                   <AttentionPanel attention={data?.attention ?? null} />
                 </aside>
               </div>
+              </>}
 
               <footer className="pt-8 text-[9px] tracking-[0.03em] text-[#a09f94]">
                 Live operational data · All times in Japan Standard Time (JST)
