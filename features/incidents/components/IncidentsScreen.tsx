@@ -4,36 +4,43 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
+import { MissingDataNotice, useMissingData } from "@/features/dashboard/components/MissingDataNotice";
+import { Pagination } from "@/features/dashboard/components/Pagination";
 import { listGuides, type GuideDetail } from "@/features/guides/api";
-import { formatIncidentStatus, incidentStatusClass, incidentStatuses, listIncidents, type Incident, type IncidentStatus } from "@/features/incidents/api";
+import { formatIncidentStatus, incidentStatusClass, incidentStatuses, listIncidentsPage, type Incident, type IncidentStatus } from "@/features/incidents/api";
 import { isAdmin } from "@/lib/api/client";
 import { useSession } from "@/lib/api/useSession";
 import { formatJst } from "@/lib/datetime";
 
 type StatusFilter = "ACTIVE" | "ALL" | IncidentStatus;
 
+const pageSize = 50;
+
 export function IncidentsScreen() {
   const session = useSession();
   const admin = isAdmin(session);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ACTIVE");
+  const [offset, setOffset] = useState(0);
   const [incidents, setIncidents] = useState<Incident[] | null>(null);
+  const [total, setTotal] = useState(0);
   const [guides, setGuides] = useState<GuideDetail[]>([]);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
+  const { missing, report } = useMissingData();
 
   useEffect(() => {
     let active = true;
     const status: IncidentStatus[] | undefined = statusFilter === "ALL" ? undefined : statusFilter === "ACTIVE" ? ["OPEN", "IN_REVIEW"] : [statusFilter];
-    listIncidents({ status })
-      .then((items) => { if (active) { setIncidents(items); setError(""); } })
+    listIncidentsPage({ status }, { limit: pageSize, offset })
+      .then((page) => { if (active) { setIncidents(page.items); setTotal(page.total); setError(""); } })
       .catch((requestError: unknown) => { if (active) setError(requestError instanceof Error ? requestError.message : "Could not load the incidents."); });
     return () => { active = false; };
-  }, [statusFilter]);
+  }, [statusFilter, offset]);
 
   // Guide names are only a label, and only admins can list guides.
   useEffect(() => {
-    if (admin) listGuides().then((items) => setGuides(items ?? [])).catch(() => setGuides([]));
-  }, [admin]);
+    if (admin) listGuides().then((items) => setGuides(items ?? [])).catch(() => { setGuides([]); report("guides"); });
+  }, [admin, report]);
 
   const guideNames = useMemo(() => new Map(guides.map((item) => [item.guide.id, item.guide.name])), [guides]);
   const filtered = useMemo(() => {
@@ -57,14 +64,15 @@ export function IncidentsScreen() {
             <section className="mt-5 bg-white p-5 sm:p-6">
               <div className="flex flex-wrap gap-2">
                 {(["ACTIVE", "ALL", ...incidentStatuses] as StatusFilter[]).map((filter) => (
-                  <button key={filter} type="button" onClick={() => setStatusFilter(filter)} className={`h-8 px-3 text-[9px] ${statusFilter === filter ? "bg-[#292b26] text-white" : "border border-[#deddd6] text-[#66685f] hover:bg-[#f8f7f3]"}`}>
+                  <button key={filter} type="button" onClick={() => { setStatusFilter(filter); setOffset(0); }} className={`h-8 px-3 text-[9px] ${statusFilter === filter ? "bg-[#292b26] text-white" : "border border-[#deddd6] text-[#66685f] hover:bg-[#f8f7f3]"}`}>
                     {filter === "ACTIVE" ? "Open & in review" : filter === "ALL" ? "All" : formatIncidentStatus(filter)}
                   </button>
                 ))}
               </div>
-              <label className="mt-4 block text-[9px]">Search<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Title or description..." className="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]" /></label>
+              <label className="mt-4 block text-[9px]">Search this page<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Title or description..." className="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]" /></label>
 
               {error && <p role="alert" className="mt-5 text-[10px] text-[#9b6f37]">{error}</p>}
+              <MissingDataNotice missing={missing} className="mt-5" />
               {!incidents && !error && <p className="mt-5 text-[10px] text-[#85867c]">Loading incidents...</p>}
               {incidents && filtered.length === 0 && <p className="mt-5 text-[10px] text-[#85867c]">No incidents found.</p>}
               {filtered.length > 0 && (
@@ -79,7 +87,7 @@ export function IncidentsScreen() {
                   ))}
                 </div>
               )}
-              {incidents && <p className="mt-5 text-[9px] text-[#96968b]">{filtered.length} incidents shown</p>}
+              {incidents && <Pagination offset={offset} limit={pageSize} total={total} onChange={setOffset} noun="incidents" />}
             </section>
           </div></div>
         </div>

@@ -5,44 +5,49 @@ import { useCallback, useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
+import { MissingDataNotice } from "@/features/dashboard/components/MissingDataNotice";
 import { listZones, type Zone } from "@/features/catalogs/api";
 import { listGuides, type GuideDetail } from "@/features/guides/api";
 import { TourDayIncidents } from "@/features/incidents/components/TourDayIncidents";
 import { getReservationDetail, listReservations, type Reservation } from "@/features/reservations/api";
-import { assignGuide, cancelTourDay, completeTourDay, confirmTourDay, finalTourDayStatuses, forceMajeureTourDay, getTourDay, getTourDayHistory, listActivities, listPlaces, rejectTourDay, unassignGuide, updateTourDay, type ItineraryActivity, type ItineraryPlace, type TourDay } from "@/features/tours/api";
+import { assignGuide, cancelTourDay, completeTourDay, confirmTourDay, forceMajeureTourDay, getTourDay, getTourDayHistory, listItineraryActivities, listItineraryPlaces, rejectTourDay, unassignGuide, updateTourDay, type ItineraryActivity, type ItineraryPlace, type TourDay } from "@/features/tours/api";
 import { HistoryTimeline } from "@/features/tours/components/HistoryTimeline";
 import { ItineraryEditor } from "@/features/tours/components/ItineraryEditor";
 import { TourDayForm, emptyTourDayDraft, toTourDayDraft, toTourDayInput, type TourDayDraft } from "@/features/tours/components/TourDayForm";
 import { ApiError, getSession, isAdmin } from "@/lib/api/client";
 import { useSession } from "@/lib/api/useSession";
-import { formatDuration, formatJst, formatJstClock } from "@/lib/datetime";
+import { formatDuration, formatJst, formatJstClock, toDayKey } from "@/lib/datetime";
+import { withFallback } from "@/lib/missing";
+import { finalStatuses, formatStatus, paidStatuses } from "@/lib/status";
 
-type TourDayContext = { tourDay: TourDay; reservation: Reservation | null; zones: Zone[]; guides: GuideDetail[]; places: ItineraryPlace[]; activities: ItineraryActivity[] };
+type TourDayContext = { tourDay: TourDay; reservation: Reservation | null; zones: Zone[]; guides: GuideDetail[]; places: ItineraryPlace[]; activities: ItineraryActivity[]; missing: string[] };
 
 // A guide reads the day, its catalogues and itinerary; reservations and guides are admin-only.
 async function loadTourDayContext(id: string): Promise<TourDayContext> {
   const admin = isAdmin(getSession());
+  const missing: string[] = [];
   const [tourDay, zones, guides, places, activities] = await Promise.all([
     getTourDay(id),
     listZones().then((items) => items ?? []),
     admin ? listGuides().then((items) => items ?? []) : Promise.resolve([]),
-    listPlaces().catch(() => []),
-    listActivities().catch(() => []),
+    withFallback(listItineraryPlaces(), [], "places", missing),
+    withFallback(listItineraryActivities(), [], "activities", missing),
   ]);
-  const reservation = admin ? await findReservation(tourDay).catch(() => null) : null;
-  return { tourDay, zones, guides, places, activities, reservation };
+  const reservation = admin ? await withFallback(findReservation(tourDay), null, "the reservation", missing) : null;
+  return { tourDay, zones, guides, places, activities, reservation, missing };
 }
 
 // Day codes are "<reservation code>-<n>", so the reservation is read by its code;
-// days without a code fall back to the list.
+// days without a code fall back to the reservations overlapping the day's date.
 async function findReservation(tourDay: TourDay): Promise<Reservation | null> {
   const code = tourDay.code?.match(/^(.+)-\d+$/)?.[1];
   if (code) {
     const detail = await getReservationDetail(code).catch(() => null);
     if (detail?.reservation.id === tourDay.reservation_id) return detail.reservation;
   }
-  const reservations = await listReservations();
-  return (reservations ?? []).find((item) => item.id === tourDay.reservation_id) ?? null;
+  const day = toDayKey(new Date(tourDay.start_datetime));
+  const reservations = await listReservations({ from: day, to: day });
+  return reservations.find((item) => item.id === tourDay.reservation_id) ?? null;
 }
 
 export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
@@ -114,7 +119,7 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
   }
 
   const tourDay = context?.tourDay;
-  const isFinal = tourDay ? finalTourDayStatuses.includes(tourDay.status) : false;
+  const isFinal = tourDay ? finalStatuses.includes(tourDay.status) : false;
   const isCancelled = tourDay?.status === "CANCELLED" || tourDay?.status === "FORCE_MAJEURE_CANCELLED";
   const backLink = !admin ? { href: "/dashboard", label: "My tours" } : context?.reservation ? { href: `/reservations/${encodeURIComponent(context.reservation.code ?? context.reservation.id)}`, label: "Back to reservation" } : { href: "/reservations", label: "Reservations" };
 
@@ -131,6 +136,7 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
               <header className="pb-6 pt-8 sm:pt-10">
                 <Link href={backLink.href} className="inline-flex bg-[#e9e5d7] px-3 py-2 text-[9px] text-[#5d5e55] transition-colors hover:bg-[#ded8c7]">← {backLink.label}</Link>
                 {error && <p role="alert" className="mt-6 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-[10px] text-[#9b6f37]">{error}<button type="button" onClick={() => setError("")} className="ml-3 underline">Dismiss</button></p>}
+                {context && <MissingDataNotice missing={context.missing} className="mt-6" />}
                 {!context && !error && <p className="mt-6 text-[10px] text-[#85867c]">Loading tour day...</p>}
                 {tourDay && (
                   <div className="mt-6 flex flex-wrap items-start justify-between gap-5">
@@ -200,7 +206,6 @@ function TourOverview({ context, canEdit, isEditing, draft, isSaving, onEdit, on
 // The backend rules (tourdaysapp): a guide can be (re)assigned before their
 // confirmation and changed on paid days, which keep their status; unassigning
 // is possible until the day is paid.
-const paidStatuses = ["VOUCHER_PENDING", "SIGNATURE_PENDING", "CONFIRMED"];
 function isPaid(status: string) { return paidStatuses.includes(status); }
 function canChangeGuide(status: string) { return status === "GUIDE_PREASSIGNED" || isPaid(status); }
 function canUnassign(status: string) { return ["GUIDE_PREASSIGNED", "GUIDE_CONFIRMED", "PAYMENT_PENDING"].includes(status); }
@@ -242,7 +247,7 @@ function AssignmentPanel({ tourDay, guides, disabled, onAssign, onUnassign }: { 
 function GuideAssignmentNote({ tourDay }: { tourDay: TourDay }) {
   const note = tourDay.status === "GUIDE_PREASSIGNED"
     ? "You have been preassigned to this tour. Accept or decline it; without an answer within 24 hours it counts as accepted."
-    : finalTourDayStatuses.includes(tourDay.status)
+    : finalStatuses.includes(tourDay.status)
       ? "This tour is closed."
       : "You are the guide for this tour. Report anything unusual as an incident.";
   return (
@@ -299,4 +304,3 @@ function initials(name: string) {
 function formatLongDate(value: string) { return formatJst(value, { day: "numeric", month: "long", year: "numeric" }); }
 function formatWeekdayDate(value: string) { return formatJst(value, { weekday: "long", day: "numeric", month: "long" }); }
 function formatTime(value: string) { return formatJstClock(value); }
-function formatStatus(value: string) { return value.toLowerCase().split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" "); }

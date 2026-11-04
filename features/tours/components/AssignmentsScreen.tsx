@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
-import { toDayKey } from "@/features/dashboard/api";
+import { MissingDataNotice, useMissingData } from "@/features/dashboard/components/MissingDataNotice";
 import { listZones, type Zone } from "@/features/catalogs/api";
 import { listGuides, type GuideDetail } from "@/features/guides/api";
 import { assignGuide, listTourDays, type TourDay } from "@/features/tours/api";
-import { formatDuration, formatJst, formatJstClock } from "@/lib/datetime";
+import { formatDuration, formatJst, formatJstClock, toDayKey } from "@/lib/datetime";
+import { withFallback } from "@/lib/missing";
+import { formatStatus } from "@/lib/status";
 
 // Days a guide can be assigned to: pending, preassigned (to change the guide) and
 // paid days left without guide (they keep their status with the new one).
@@ -26,17 +28,19 @@ export function AssignmentsScreen() {
   const [guideId, setGuideId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const { missing, report } = useMissingData();
   const [isSaving, setIsSaving] = useState(false);
 
   const loadDays = useCallback(() => listTourDays({ from: toDayKey(new Date()), status: assignableStatuses }), []);
 
   useEffect(() => {
     let active = true;
-    Promise.all([loadDays(), listGuides().then((items) => items ?? []), listZones().then((items) => items ?? []).catch(() => [])])
-      .then(([dayItems, guideItems, zoneItems]) => { if (active) { setDays(dayItems); setGuides(guideItems); setZones(zoneItems); } })
+    const failed: string[] = [];
+    Promise.all([loadDays(), listGuides().then((items) => items ?? []), withFallback(listZones().then((items) => items ?? []), [], "zones", failed)])
+      .then(([dayItems, guideItems, zoneItems]) => { if (active) { setDays(dayItems); setGuides(guideItems); setZones(zoneItems); failed.forEach(report); } })
       .catch((requestError: unknown) => { if (active) setError(requestError instanceof Error ? requestError.message : "Could not load the tour days."); });
     return () => { active = false; };
-  }, [loadDays]);
+  }, [loadDays, report]);
 
   const visible = useMemo(() => (days ?? []).filter((day) => {
     const matchesView = view === "awaiting" ? day.status === "GUIDE_PREASSIGNED" : !day.guide_id;
@@ -110,6 +114,7 @@ export function AssignmentsScreen() {
                 </div>
 
                 {error && <p role="alert" className="mt-4 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-[10px] text-[#9b6f37]">{error}</p>}
+                <MissingDataNotice missing={missing} className="mt-4" />
                 {notice && <p className="mt-4 bg-[#eef0e9] p-3 text-[10px] text-[#68705d]">{notice}</p>}
                 {!days && !error && <p className="mt-5 text-[10px] text-[#85867c]">Loading tour days...</p>}
                 {days && groups.length === 0 && <p className="mt-5 text-[10px] text-[#85867c]">{view === "unassigned" ? "Every upcoming day has a guide." : "No preassignments waiting for an answer."}</p>}
@@ -150,4 +155,3 @@ export function AssignmentsScreen() {
   );
 }
 
-function formatStatus(value: string) { return value.toLowerCase().split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" "); }

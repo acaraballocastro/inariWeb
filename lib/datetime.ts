@@ -30,6 +30,16 @@ export function formatJstClock(value: string | Date) {
   return formatJst(value, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 }
 
+/** "YYYY-MM-DD" of an instant in JST: the operations day it falls on. */
+export function toDayKey(value: string | Date) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: operationsTimeZone }).format(new Date(value));
+}
+
+/** The instant a JST day ("YYYY-MM-DD") starts. */
+export function startOfJstDay(dayKey: string) {
+  return new Date(`${dayKey}T00:00:00${jstOffset}`);
+}
+
 /** Tour day durations are stored as whole hours and shown as "6h". */
 export function formatDuration(hours: number | null | undefined) {
   if (hours == null || hours <= 0) return "";

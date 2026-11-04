@@ -1,4 +1,4 @@
-import { request } from "@/lib/api/client";
+import { request, requestPage } from "@/lib/api/client";
 
 export type IncidentStatus = "OPEN" | "IN_REVIEW" | "RESOLVED" | "CLOSED";
 
@@ -47,15 +47,22 @@ export function isIncidentActive(status: IncidentStatus) {
 
 export type IncidentFilter = { status?: IncidentStatus[]; tourDayId?: string; reservationId?: string; guideId?: string };
 
-// A guide gets the incidents they opened and those of the days assigned to them.
-export function listIncidents(filter: IncidentFilter = {}) {
+function incidentsPath(filter: IncidentFilter) {
   const params = new URLSearchParams();
   if (filter.status?.length) params.set("status", filter.status.join(","));
   if (filter.tourDayId) params.set("tour_day_id", filter.tourDayId);
   if (filter.reservationId) params.set("reservation_id", filter.reservationId);
   if (filter.guideId) params.set("guide_id", filter.guideId);
-  const query = params.size ? `?${params}` : "";
-  return request<Incident[] | null>(`/incidents${query}`).then((items) => items ?? []);
+  return params.size ? `/incidents?${params}` : "/incidents";
+}
+
+// A guide gets the incidents they opened and those of the days assigned to them.
+export function listIncidents(filter: IncidentFilter = {}) {
+  return request<Incident[] | null>(incidentsPath(filter)).then((items) => items ?? []);
+}
+
+export function listIncidentsPage(filter: IncidentFilter, page: { limit: number; offset: number }) {
+  return requestPage<Incident>(incidentsPath(filter), page);
 }
 
 export function getIncident(id: string) {

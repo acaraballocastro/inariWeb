@@ -16,7 +16,7 @@ export function ForgotPasswordScreen() {
     setError("");
 
     if (!email.trim()) {
-      setError("Introduce tu email.");
+      setError("Enter your email.");
       return;
     }
 
@@ -25,7 +25,7 @@ export function ForgotPasswordScreen() {
       await requestPasswordReset(email.trim());
       setIsSent(true);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "No se pudo enviar el email.");
+      setError(requestError instanceof Error ? requestError.message : "Could not send the email.");
     } finally {
       setIsSubmitting(false);
     }

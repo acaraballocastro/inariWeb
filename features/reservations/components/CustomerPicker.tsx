@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import type { ReservationCustomer, ReservationCustomerInput } from "@/features/reservations/api";
+import { useEffect, useState } from "react";
+import { searchCustomers, type ReservationCustomer, type ReservationCustomerInput } from "@/features/reservations/api";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 
 const emptyNewCustomer = { full_name: "", email: "", phone: "", document_number: "", age: "" };
 
@@ -9,17 +10,31 @@ export function toCustomerInputs(customers: ReservationCustomer[]): ReservationC
   return customers.map((customer) => ({ id: customer.id, full_name: customer.full_name, document_number: customer.document_number, phone: customer.phone, email: customer.email, age: customer.age ?? 0 }));
 }
 
-export function CustomerPicker({ customers, value, onChange, disabled = false, inputClass, labelClass }: { customers: ReservationCustomer[]; value: ReservationCustomerInput[]; onChange: (value: ReservationCustomerInput[]) => void; disabled?: boolean; inputClass: string; labelClass: string }) {
+export function CustomerPicker({ value, onChange, disabled = false, inputClass, labelClass }: { value: ReservationCustomerInput[]; onChange: (value: ReservationCustomerInput[]) => void; disabled?: boolean; inputClass: string; labelClass: string }) {
   const [isCreating, setIsCreating] = useState(false);
   const [newCustomer, setNewCustomer] = useState(emptyNewCustomer);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<{ query: string; customers: ReservationCustomer[] } | null>(null);
+  const debouncedQuery = useDebouncedValue(query.trim());
+
+  // Existing customers are searched on the server (name, document, phone or email) instead of loading them all.
+  useEffect(() => {
+    if (!debouncedQuery) return;
+    let active = true;
+    searchCustomers(debouncedQuery)
+      .then((customers) => { if (active) setResults({ query: debouncedQuery, customers }); })
+      .catch(() => { if (active) setResults({ query: debouncedQuery, customers: [] }); });
+    return () => { active = false; };
+  }, [debouncedQuery]);
 
   const selectedIds = new Set(value.map((customer) => customer.id).filter(Boolean));
-  const available = customers.filter((customer) => !selectedIds.has(customer.id));
+  // Null while the results for what is typed now have not arrived.
+  const matches = results && results.query === query.trim() ? results.customers.filter((customer) => !selectedIds.has(customer.id)) : null;
 
-  function addExisting(id: string) {
-    const customer = customers.find((item) => item.id === id);
-    if (customer) onChange([...value, ...toCustomerInputs([customer])]);
+  function addExisting(customer: ReservationCustomer) {
+    onChange([...value, ...toCustomerInputs([customer])]);
+    setQuery("");
   }
 
   function addNew() {
@@ -48,11 +63,19 @@ export function CustomerPicker({ customers, value, onChange, disabled = false, i
       )}
 
       {!isCreating && (
-        <div className="mt-2 flex flex-col gap-2 sm:flex-row">
-          <select value="" disabled={disabled || available.length === 0} onChange={(event) => addExisting(event.target.value)} className={`${inputClass} mt-0! sm:flex-1`}>
-            <option value="">{available.length ? "Add an existing customer" : "No more customers available"}</option>
-            {available.map((customer) => <option key={customer.id} value={customer.id}>{customer.full_name}{customer.email ? ` · ${customer.email}` : ""}</option>)}
-          </select>
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start">
+          <div className="sm:flex-1">
+            <input type="search" value={query} disabled={disabled} onChange={(event) => setQuery(event.target.value)} placeholder="Search an existing customer by name, email, phone or document..." aria-label="Search an existing customer" className={`${inputClass} mt-0!`} />
+            {query.trim() && (
+              <ul className="mt-1 max-h-48 divide-y divide-[#ecebe5] overflow-y-auto border border-[#e3e1da] bg-white">
+                {matches === null && <li className="px-3 py-2 text-[9px] text-[#96968b]">Searching...</li>}
+                {matches?.length === 0 && <li className="px-3 py-2 text-[9px] text-[#96968b]">No customers found.</li>}
+                {matches?.map((customer) => (
+                  <li key={customer.id}><button type="button" disabled={disabled} onClick={() => addExisting(customer)} className="block w-full px-3 py-2 text-left hover:bg-[#f8f7f3]"><span className="block truncate text-[10px] text-[#292b26]">{customer.full_name}</span><span className="mt-0.5 block truncate text-[8px] text-[#85867c]">{[customer.email, customer.phone, customer.document_number].filter(Boolean).join(" · ") || "No contact data"}</span></button></li>
+                ))}
+              </ul>
+            )}
+          </div>
           <button type="button" disabled={disabled} onClick={() => setIsCreating(true)} className="min-h-9 shrink-0 self-stretch border border-[#deddd6] px-4 text-[10px] text-[#292b26] hover:bg-[#f8f7f3] disabled:opacity-50">+ New customer</button>
         </div>
       )}

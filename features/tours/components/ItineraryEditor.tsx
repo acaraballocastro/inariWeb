@@ -78,10 +78,17 @@ export function ItineraryEditor({ tourDay, places, activities, onCountChange, re
     const current = items[index];
     const target = items[index + direction];
     if (!current || !target) return;
-    runAction(() => Promise.all([
-      updateItineraryItem(tourDay.id, current.id, { ...toItemInput(current), order_index: target.order_index }),
-      updateItineraryItem(tourDay.id, target.id, { ...toItemInput(target), order_index: current.order_index }),
-    ]), "Could not reorder the itinerary.");
+    // Two requests swap the positions: if the second fails, the first is undone so
+    // no two stops are left with the same position.
+    runAction(async () => {
+      await updateItineraryItem(tourDay.id, current.id, { order_index: target.order_index });
+      try {
+        await updateItineraryItem(tourDay.id, target.id, { order_index: current.order_index });
+      } catch (requestError) {
+        await updateItineraryItem(tourDay.id, current.id, { order_index: current.order_index }).catch(() => undefined);
+        throw requestError;
+      }
+    }, "Could not reorder the itinerary.");
   }
 
   function describeStop(item: ItineraryItem) {
@@ -130,10 +137,6 @@ export function ItineraryEditor({ tourDay, places, activities, onCountChange, re
 
 function toStopDraft(item: ItineraryItem | null): StopDraft {
   return { start_time: item?.start_time ? toTimeInput(item.start_time) : "", end_time: item?.end_time ? toTimeInput(item.end_time) : "", type: item?.type ?? "PLACE", place_id: item?.place_id ?? "", activity_id: item?.activity_id ?? "", notes: item?.notes ?? "" };
-}
-
-function toItemInput(item: ItineraryItem): ItineraryItemInput {
-  return { order_index: item.order_index, start_time: item.start_time ? toTimeInput(item.start_time) : null, end_time: item.end_time ? toTimeInput(item.end_time) : null, type: item.type, place_id: item.place_id, activity_id: item.activity_id, notes: item.notes };
 }
 
 // Itinerary times are JST wall-clock times. The API returns them as "HH:MM:SS"

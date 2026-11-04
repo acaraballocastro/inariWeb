@@ -16,7 +16,7 @@ export function SystemScreen() {
   const load = useCallback(() => {
     getSystemSnapshot()
       .then((data) => { setSnapshot(data); setError(""); setUpdatedAt(new Date()); })
-      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "No se pudo cargar el estado del sistema."));
+      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "Could not load the system status."));
   }, []);
 
   useEffect(() => {

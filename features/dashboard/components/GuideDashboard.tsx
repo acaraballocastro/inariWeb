@@ -7,24 +7,27 @@ import { listZones, type Zone } from "@/features/catalogs/api";
 import { getGuideByUser } from "@/features/guides/api";
 import { confirmTourDay, listTourDays, listTourDaysAvailableForGuide, rejectTourDay, type TourDay } from "@/features/tours/api";
 import { getSession } from "@/lib/api/client";
-import { formatDuration } from "@/lib/datetime";
-import { formatClock, formatShortDate, formatStatus, toDayKey } from "../api";
+import { formatDuration, toDayKey } from "@/lib/datetime";
+import { withFallback } from "@/lib/missing";
+import { formatStatus, isCancelled } from "@/lib/status";
+import { MissingDataNotice } from "./MissingDataNotice";
+import { formatClock, formatShortDate } from "../api";
 
-type GuideData = { mine: TourDay[]; open: TourDay[]; zones: Zone[] };
+type GuideData = { mine: TourDay[]; open: TourDay[]; zones: Zone[]; missing: string[] };
 
-const cancelledStatuses = new Set(["CANCELLED", "FORCE_MAJEURE_CANCELLED"]);
 
 // The API only returns a guide's own days, so the list needs no guide filter.
 async function loadGuideData(now: Date): Promise<GuideData> {
   const session = getSession();
-  if (!session) return { mine: [], open: [], zones: [] };
+  if (!session) return { mine: [], open: [], zones: [], missing: [] };
   const guide = await getGuideByUser(session.userId);
+  const missing: string[] = [];
   const [mine, open, zones] = await Promise.all([
     listTourDays({ from: toDayKey(now) }),
-    listTourDaysAvailableForGuide(guide.id).catch(() => []),
-    listZones().then((items) => items ?? []).catch(() => []),
+    withFallback(listTourDaysAvailableForGuide(guide.id), [], "open tour days", missing),
+    withFallback(listZones().then((items) => items ?? []), [], "zones", missing),
   ]);
-  return { mine: mine.filter((day) => !cancelledStatuses.has(day.status)), open, zones };
+  return { mine: mine.filter((day) => !isCancelled(day.status)), open, zones, missing };
 }
 
 export function GuideDashboard({ now }: { now: Date | null }) {
@@ -68,6 +71,7 @@ export function GuideDashboard({ now }: { now: Date | null }) {
   return (
     <>
       {error && <p role="alert" className="mb-5 bg-[#f4e4df] px-4 py-3 text-[10px] text-[#8a3b2c]">{error}</p>}
+      <MissingDataNotice missing={data?.missing ?? []} className="mb-5" />
 
       <div className="grid grid-cols-3 gap-3">
         {[["Today", todayCount], ["Awaiting your answer", pending?.length], ["Upcoming", upcoming?.length]].map(([label, value]) => (

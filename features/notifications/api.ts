@@ -1,4 +1,4 @@
-import { request } from "@/lib/api/client";
+import { request, requestPage } from "@/lib/api/client";
 
 export type AppNotification = {
   id: string;
@@ -18,6 +18,11 @@ export function listNotifications(options: { unreadOnly?: boolean; limit?: numbe
   if (options.limit) params.set("limit", String(options.limit));
   const query = params.toString();
   return request<AppNotification[]>(`/notifications${query ? `?${query}` : ""}`);
+}
+
+// Most recent first.
+export function listNotificationsPage(options: { unreadOnly?: boolean }, page: { limit: number; offset: number }) {
+  return requestPage<AppNotification>(options.unreadOnly ? "/notifications?unread=true" : "/notifications", page);
 }
 
 export function getUnreadCount() {

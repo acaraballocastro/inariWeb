@@ -1,12 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { changePassword, logout } from "@/features/auth/api";
 import { getSession, saveSession } from "@/lib/api/client";
+import { useSession } from "@/lib/api/useSession";
 
 export function ChangePasswordScreen() {
   const router = useRouter();
+  // Required after an invitation (temporary password); otherwise the user chose to change it.
+  const isRequired = useSession()?.mustChangePassword ?? false;
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
@@ -26,11 +30,11 @@ export function ChangePasswordScreen() {
     setError("");
 
     if (newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/\d/.test(newPassword) || !/[\p{P}\p{S}]/u.test(newPassword)) {
-      setError("La contraseña debe tener 8 caracteres, mayúscula, minúscula, número y símbolo.");
+      setError("The password needs at least 8 characters, with an uppercase letter, a lowercase letter, a number and a symbol.");
       return;
     }
     if (newPassword !== confirmation) {
-      setError("Las contraseñas no coinciden.");
+      setError("The passwords do not match.");
       return;
     }
 
@@ -45,7 +49,7 @@ export function ChangePasswordScreen() {
       saveSession({ ...session, mustChangePassword: false });
       router.replace("/dashboard");
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "No se pudo cambiar la contraseña.");
+      setError(requestError instanceof Error ? requestError.message : "Could not change the password.");
     } finally {
       setIsSubmitting(false);
     }
@@ -61,9 +65,9 @@ export function ChangePasswordScreen() {
       <section className="w-full max-w-[430px] bg-[#f8f7f3] p-7 sm:p-10">
         <p className="font-serif text-[25px] tracking-[0.16em]">INARI</p>
         <p className="mt-2 text-[8px] tracking-[0.5em] text-[#9b8353]">TOURS</p>
-        <p className="mt-12 text-[9px] font-semibold tracking-[0.18em] text-[#9b8353]">SECURITY / REQUIRED</p>
-        <h1 className="mt-4 font-serif text-3xl tracking-[-0.04em]">Choose a new password</h1>
-        <p className="mt-3 text-[11px] leading-relaxed text-[#85867c]">Your account uses a temporary password. Enter the one from your invitation email and choose your own to continue.</p>
+        <p className="mt-12 text-[9px] font-semibold tracking-[0.18em] text-[#9b8353]">{isRequired ? "SECURITY / REQUIRED" : "SECURITY / PASSWORD"}</p>
+        <h1 className="mt-4 font-serif text-3xl tracking-[-0.04em]">{isRequired ? "Choose a new password" : "Change your password"}</h1>
+        <p className="mt-3 text-[11px] leading-relaxed text-[#85867c]">{isRequired ? "Your account uses a temporary password. Enter the one from your invitation email and choose your own to continue." : "Enter your current password and choose a new one. Your other devices will be signed out."}</p>
         <form onSubmit={handleSubmit} className="mt-6">
           <label className="block text-[10px] text-[#77796f]">Current password<input type="password" autoComplete="current-password" value={oldPassword} onChange={(event) => setOldPassword(event.target.value)} className="mt-2 h-10 w-full border border-[#e3e1da] bg-white px-3 text-xs outline-none focus:border-[#b5a786]" /></label>
           <label className="mt-4 block text-[10px] text-[#77796f]">New password<input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className="mt-2 h-10 w-full border border-[#e3e1da] bg-white px-3 text-xs outline-none focus:border-[#b5a786]" /></label>
@@ -71,7 +75,9 @@ export function ChangePasswordScreen() {
           {error && <p role="alert" className="mt-4 text-[10px] leading-relaxed text-[#9b6f37]">{error}</p>}
           <button type="submit" disabled={isSubmitting} className="mt-5 flex h-11 w-full items-center justify-center bg-[#292b26] text-xs font-medium text-white hover:bg-[#3a3d34] disabled:cursor-wait disabled:opacity-60">{isSubmitting ? "Updating..." : "Update password"}</button>
         </form>
-        <button type="button" onClick={handleSignOut} className="mt-4 text-[10px] text-[#77796f] underline underline-offset-4 hover:text-[#292b26]">Sign out</button>
+        {isRequired
+          ? <button type="button" onClick={handleSignOut} className="mt-4 text-[10px] text-[#77796f] underline underline-offset-4 hover:text-[#292b26]">Sign out</button>
+          : <Link href="/dashboard" className="mt-4 inline-block text-[10px] text-[#77796f] underline underline-offset-4 hover:text-[#292b26]">Back to dashboard</Link>}
       </section>
     </main>
   );

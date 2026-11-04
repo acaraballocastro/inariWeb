@@ -8,10 +8,10 @@ import { ApiError } from "@/lib/api/client";
 
 function loginErrorMessage(requestError: unknown) {
   if (requestError instanceof ApiError) {
-    if (requestError.code === "TOO_MANY_REQUESTS") return "Demasiados intentos fallidos. Espera unos minutos o usa \"Forgot your password?\".";
-    if (requestError.code === "TEMPORARY_PASSWORD_EXPIRED") return "Tu contraseña temporal ha caducado. Pide al administrador una nueva invitación o usa \"Forgot your password?\".";
+    if (requestError.code === "TOO_MANY_REQUESTS") return "Too many failed attempts. Wait a few minutes or use \"Forgot your password?\".";
+    if (requestError.code === "TEMPORARY_PASSWORD_EXPIRED") return "Your temporary password has expired. Ask your administrator for a new invitation or use \"Forgot your password?\".";
   }
-  return requestError instanceof Error ? requestError.message : "No se pudo iniciar sesión.";
+  return requestError instanceof Error ? requestError.message : "Could not sign in.";
 }
 
 export function LoginPanel() {
@@ -26,7 +26,7 @@ export function LoginPanel() {
     setError("");
 
     if (!email.trim() || !password) {
-      setError("Introduce tu email y contraseña.");
+      setError("Enter your email and password.");
       return;
     }
 
@@ -46,7 +46,7 @@ export function LoginPanel() {
       <header>
         <Link
           href="/"
-          aria-label="INARI Tours, inicio"
+          aria-label="INARI Tours, home"
           className="font-serif text-[32px] tracking-[0.16em] text-[#282a25]"
         >
           INARI

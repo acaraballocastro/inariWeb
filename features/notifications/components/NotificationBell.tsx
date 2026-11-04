@@ -15,6 +15,7 @@ export function NotificationBell() {
   const [unread, setUnread] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
 
   const refreshCount = useCallback(() => {
@@ -30,7 +31,7 @@ export function NotificationBell() {
 
   useEffect(() => {
     if (!isOpen) return;
-    listNotifications({ limit: 8 }).then(setItems).catch(() => setItems([]));
+    listNotifications({ limit: 8 }).then((result) => { setItems(result); setLoadFailed(false); }).catch(() => { setItems([]); setLoadFailed(true); });
     const close = (event: MouseEvent) => { if (panel.current && !panel.current.contains(event.target as Node)) setIsOpen(false); };
     document.addEventListener("mousedown", close);
     return () => document.removeEventListener("mousedown", close);
@@ -65,7 +66,8 @@ export function NotificationBell() {
           </div>
           <div className="max-h-[360px] overflow-y-auto">
             {items === null && <p className="px-4 py-5 text-[10px] text-[#85867c]">Loading…</p>}
-            {items?.length === 0 && <p className="px-4 py-5 text-[10px] text-[#85867c]">Nothing yet.</p>}
+            {loadFailed && <p role="status" className="px-4 py-5 text-[10px] text-[#9b6f37]">Could not load the notifications.</p>}
+            {!loadFailed && items?.length === 0 && <p className="px-4 py-5 text-[10px] text-[#85867c]">Nothing yet.</p>}
             {items?.map((item) => (
               <button key={item.id} type="button" onClick={() => open(item)} className={`block w-full border-b border-[#f0efe9] px-4 py-3 text-left hover:bg-[#fbfaf7] ${item.is_read ? "" : "bg-[#fbf8f1]"}`}>
                 <span className="flex items-start gap-2">

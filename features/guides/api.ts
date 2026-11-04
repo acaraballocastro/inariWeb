@@ -51,18 +51,6 @@ export function listGuides() {
   return request<GuideDetail[]>("/guides");
 }
 
-export function listLanguages() {
-  return request<GuideLanguage[]>("/languages");
-}
-
-export function listZones() {
-  return request<GuideZone[]>("/zones");
-}
-
-export function getGuide(id: string) {
-  return request<GuideDetail>(`/guides/${id}`);
-}
-
 export function getGuideDetail(id: string) {
   return request<GuideDetail>(`/guides/${id}`);
 }

@@ -4,6 +4,9 @@ import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
+import { Pagination } from "@/features/dashboard/components/Pagination";
+import type { Page } from "@/lib/api/client";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 
 const inputClass = "mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-2.5 text-[10px] outline-none focus:border-[#b5a786]";
 
@@ -24,16 +27,23 @@ export type RecordsConfig<T extends { id: string }> = {
   isActive?: (item: T) => boolean;
   searchText: (item: T) => string;
   toDraft: (item: T | null) => RecordDraft;
-  list: () => Promise<T[]>;
+  /** Small catalogues: loaded whole and searched in the browser. */
+  list?: () => Promise<T[]>;
+  /** Large lists: paged and searched on the server instead of `list`. */
+  remote?: { listPage: (page: { limit: number; offset: number }) => Promise<Page<T>>; search: (query: string) => Promise<T[]>; searchLimit: number };
   create: (draft: RecordDraft) => Promise<unknown>;
   update: (item: T, draft: RecordDraft) => Promise<unknown>;
   remove: (item: T) => Promise<unknown>;
   label: (item: T) => string;
 };
 
+const pageSize = 50;
+
 /** List, search, create, edit and delete for a simple admin catalogue. */
 export function RecordsScreen<T extends { id: string }>({ config }: { config: RecordsConfig<T> }) {
   const [items, setItems] = useState<T[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
   const [query, setQuery] = useState("");
   const [showInactive, setShowInactive] = useState(true);
   const [error, setError] = useState("");
@@ -41,21 +51,30 @@ export function RecordsScreen<T extends { id: string }>({ config }: { config: Re
   const [draft, setDraft] = useState<RecordDraft>({});
   const [isSaving, setIsSaving] = useState(false);
 
-  const { list } = config;
-  const reload = useCallback(() => list().then(setItems), [list]);
+  const { list, remote } = config;
+  const remoteQuery = useDebouncedValue(remote ? query.trim() : "");
+
+  const fetchItems = useCallback((): Promise<Page<T>> => {
+    if (!remote) return (list?.() ?? Promise.resolve([])).then((result) => ({ items: result, total: result.length }));
+    if (remoteQuery) return remote.search(remoteQuery).then((result) => ({ items: result, total: result.length }));
+    return remote.listPage({ limit: pageSize, offset });
+  }, [list, remote, remoteQuery, offset]);
+
+  const reload = useCallback(() => fetchItems().then((page) => { setItems(page.items); setTotal(page.total); }), [fetchItems]);
 
   useEffect(() => {
     let active = true;
-    list()
-      .then((result) => { if (active) setItems(result); })
+    fetchItems()
+      .then((page) => { if (active) { setItems(page.items); setTotal(page.total); } })
       .catch((requestError: unknown) => { if (active) setError(requestError instanceof Error ? requestError.message : "Could not load the list."); });
     return () => { active = false; };
-  }, [list]);
+  }, [fetchItems]);
 
+  // Remote lists come already searched by the server.
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const normalized = remote ? "" : query.trim().toLowerCase();
     return (items ?? []).filter((item) => (showInactive || !config.isActive || config.isActive(item)) && config.searchText(item).toLowerCase().includes(normalized));
-  }, [items, query, showInactive, config]);
+  }, [items, query, showInactive, config, remote]);
 
   function openForm(item: T | null) {
     setError("");
@@ -104,7 +123,7 @@ export function RecordsScreen<T extends { id: string }>({ config }: { config: Re
 
             <section className="mt-5 bg-white p-5 sm:p-6">
               <div className="flex flex-col gap-4 border-b border-[#ecebe5] pb-5 sm:flex-row sm:items-end sm:justify-between">
-                <div><h2 className="font-serif text-xl">{config.title}</h2><p className="mt-2 text-[9px] text-[#96968b]">{items ? `${items.length} in total` : "Live data from InariOps"}</p></div>
+                <div><h2 className="font-serif text-xl">{config.title}</h2><p className="mt-2 text-[9px] text-[#96968b]">{items && !(remote && remoteQuery) ? `${total} in total` : "Live data from InariOps"}</p></div>
                 {editing === null && <button type="button" onClick={() => openForm(null)} className="h-9 bg-[#292b26] px-4 text-[9px] font-medium text-white hover:bg-[#3a3d34]">+ Add {config.noun}</button>}
               </div>
 
@@ -124,7 +143,7 @@ export function RecordsScreen<T extends { id: string }>({ config }: { config: Re
                 </form>
               )}
 
-              <div className="mt-5 flex flex-wrap items-end gap-3"><label className="min-w-[200px] flex-1 text-[9px]">Search<input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search..." className={inputClass} /></label>{config.isActive && <label className="flex h-9 items-center gap-2 text-[9px]"><input type="checkbox" checked={showInactive} onChange={(event) => setShowInactive(event.target.checked)} />Show inactive</label>}</div>
+              <div className="mt-5 flex flex-wrap items-end gap-3"><label className="min-w-[200px] flex-1 text-[9px]">Search<input type="search" value={query} onChange={(event) => { setQuery(event.target.value); setOffset(0); }} placeholder="Search..." className={inputClass} /></label>{config.isActive && <label className="flex h-9 items-center gap-2 text-[9px]"><input type="checkbox" checked={showInactive} onChange={(event) => setShowInactive(event.target.checked)} />Show inactive</label>}</div>
 
               {error && <p role="alert" className="mt-4 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-[10px] text-[#9b6f37]">{error}</p>}
               {!items && !error && <p className="mt-6 text-[10px] text-[#85867c]">Loading...</p>}
@@ -142,7 +161,8 @@ export function RecordsScreen<T extends { id: string }>({ config }: { config: Re
                   </div>
                 </div></div>
               )}
-              {items && <p className="mt-5 text-[9px] text-[#96968b]">{filtered.length} shown</p>}
+              {items && remote && !remoteQuery && <Pagination offset={offset} limit={pageSize} total={total} onChange={setOffset} noun={config.title.toLowerCase()} />}
+              {items && !(remote && !remoteQuery) && <p className="mt-5 text-[9px] text-[#96968b]">{filtered.length} shown{remote && filtered.length >= remote.searchLimit ? ` · only the first ${remote.searchLimit} matches, refine the search` : ""}</p>}
             </section>
           </div></div>
         </div>

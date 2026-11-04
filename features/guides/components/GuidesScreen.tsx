@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
-import { createGuide, listGuides, listLanguages, listZones, updateGuide, type GuideDetail, type GuideLanguage, type GuideZone } from "@/features/guides/api";
+import { createGuide, listGuides, updateGuide, type GuideDetail, type GuideLanguage, type GuideZone } from "@/features/guides/api";
+import { listLanguages, listZones } from "@/features/catalogs/api";
 import { RelationSelector } from "@/features/guides/components/RelationSelector";
 
 type Guide = {
@@ -38,7 +39,7 @@ export function GuidesScreen() {
         setLanguages(languageItems.filter((language) => language.is_active !== false));
         setZones(zoneItems.filter((zone) => zone.is_active !== false));
       })
-      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "No se pudieron cargar las guías."))
+      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "Could not load the guides."))
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -53,7 +54,7 @@ export function GuidesScreen() {
   async function handleUpdateGuide(guide: Guide) {
     setActionError("");
     if (!guide.detail.guide.name.trim() || !guide.detail.guide.email.trim() || guide.detail.guide.max_tours_per_day < 1) {
-      setActionError("Completa nombre, email y una capacidad diaria válida.");
+      setActionError("Enter a name, an email and a valid daily capacity.");
       return;
     }
     try {
@@ -68,7 +69,7 @@ export function GuidesScreen() {
       setGuides((currentGuides) => currentGuides.map((currentGuide) => currentGuide.id === guide.id ? guide : currentGuide));
       setEditingGuideId(null);
     } catch (requestError) {
-      setActionError(requestError instanceof Error ? requestError.message : "No se pudo actualizar la guía.");
+      setActionError(requestError instanceof Error ? requestError.message : "Could not update the guide.");
     }
   }
 
@@ -77,7 +78,7 @@ export function GuidesScreen() {
     setActionError("");
     setNotice("");
     if (!newGuide.name.trim() || !newGuide.email.trim() || !newGuide.phone.trim() || Number(newGuide.maxToursPerDay) < 1) {
-      setActionError("Completa nombre, email, teléfono y capacidad diaria.");
+      setActionError("Enter a name, email, phone and daily capacity.");
       return;
     }
 
@@ -96,7 +97,7 @@ export function GuidesScreen() {
       setNewGuide({ name: "", email: "", phone: "", maxToursPerDay: "1", languages: [], zones: [] });
       setShowCreateForm(false);
     } catch (requestError) {
-      setActionError(requestError instanceof Error ? requestError.message : "No se pudo crear la guía.");
+      setActionError(requestError instanceof Error ? requestError.message : "Could not create the guide.");
     } finally {
       setIsCreating(false);
     }

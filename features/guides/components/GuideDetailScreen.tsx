@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
-import { createGuideAvailability, deleteGuideAvailability, getGuideDetail, listGuideAvailabilities, listLanguages, listZones, updateGuide, updateGuideAvailability, type GuideAvailability, type GuideDetail, type GuideLanguage, type GuideZone } from "@/features/guides/api";
+import { createGuideAvailability, deleteGuideAvailability, getGuideDetail, listGuideAvailabilities, updateGuide, updateGuideAvailability, type GuideAvailability, type GuideDetail, type GuideLanguage, type GuideZone } from "@/features/guides/api";
+import { listLanguages, listZones } from "@/features/catalogs/api";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
 import { RelationSelector } from "@/features/guides/components/RelationSelector";
@@ -40,13 +41,13 @@ export function GuideDetailScreen({ guideId, self = false }: { guideId: string; 
         setPhone(result.guide.phone);
         setMaxTours(String(result.guide.max_tours_per_day));
       })
-      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "No se pudo cargar la guía."));
+      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "Could not load the guide."));
   }, [guideId]);
 
   useEffect(() => {
     listGuideAvailabilities(guideId)
       .then((items) => setAvailabilities(items ?? []))
-      .catch((requestError) => setAvailabilityError(requestError instanceof Error ? requestError.message : "No se pudo cargar la disponibilidad."))
+      .catch((requestError) => setAvailabilityError(requestError instanceof Error ? requestError.message : "Could not load the availability."))
       .finally(() => setAvailabilityLoading(false));
   }, [guideId]);
 
@@ -59,7 +60,7 @@ export function GuideDetailScreen({ guideId, self = false }: { guideId: string; 
   async function saveAvailability(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!availabilityDraft.start_date || !availabilityDraft.end_date || availabilityDraft.start_date > availabilityDraft.end_date) {
-      setAvailabilityError("Selecciona un rango de fechas válido.");
+      setAvailabilityError("Select a valid date range.");
       return;
     }
     setAvailabilitySaving(true);
@@ -73,7 +74,7 @@ export function GuideDetailScreen({ guideId, self = false }: { guideId: string; 
       setEditingAvailabilityId(null);
       setShowAvailabilityForm(false);
     } catch (requestError) {
-      setAvailabilityError(requestError instanceof Error ? requestError.message : "No se pudo guardar la disponibilidad.");
+      setAvailabilityError(requestError instanceof Error ? requestError.message : "Could not save the availability.");
     } finally {
       setAvailabilitySaving(false);
     }
@@ -85,14 +86,14 @@ export function GuideDetailScreen({ guideId, self = false }: { guideId: string; 
       await deleteGuideAvailability(guideId, availability.id);
       setAvailabilities((current) => current.filter((item) => item.id !== availability.id));
     } catch (requestError) {
-      setAvailabilityError(requestError instanceof Error ? requestError.message : "No se pudo eliminar la disponibilidad.");
+      setAvailabilityError(requestError instanceof Error ? requestError.message : "Could not delete the availability.");
     }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!detail || !name.trim() || !email.trim() || !maxTours || Number(maxTours) < 1) {
-      setError("Completa nombre, email y un límite de tours válido.");
+      setError("Enter a name, an email and a valid tour limit.");
       return;
     }
     setIsSaving(true);
@@ -103,7 +104,7 @@ export function GuideDetailScreen({ guideId, self = false }: { guideId: string; 
       setOriginalDetail({ ...detail, guide: { ...detail.guide, name: name.trim(), email: email.trim(), phone: phone.trim(), max_tours_per_day: Number(maxTours) } });
       setIsEditing(false);
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "No se pudo actualizar la guía.");
+      setError(requestError instanceof Error ? requestError.message : "Could not update the guide.");
     } finally {
       setIsSaving(false);
     }

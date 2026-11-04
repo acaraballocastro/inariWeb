@@ -1,4 +1,4 @@
-import { request } from "@/lib/api/client";
+import { request, requestPage } from "@/lib/api/client";
 import type { HistoryEntry } from "@/features/tours/api";
 
 export type Reservation = {
@@ -31,16 +31,52 @@ export type Agency = {
 
 export type ReservationListItem = Reservation & { customers: ReservationCustomer[] | null };
 
-export function listReservations() {
-  return request<ReservationListItem[]>("/reservations");
+/** `from`/`to` are inclusive dates (YYYY-MM-DD) and match the reservations overlapping the range; `q` matches part of the code or title. */
+export type ReservationFilter = { status?: string[]; from?: string; to?: string; agencyId?: string; guideId?: string; q?: string };
+
+function reservationsPath(filter: ReservationFilter) {
+  const params = new URLSearchParams();
+  if (filter.status?.length) params.set("status", filter.status.join(","));
+  if (filter.from) params.set("from", filter.from);
+  if (filter.to) params.set("to", filter.to);
+  if (filter.agencyId) params.set("agency_id", filter.agencyId);
+  if (filter.guideId) params.set("guide_id", filter.guideId);
+  if (filter.q) params.set("q", filter.q);
+  return params.size ? `/reservations?${params}` : "/reservations";
 }
 
-export function listAgencies() {
-  return request<Agency[]>("/agencies");
+// Most recent start first.
+export function listReservations(filter: ReservationFilter = {}) {
+  return request<ReservationListItem[] | null>(reservationsPath(filter)).then((items) => items ?? []);
 }
 
-export function listCustomers() {
-  return request<ReservationCustomer[] | null>("/customers").then((items) => items ?? []);
+export function listReservationsPage(filter: ReservationFilter, page: { limit: number; offset: number }) {
+  return requestPage<ReservationListItem>(reservationsPath(filter), page);
+}
+
+/** How many reservations match, without loading them. */
+export function countReservations(filter: ReservationFilter) {
+  return listReservationsPage(filter, { limit: 1, offset: 0 }).then((result) => result.total);
+}
+
+export type AgencyFilter = { name?: string; email?: string; isActive?: boolean };
+
+export function listAgencies(filter: AgencyFilter = {}) {
+  const params = new URLSearchParams();
+  if (filter.name) params.set("name", filter.name);
+  if (filter.email) params.set("email", filter.email);
+  if (filter.isActive !== undefined) params.set("is_active", String(filter.isActive));
+  return request<Agency[] | null>(params.size ? `/agencies?${params}` : "/agencies").then((items) => items ?? []);
+}
+
+// Sorted by name.
+export function listCustomersPage(page: { limit: number; offset: number }) {
+  return requestPage<ReservationCustomer>("/customers", page);
+}
+
+/** Matches part of the name, document, phone or email; at most 20 results. */
+export function searchCustomers(query: string) {
+  return request<ReservationCustomer[] | null>(`/customers/search?query=${encodeURIComponent(query)}`).then((items) => items ?? []);
 }
 
 export type AgencyInput = { name: string; representative: string; email: string; is_active?: boolean };

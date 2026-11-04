@@ -28,7 +28,7 @@ export function PushToggle({ compact = false }: { compact?: boolean }) {
     try {
       setState(state === "on" ? await disablePush() : await enablePush());
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "No se pudieron activar las notificaciones.");
+      setError(requestError instanceof Error ? requestError.message : "Could not turn on notifications.");
     } finally {
       setIsBusy(false);
     }

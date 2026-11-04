@@ -1,7 +1,7 @@
 "use client";
 
 import { createActivity, deleteActivity, listAllActivities, updateActivity, type Activity } from "@/features/catalogs/api";
-import { createAgency, createCustomer, deleteAgency, deleteCustomer, listAgencies, listCustomers, updateAgency, updateCustomer, type Agency, type CustomerInput, type ReservationCustomer } from "@/features/reservations/api";
+import { createAgency, createCustomer, deleteAgency, deleteCustomer, listAgencies, listCustomersPage, searchCustomers, updateAgency, updateCustomer, type Agency, type CustomerInput, type ReservationCustomer } from "@/features/reservations/api";
 import { ActiveBadge, RecordsScreen, type RecordDraft, type RecordsConfig } from "./RecordsScreen";
 
 const text = (draft: RecordDraft, key: string) => String(draft[key] ?? "").trim();
@@ -62,7 +62,8 @@ const customerConfig: RecordsConfig<ReservationCustomer> = {
   ],
   searchText: (item) => `${item.full_name} ${item.email} ${item.phone} ${item.document_number}`,
   toDraft: (item) => ({ full_name: item?.full_name ?? "", email: item?.email ?? "", phone: item?.phone ?? "", document_number: item?.document_number ?? "", age: item?.age == null ? "" : String(item.age) }),
-  list: () => listCustomers().then(byName<ReservationCustomer>((item) => item.full_name)),
+  // The server sorts customers by name.
+  remote: { listPage: listCustomersPage, search: searchCustomers, searchLimit: 20 },
   create: (draft) => createCustomer(toCustomerInput(draft)),
   update: (item, draft) => updateCustomer(item.id, toCustomerInput(draft)),
   remove: (item) => deleteCustomer(item.id),

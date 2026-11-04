@@ -4,11 +4,15 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
+import { MissingDataNotice, useMissingData } from "@/features/dashboard/components/MissingDataNotice";
 import { listZones, type Zone } from "@/features/catalogs/api";
 import { listGuides, type GuideDetail } from "@/features/guides/api";
 import { listTourDays, type TourDay } from "@/features/tours/api";
 import { formatJst, formatJstClock } from "@/lib/datetime";
-import { OperationsCalendar, dayKey, monthRange, toneFor, type CalendarMonth } from "./OperationsCalendar";
+import { monthRange, type CalendarMonth } from "@/lib/calendar";
+import { toDayKey } from "@/lib/datetime";
+import { withFallback } from "@/lib/missing";
+import { OperationsCalendar, toneFor } from "./OperationsCalendar";
 
 export function CalendarScreen() {
   // Read the clock after mount so the prerender doesn't freeze a stale month.
@@ -18,20 +22,23 @@ export function CalendarScreen() {
   const [guides, setGuides] = useState<GuideDetail[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
   const [error, setError] = useState("");
+  const { missing, report } = useMissingData();
 
   useEffect(() => {
     let active = true;
     // Guides and zones only provide labels.
-    Promise.all([listGuides().then((items) => items ?? []).catch(() => []), listZones().then((items) => items ?? []).catch(() => [])])
+    const failed: string[] = [];
+    Promise.all([withFallback(listGuides().then((items) => items ?? []), [], "guides", failed), withFallback(listZones().then((items) => items ?? []), [], "zones", failed)])
       .then(([guideItems, zoneItems]) => {
         if (!active) return;
-        const key = dayKey(new Date());
+        failed.forEach(report);
+        const key = toDayKey(new Date());
         setGuides(guideItems); setZones(zoneItems);
         setToday(key);
         setMonth((current) => current ?? { year: Number(key.slice(0, 4)), month: Number(key.slice(5, 7)) });
       });
     return () => { active = false; };
-  }, []);
+  }, [report]);
 
   useEffect(() => {
     if (!month) return;
@@ -61,6 +68,7 @@ export function CalendarScreen() {
                 <p className="mt-2 text-[11px] text-[#85867c]">Keep every journey moving with a clear view of the season ahead.</p>
               </header>
               {error && <p role="alert" className="mb-5 bg-[#f4e4df] px-4 py-3 text-[10px] text-[#8a3b2c]">{error}</p>}
+              <MissingDataNotice missing={missing} className="mb-5" />
               <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]">
                 {month ? <OperationsCalendar month={month} days={days} today={today} guideName={guideName} zoneName={zoneName} onMonthChange={(next) => { setDays(null); setMonth(next); }} /> : <section className="bg-white p-5 text-[10px] text-[#85867c] sm:p-6">Loading calendar…</section>}
                 <CalendarSummary days={days} today={today} guideName={guideName} />
@@ -75,7 +83,7 @@ export function CalendarScreen() {
 
 function CalendarSummary({ days, today, guideName }: { days: TourDay[] | null; today: string; guideName: (id: string | null) => string | null }) {
   const active = (days ?? []).filter((day) => toneFor(day.status) !== "muted");
-  const todays = active.filter((day) => dayKey(day.start_datetime) === today);
+  const todays = active.filter((day) => toDayKey(day.start_datetime) === today);
   const count = (value: number) => (days ? String(value).padStart(2, "0") : "—");
 
   return (

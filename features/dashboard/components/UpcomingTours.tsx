@@ -1,7 +1,8 @@
 import Link from "next/link";
 
 import { formatDuration } from "@/lib/datetime";
-import { formatClock, formatShortDate, formatStatus, type DashboardTour } from "../api";
+import { formatStatus } from "@/lib/status";
+import { formatClock, formatShortDate, type DashboardTour } from "../api";
 
 const statusLabels: Record<string, string> = {
   PENDING: "Pending",

@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 
 import { isAdmin } from "@/lib/api/client";
 import { useSession } from "@/lib/api/useSession";
-import { loadDashboard, operationsTimeZone, type DashboardData } from "../api";
+import { operationsTimeZone } from "@/lib/datetime";
+import { loadDashboard, type DashboardData } from "../api";
 import { useCurrentUser } from "../useCurrentUser";
 import { DashboardHeader } from "./DashboardHeader";
 import { DashboardSidebar } from "./DashboardSidebar";
 import { GuideDashboard } from "./GuideDashboard";
+import { MissingDataNotice } from "./MissingDataNotice";
 import { OverviewBanner } from "./OverviewBanner";
 import { RecentActivity } from "./RecentActivity";
 import { SchedulePanel } from "./SchedulePanel";
@@ -66,6 +68,7 @@ export function DashboardScreen() {
               {session && !isAdmin(session) ? <GuideDashboard now={now} /> : <>
 
               {error && <p className="mb-5 bg-[#f4e4df] px-4 py-3 text-[10px] text-[#8a3b2c]">{error}</p>}
+              <MissingDataNotice missing={data?.missing ?? []} className="mb-5" />
 
               <OverviewBanner />
               <StatCards stats={data?.stats ?? null} />

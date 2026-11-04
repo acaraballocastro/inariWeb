@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
+import { MissingDataNotice, useMissingData } from "@/features/dashboard/components/MissingDataNotice";
 import { changeIncidentStatus, formatIncidentStatus, getIncident, incidentStatusClass, nextIncidentStatuses, type IncidentDetail, type IncidentStatus } from "@/features/incidents/api";
 import { listUsers, type User } from "@/features/users/api";
 import { isAdmin } from "@/lib/api/client";
@@ -17,6 +18,7 @@ export function IncidentDetailScreen({ incidentId }: { incidentId: string }) {
   const [incident, setIncident] = useState<IncidentDetail | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState("");
+  const { missing, report } = useMissingData();
   const [nextStatus, setNextStatus] = useState<IncidentStatus | "">("");
   const [reason, setReason] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -31,8 +33,8 @@ export function IncidentDetailScreen({ incidentId }: { incidentId: string }) {
 
   // Names for the history; only admins can list users.
   useEffect(() => {
-    if (admin) listUsers().then((items) => setUsers(items ?? [])).catch(() => setUsers([]));
-  }, [admin]);
+    if (admin) listUsers().then((items) => setUsers(items ?? [])).catch(() => { setUsers([]); report("user names"); });
+  }, [admin, report]);
 
   const userNames = useMemo(() => new Map(users.map((user) => [user.id, user.name])), [users]);
   const options = incident ? nextIncidentStatuses(incident.status) : [];
@@ -67,6 +69,7 @@ export function IncidentDetailScreen({ incidentId }: { incidentId: string }) {
           <div className="px-5 pb-10 sm:px-8 lg:px-10"><div className="mx-auto max-w-[900px]">
             <Link href="/incidents" className="mt-8 inline-flex bg-[#e9e5d7] px-3 py-2 text-[9px] text-[#5d5e55] hover:bg-[#ded8c7]">← Incidents</Link>
             {error && <p role="alert" className="mt-6 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-[10px] text-[#9b6f37]">{error}</p>}
+            <MissingDataNotice missing={missing} className="mt-6" />
             {!incident && !error && <p className="mt-6 text-[10px] text-[#85867c]">Loading incident...</p>}
             {incident && <>
               <header className="border-b border-[#deddd6] pb-6 pt-6">

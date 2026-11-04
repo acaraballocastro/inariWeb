@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 
 import type { TourDay } from "@/features/tours/api";
-import { formatJst, formatJstClock } from "@/lib/datetime";
-
-export type CalendarMonth = { year: number; month: number };
+import { monthCells, shiftMonth, type CalendarMonth } from "@/lib/calendar";
+import { formatJst, formatJstClock, toDayKey } from "@/lib/datetime";
+import { formatStatus, isCancelled } from "@/lib/status";
 
 type Tone = "gold" | "green" | "blue" | "muted";
 
@@ -20,7 +20,7 @@ const toneStyles: Record<Tone, string> = {
 export function toneFor(status: string): Tone {
   if (status === "PENDING_ASSIGNMENT" || status === "GUIDE_PREASSIGNED") return "gold";
   if (status === "CONFIRMED" || status === "COMPLETED") return "green";
-  if (status === "CANCELLED" || status === "FORCE_MAJEURE_CANCELLED") return "muted";
+  if (isCancelled(status)) return "muted";
   return "blue";
 }
 
@@ -33,14 +33,11 @@ export function OperationsCalendar({ month, days, today, guideName, zoneName, on
   const visible = (days ?? []).filter((day) => showCancelled || toneFor(day.status) !== "muted");
   const byDate = new Map<string, TourDay[]>();
   for (const day of visible) {
-    const key = dayKey(day.start_datetime);
+    const key = toDayKey(day.start_datetime);
     byDate.set(key, [...(byDate.get(key) ?? []), day]);
   }
 
-  const shift = (delta: number) => {
-    const date = new Date(Date.UTC(month.year, month.month - 1 + delta, 1));
-    onMonthChange({ year: date.getUTCFullYear(), month: date.getUTCMonth() + 1 });
-  };
+  const shift = (delta: number) => onMonthChange(shiftMonth(month, delta));
   const goToday = () => onMonthChange({ year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) });
 
   return (
@@ -126,30 +123,4 @@ function Legend({ tone, label }: { tone: string; label: string }) {
   return <span className="flex items-center gap-1.5"><span className={`h-2 w-2 ${tone}`} />{label}</span>;
 }
 
-/** "YYYY-MM-DD" of an instant in JST. */
-export function dayKey(value: string | Date) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Tokyo" }).format(new Date(value));
-}
 
-/** The JST instants that bound a month, for the API range [from, to). */
-export function monthRange(month: CalendarMonth) {
-  const pad = (value: number) => String(value).padStart(2, "0");
-  const next = new Date(Date.UTC(month.year, month.month, 1));
-  return {
-    from: new Date(`${month.year}-${pad(month.month)}-01T00:00:00+09:00`).toISOString(),
-    to: new Date(`${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-01T00:00:00+09:00`).toISOString(),
-  };
-}
-
-// Whole weeks from the Monday on or before the 1st to the Sunday on or after the last day.
-function monthCells(month: CalendarMonth) {
-  const first = new Date(Date.UTC(month.year, month.month - 1, 1));
-  const last = new Date(Date.UTC(month.year, month.month, 0));
-  const start = new Date(first.getTime() - ((first.getUTCDay() + 6) % 7) * 86_400_000);
-  const end = new Date(last.getTime() + ((7 - last.getUTCDay()) % 7) * 86_400_000);
-  const cells: string[] = [];
-  for (let time = start.getTime(); time <= end.getTime(); time += 86_400_000) cells.push(new Date(time).toISOString().slice(0, 10));
-  return cells;
-}
-
-function formatStatus(value: string) { return value.toLowerCase().split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" "); }

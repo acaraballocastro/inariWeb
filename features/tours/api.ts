@@ -1,4 +1,6 @@
-import { request } from "@/lib/api/client";
+import { listAllActivities } from "@/features/catalogs/api";
+import { listPlacesWithZone } from "@/features/places/api";
+import { request, requestPage } from "@/lib/api/client";
 
 export type TourDay = {
   id: string;
@@ -53,11 +55,12 @@ export type UpdateTourDayInput = TourDayFormInput & {
   voucher_status?: string;
 };
 
-export type TourDayFilter = { from?: string; to?: string; status?: string[]; guideId?: string; zoneId?: string; reservationId?: string };
+/** `unassigned` keeps only the days without guide, whatever their status (paid days keep theirs when left without guide). */
+export type TourDayFilter = { from?: string; to?: string; status?: string[]; guideId?: string; zoneId?: string; reservationId?: string; unassigned?: boolean };
 
 // `from` / `to` accept RFC3339 timestamps or YYYY-MM-DD dates; `to` is exclusive.
-// A guide only gets their own days: the API forces `guide_id`.
-export function listTourDays(filter: TourDayFilter = {}) {
+// A guide only gets their own days: the API forces `guide_id`. Ordered by start.
+function tourDaysPath(filter: TourDayFilter) {
   const params = new URLSearchParams();
   if (filter.from) params.set("from", filter.from);
   if (filter.to) params.set("to", filter.to);
@@ -65,8 +68,21 @@ export function listTourDays(filter: TourDayFilter = {}) {
   if (filter.guideId) params.set("guide_id", filter.guideId);
   if (filter.zoneId) params.set("zone_id", filter.zoneId);
   if (filter.reservationId) params.set("reservation_id", filter.reservationId);
-  const query = params.size ? `?${params}` : "";
-  return request<TourDay[] | null>(`/tour-days${query}`).then((items) => items ?? []);
+  if (filter.unassigned) params.set("unassigned", "true");
+  return params.size ? `/tour-days?${params}` : "/tour-days";
+}
+
+export function listTourDays(filter: TourDayFilter = {}) {
+  return request<TourDay[] | null>(tourDaysPath(filter)).then((items) => items ?? []);
+}
+
+export function listTourDaysPage(filter: TourDayFilter, page: { limit: number; offset: number }) {
+  return requestPage<TourDay>(tourDaysPath(filter), page);
+}
+
+/** How many tour days match, without loading them. */
+export function countTourDays(filter: TourDayFilter) {
+  return listTourDaysPage(filter, { limit: 1, offset: 0 }).then((result) => result.total);
 }
 
 export function getTourDay(id: string) {
@@ -133,7 +149,6 @@ export function getTourDayHistory(id: string) {
   return request<HistoryEntry[] | null>(`/tour-days/${encodeURIComponent(id)}/history`).then((items) => items ?? []);
 }
 
-export const finalTourDayStatuses = ["COMPLETED", "CANCELLED", "FORCE_MAJEURE_CANCELLED"];
 
 export function assignGuide(tourDayIds: string[], guideId: string) {
   return request<void>("/tour-days/assign-guide", { method: "PATCH", body: JSON.stringify({ tour_day_ids: tourDayIds, guide_id: guideId }) });
@@ -161,7 +176,8 @@ export function createItineraryItem(tourDayId: string, input: ItineraryItemInput
   return request<ItineraryItem>(`/tour-days/${encodeURIComponent(tourDayId)}/itinerary`, { method: "POST", body: JSON.stringify(input) });
 }
 
-export function updateItineraryItem(tourDayId: string, itemId: string, input: ItineraryItemInput) {
+/** Partial: fields left out keep their value and null clears them. */
+export function updateItineraryItem(tourDayId: string, itemId: string, input: Partial<ItineraryItemInput>) {
   return request<ItineraryItem>(`/tour-days/${encodeURIComponent(tourDayId)}/itinerary/${encodeURIComponent(itemId)}`, { method: "PATCH", body: JSON.stringify(input) });
 }
 
@@ -169,16 +185,15 @@ export function deleteItineraryItem(tourDayId: string, itemId: string) {
   return request<void>(`/tour-days/${encodeURIComponent(tourDayId)}/itinerary/${encodeURIComponent(itemId)}`, { method: "DELETE" });
 }
 
-type ApiPlace = { id: string; name: string; description: string | null; zone_id: string | null; is_active: boolean };
-type ApiActivity = { id: string; name: string; description: string | null; is_active: boolean };
-
 export type ItineraryPlace = { id: string; name: string; zone_name: string | null };
 export type ItineraryActivity = { id: string; name: string };
 
-export function listPlaces() {
-  return request<{ place: ApiPlace; zone: { name: string } | null }[] | null>("/places").then((items) => (items ?? []).filter((item) => item.place.is_active).map((item): ItineraryPlace => ({ id: item.place.id, name: item.place.name, zone_name: item.zone?.name ?? null })));
+/** Active places, as the itinerary offers them. */
+export function listItineraryPlaces() {
+  return listPlacesWithZone().then((items) => items.filter((item) => item.place.is_active).map((item): ItineraryPlace => ({ id: item.place.id, name: item.place.name, zone_name: item.zone?.name ?? null })));
 }
 
-export function listActivities() {
-  return request<ApiActivity[] | null>("/activities").then((items) => (items ?? []).filter((item) => item.is_active).map((item): ItineraryActivity => ({ id: item.id, name: item.name })));
+/** Active activities, as the itinerary offers them. */
+export function listItineraryActivities() {
+  return listAllActivities().then((items) => items.filter((item) => item.is_active).map((item): ItineraryActivity => ({ id: item.id, name: item.name })));
 }

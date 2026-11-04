@@ -19,11 +19,11 @@ export function ResetPasswordScreen({ token }: { token: string }) {
     setError("");
 
     if (newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/\d/.test(newPassword) || !/[\p{P}\p{S}]/u.test(newPassword)) {
-      setError("La contraseña debe tener 8 caracteres, mayúscula, minúscula, número y símbolo.");
+      setError("The password needs at least 8 characters, with an uppercase letter, a lowercase letter, a number and a symbol.");
       return;
     }
     if (newPassword !== confirmation) {
-      setError("Las contraseñas no coinciden.");
+      setError("The passwords do not match.");
       return;
     }
 
@@ -35,7 +35,7 @@ export function ResetPasswordScreen({ token }: { token: string }) {
       if (requestError instanceof ApiError && requestError.code === "INVALID_RESET_TOKEN") {
         setIsLinkInvalid(true);
       } else {
-        setError(requestError instanceof Error ? requestError.message : "No se pudo cambiar la contraseña.");
+        setError(requestError instanceof Error ? requestError.message : "Could not change the password.");
       }
     } finally {
       setIsSubmitting(false);

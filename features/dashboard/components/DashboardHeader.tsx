@@ -6,7 +6,7 @@ import { NotificationBell } from "@/features/notifications/components/Notificati
 import { useSession } from "@/lib/api/useSession";
 import { formatClock } from "../api";
 import { useCurrentUser } from "../useCurrentUser";
-import { NavigationLinks, navigationFor, useSignOut } from "./DashboardSidebar";
+import { AccountLinks, NavigationLinks, navigationFor } from "./DashboardSidebar";
 
 export function DashboardHeader({ breadcrumb = "Workspace / Dashboard" }: { breadcrumb?: string }) {
   const user = useCurrentUser();
@@ -42,7 +42,6 @@ export function DashboardHeader({ breadcrumb = "Workspace / Dashboard" }: { brea
 // The sidebar is only shown on large screens; below that the same links open from the header.
 function MobileMenu({ onClose }: { onClose: () => void }) {
   const session = useSession();
-  const { signOut, signOutEverywhere } = useSignOut();
   const { navigation, sections } = navigationFor(session);
 
   return (
@@ -54,10 +53,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
           <button type="button" onClick={onClose} aria-label="Close menu" className="h-8 w-8 border border-[#deddd6] text-[11px]">✕</button>
         </div>
         <NavigationLinks navigation={navigation} sections={sections} onNavigate={onClose} />
-        <div className="mt-10 border-t border-[#deddd6] pt-5">
-          <button type="button" onClick={signOut} className="text-[10px] text-[#77786f] underline underline-offset-4">Sign out</button>
-          <button type="button" onClick={signOutEverywhere} className="mt-3 block text-[10px] text-[#77786f] underline underline-offset-4">Sign out on all devices</button>
-        </div>
+        <AccountLinks className="mt-10 space-y-3 border-t border-[#deddd6] pt-5 text-[10px]" onNavigate={onClose} />
       </div>
     </div>
   );

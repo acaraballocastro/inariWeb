@@ -6,7 +6,7 @@ export function LoginHero() {
       <div className="absolute inset-0">
         <Image
           src="/images/kyoto-hero.png"
-          alt="Templo tradicional japonés entre árboles otoñales en Kioto"
+          alt="Traditional Japanese temple among autumn trees in Kyoto"
           width={1200}
           height={1400}
           priority

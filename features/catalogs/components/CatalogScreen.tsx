@@ -22,7 +22,7 @@ export function CatalogScreen({ kind }: { kind: CatalogKind }) {
   useEffect(() => {
     (isLanguage ? listLanguages() : listZones())
       .then(setItems)
-      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "No se pudo cargar el catálogo."))
+      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "Could not load the catalog."))
       .finally(() => setIsLoading(false));
   }, [isLanguage]);
 
@@ -42,7 +42,7 @@ export function CatalogScreen({ kind }: { kind: CatalogKind }) {
       setItems((currentItems) => currentItems.map((currentItem) => currentItem.id === item.id ? item : currentItem));
       setEditingId(null);
     } catch (requestError) {
-      setActionError(requestError instanceof Error ? requestError.message : "No se pudo actualizar el registro.");
+      setActionError(requestError instanceof Error ? requestError.message : "Could not update the record.");
     }
   }
 
@@ -54,7 +54,7 @@ export function CatalogScreen({ kind }: { kind: CatalogKind }) {
       else await deleteZone(item.id);
       setItems((currentItems) => currentItems.filter((currentItem) => currentItem.id !== item.id));
     } catch (requestError) {
-      setActionError(requestError instanceof Error ? requestError.message : "No se pudo eliminar el registro.");
+      setActionError(requestError instanceof Error ? requestError.message : "Could not delete the record.");
     }
   }
 
@@ -90,7 +90,7 @@ function CreateForm({ kind, onCreated, onError }: { kind: CatalogKind; onCreated
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  async function submit(event: FormEvent) { event.preventDefault(); if (!name.trim() || (kind === "languages" && !code.trim())) { onError("Completa los campos requeridos."); return; } setIsSaving(true); onError(""); try { onCreated(kind === "languages" ? await createLanguage({ name: name.trim(), code: code.trim().toLowerCase() }) : await createZone({ name: name.trim() })); } catch (requestError) { onError(requestError instanceof Error ? requestError.message : "No se pudo crear el registro."); } finally { setIsSaving(false); } }
+  async function submit(event: FormEvent) { event.preventDefault(); if (!name.trim() || (kind === "languages" && !code.trim())) { onError("Fill in the required fields."); return; } setIsSaving(true); onError(""); try { onCreated(kind === "languages" ? await createLanguage({ name: name.trim(), code: code.trim().toLowerCase() }) : await createZone({ name: name.trim() })); } catch (requestError) { onError(requestError instanceof Error ? requestError.message : "Could not create the record."); } finally { setIsSaving(false); } }
   return <form onSubmit={submit} className="mt-5 grid gap-3 border-b border-[#ecebe5] pb-5 sm:grid-cols-2 lg:grid-cols-4"><label className="text-[9px] text-[#77786f]">Name<input value={name} onChange={(event) => setName(event.target.value)} placeholder={kind === "languages" ? "Japanese" : "Kyoto"} className={`${inputClass} mt-2`} /></label>{kind === "languages" && <label className="text-[9px] text-[#77786f]">Code<input value={code} onChange={(event) => setCode(event.target.value)} placeholder="ja" maxLength={8} className={`${inputClass} mt-2`} /></label>}<span /><button type="submit" disabled={isSaving} className="h-9 self-end bg-[#292b26] px-4 text-[9px] font-medium text-white disabled:opacity-60">{isSaving ? "Creating..." : "Create"}</button></form>;
 }
 

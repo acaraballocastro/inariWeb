@@ -4,21 +4,45 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
-import { listNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification } from "@/features/notifications/api";
+import { listNotificationsPage, markAllNotificationsRead, markNotificationRead, type AppNotification } from "@/features/notifications/api";
 import { PushToggle } from "./PushToggle";
 import { formatNotificationTime } from "./time";
+
+const pageSize = 50;
 
 export function NotificationsScreen() {
   const router = useRouter();
   const [items, setItems] = useState<AppNotification[] | null>(null);
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    listNotifications({ unreadOnly, limit: 100 })
-      .then((list) => { setItems(list); setError(""); })
-      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "No se pudieron cargar las notificaciones."));
+    let active = true;
+    listNotificationsPage({ unreadOnly }, { limit: pageSize, offset: 0 })
+      .then((page) => { if (active) { setItems(page.items); setTotal(page.total); setError(""); } })
+      .catch((requestError) => { if (active) setError(requestError instanceof Error ? requestError.message : "Could not load the notifications."); });
+    return () => { active = false; };
   }, [unreadOnly]);
+
+  async function loadMore() {
+    if (!items) return;
+    setIsLoadingMore(true);
+    try {
+      const page = await listNotificationsPage({ unreadOnly }, { limit: pageSize, offset: items.length });
+      // New notifications may have shifted the offset: skip the ones already shown.
+      setItems((current) => {
+        const shown = new Set(current?.map((item) => item.id));
+        return [...(current ?? []), ...page.items.filter((item) => !shown.has(item.id))];
+      });
+      setTotal(page.total);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not load the notifications.");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }
 
   async function open(item: AppNotification) {
     if (!item.is_read) await markNotificationRead(item.id).catch(() => undefined);
@@ -28,6 +52,7 @@ export function NotificationsScreen() {
 
   async function readAll() {
     await markAllNotificationsRead().catch(() => undefined);
+    if (unreadOnly) setTotal(0);
     setItems((current) => (unreadOnly ? [] : current?.map((item) => ({ ...item, is_read: true })) ?? null));
   }
 
@@ -70,6 +95,12 @@ export function NotificationsScreen() {
                     </button>
                   ))}
                 </div>
+                {items && items.length < total && (
+                  <div className="mt-4 flex items-center justify-between gap-3 text-[9px] text-[#96968b]">
+                    <span>{items.length} of {total}</span>
+                    <button type="button" disabled={isLoadingMore} onClick={loadMore} className="h-8 border border-[#deddd6] px-3 text-[#292b26] hover:bg-[#f8f7f3] disabled:opacity-50">{isLoadingMore ? "Loading…" : "Load more"}</button>
+                  </div>
+                )}
               </section>
             </div>
           </div>

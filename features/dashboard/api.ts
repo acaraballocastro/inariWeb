@@ -1,14 +1,16 @@
-import { listGuides, listZones } from "@/features/guides/api";
-import { listReservations, type ReservationListItem } from "@/features/reservations/api";
-import { listTourDays, type TourDay } from "@/features/tours/api";
+import { listZones } from "@/features/catalogs/api";
+import { listGuides } from "@/features/guides/api";
+import { listReservations, listReservationsPage, type ReservationListItem } from "@/features/reservations/api";
+import { countTourDays, listTourDays, listTourDaysPage, type TourDay } from "@/features/tours/api";
 
-import { operationsTimeZone } from "@/lib/datetime";
+import { formatJst, formatJstClock, startOfJstDay, toDayKey } from "@/lib/datetime";
+import { withFallback } from "@/lib/missing";
+import { activeStatuses, formatStatus, isCancelled, openStatuses } from "@/lib/status";
 
-// Operations run in Japan, so "today" and every time on the dashboard is JST.
-export { operationsTimeZone };
 const dayMs = 24 * 60 * 60 * 1000;
-const cancelledStatuses = new Set(["CANCELLED", "FORCE_MAJEURE_CANCELLED"]);
-const closedReservationStatuses = new Set([...cancelledStatuses, "COMPLETED"]);
+// The activity feed reads the open reservations plus the ones starting latest, so recent
+// cancellations and completions also show up without loading the whole history.
+const recentReservationsCount = 20;
 
 export type DashboardTour = {
   id: string;
@@ -47,20 +49,32 @@ export type DashboardData = {
   todayTours: DashboardTour[];
   upcomingTours: DashboardTour[];
   activity: DashboardActivity[];
+  /** Labels that could not be loaded (the dashboard shows it without them). */
+  missing: string[];
 };
+
+const upcomingCount = 6;
 
 export async function loadDashboard(now = new Date()): Promise<DashboardData> {
   const today = toDayKey(now);
-  const todayStart = startOfDay(today);
+  const todayStart = startOfJstDay(today);
   const tomorrowStart = new Date(todayStart.getTime() + dayMs);
   const weekEnd = new Date(todayStart.getTime() + 7 * dayMs);
 
-  // Guides and zones only provide labels, so the dashboard still renders without them.
-  const [tourDays, reservations, guides, zones] = await Promise.all([
-    listTourDays({ from: todayStart.toISOString() }),
-    listReservations().then((items) => items ?? []),
-    listGuides().then((items) => items ?? []).catch(() => []),
-    listZones().then((items) => items ?? []).catch(() => []),
+  // Everything is bounded: this week's days, counts for the rest of the future, the
+  // next few days and the open reservations; never the whole history. Guides and zones
+  // only provide labels, so the dashboard still renders without them and says so.
+  const missing: string[] = [];
+  const fromToday = todayStart.toISOString();
+  const [weekTourDays, upcoming, unassigned, awaitingAcceptance, openReservations, latestReservations, guides, zones] = await Promise.all([
+    listTourDays({ from: fromToday, to: weekEnd.toISOString() }),
+    listTourDaysPage({ from: now.toISOString(), status: activeStatuses }, { limit: upcomingCount, offset: 0 }).then((page) => page.items),
+    countTourDays({ from: fromToday, status: openStatuses, unassigned: true }),
+    countTourDays({ from: fromToday, status: ["GUIDE_PREASSIGNED"] }),
+    listReservations({ status: openStatuses }),
+    listReservationsPage({}, { limit: recentReservationsCount, offset: 0 }).then((page) => page.items),
+    withFallback(listGuides().then((items) => items ?? []), [], "guides", missing),
+    withFallback(listZones().then((items) => items ?? []), [], "zones", missing),
   ]);
 
   const guideNames = new Map(guides.map((item) => [item.guide.id, item.guide.name]));
@@ -76,14 +90,8 @@ export async function loadDashboard(now = new Date()): Promise<DashboardData> {
     status: day.status,
   });
 
-  const active = tourDays.filter((day) => !cancelledStatuses.has(day.status));
-  const startsBefore = (day: TourDay, limit: Date) => new Date(day.start_datetime) < limit;
-  const todayDays = active.filter((day) => startsBefore(day, tomorrowStart));
-  const weekDays = active.filter((day) => startsBefore(day, weekEnd));
-  const unassigned = active.filter((day) => !day.guide_id).length;
-  const awaitingAcceptance = active.filter((day) => day.status === "GUIDE_PREASSIGNED").length;
-
-  const openReservations = reservations.filter((reservation) => !closedReservationStatuses.has(reservation.status));
+  const weekDays = weekTourDays.filter((day) => !isCancelled(day.status));
+  const todayDays = weekDays.filter((day) => new Date(day.start_datetime) < tomorrowStart);
 
   return {
     today,
@@ -101,13 +109,15 @@ export async function loadDashboard(now = new Date()): Promise<DashboardData> {
       awaitingSignature: openReservations.filter((reservation) => reservation.signature_status === "SENT").length,
     },
     todayTours: todayDays.map(toTour),
-    upcomingTours: active.filter((day) => new Date(day.start_datetime) >= now).slice(0, 6).map(toTour),
-    activity: recentActivity(reservations),
+    upcomingTours: upcoming.map(toTour),
+    activity: recentActivity([...openReservations, ...latestReservations]),
+    missing,
   };
 }
 
 function recentActivity(reservations: ReservationListItem[]): DashboardActivity[] {
-  return [...reservations]
+  const unique = new Map(reservations.map((reservation) => [reservation.id, reservation]));
+  return [...unique.values()]
     .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
     .slice(0, 5)
     .map((reservation) => ({
@@ -119,23 +129,10 @@ function recentActivity(reservations: ReservationListItem[]): DashboardActivity[
     }));
 }
 
-export function toDayKey(date: Date) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: operationsTimeZone }).format(date);
-}
-
-// Japan has no DST, so a fixed +09:00 offset is exact.
-function startOfDay(dayKey: string) {
-  return new Date(`${dayKey}T00:00:00+09:00`);
-}
-
-export function formatStatus(value: string) {
-  return value.toLowerCase().split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
-}
-
 export function formatClock(value: string | Date) {
-  return new Intl.DateTimeFormat("en-GB", { timeZone: operationsTimeZone, hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+  return formatJstClock(value);
 }
 
 export function formatShortDate(value: string | Date) {
-  return new Intl.DateTimeFormat("en-GB", { timeZone: operationsTimeZone, day: "numeric", month: "short" }).format(new Date(value));
+  return formatJst(value, { day: "numeric", month: "short" });
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { MissingDataNotice, useMissingData } from "@/features/dashboard/components/MissingDataNotice";
+import { withFallback } from "@/lib/missing";
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { listZones, type Zone } from "@/features/catalogs/api";
@@ -18,6 +20,7 @@ export function ReservationTourDaysStep({ reservation, onFinish }: { reservation
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<TourDayDraft>(emptyTourDayDraft);
+  const { missing, report } = useMissingData();
 
   const loadTourDays = useCallback(async () => {
     const items = await listTourDaysByReservation(reservation.id);
@@ -26,12 +29,13 @@ export function ReservationTourDaysStep({ reservation, onFinish }: { reservation
 
   useEffect(() => {
     let active = true;
-    Promise.all([listTourDaysByReservation(reservation.id), listZones().catch(() => [])])
-      .then(([items, zoneItems]) => { if (active) { setTourDays(items.sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime())); setZones(zoneItems ?? []); } })
+    const failed: string[] = [];
+    Promise.all([listTourDaysByReservation(reservation.id), withFallback(listZones(), [], "zones", failed)])
+      .then(([items, zoneItems]) => { if (active) { failed.forEach(report); setTourDays(items.sort((a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime())); setZones(zoneItems ?? []); } })
       .catch((requestError: unknown) => { if (active) setError(requestError instanceof Error ? requestError.message : "Could not load the tour days."); })
       .finally(() => { if (active) setIsLoading(false); });
     return () => { active = false; };
-  }, [reservation.id]);
+  }, [reservation.id, report]);
 
   function startEditing(tourDay: TourDay) {
     setError(""); setEditingId(tourDay.id); setDraft(toTourDayDraft(tourDay));
@@ -65,6 +69,7 @@ export function ReservationTourDaysStep({ reservation, onFinish }: { reservation
   return (
     <div className="px-6 py-6 sm:px-8">
       {error && <p role="alert" className="mb-5 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-[10px] text-[#9b6f37]">{error}</p>}
+      <MissingDataNotice missing={missing} className="mb-5" />
       <p className="text-[10px] leading-relaxed text-[#85867c]">One tour day was generated for each date of <span className="text-[#55574f]">{reservation.title || reservation.code || "the reservation"}</span>. Complete their details or add more days.</p>
 
       {isLoading && <p className="mt-5 text-[10px] text-[#85867c]">Loading tour days...</p>}

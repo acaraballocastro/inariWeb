@@ -19,11 +19,9 @@ const adminNavigation: NavItem[] = [
   { label: "Notifications", href: "/notifications" },
 ];
 
-// Items without a route yet are placeholders for upcoming backend features.
 const adminSections: NavSection[] = [
-  { title: "Content", items: [{ label: "Itineraries", href: "#itineraries" }, { label: "Activities", href: "/activities" }, { label: "Places", href: "/places" }, { label: "Languages", href: "/languages" }, { label: "Zones", href: "/zones" }] },
-  { title: "Management", items: [{ label: "Guides", href: "/guides" }, { label: "Users", href: "/users" }, { label: "Agencies", href: "/agencies" }, { label: "Customers", href: "/customers" }, { label: "Tour Templates", href: "#tour-templates" }, { label: "System", href: "/system" }] },
-  { title: "Documents", items: [{ label: "Vouchers", href: "#vouchers" }, { label: "Signatures", href: "#signatures" }] },
+  { title: "Content", items: [{ label: "Activities", href: "/activities" }, { label: "Places", href: "/places" }, { label: "Languages", href: "/languages" }, { label: "Zones", href: "/zones" }] },
+  { title: "Management", items: [{ label: "Guides", href: "/guides" }, { label: "Users", href: "/users" }, { label: "Agencies", href: "/agencies" }, { label: "Customers", href: "/customers" }, { label: "Audit log", href: "/audit" }, { label: "System", href: "/system" }] },
 ];
 
 const guideNavigation: NavItem[] = [
@@ -62,7 +60,6 @@ export function DashboardSidebar({ activeItem = "Dashboard" }: { activeItem?: st
   const router = useRouter();
   const pathname = usePathname();
   const session = useSession();
-  const { signOut, signOutEverywhere } = useSignOut();
 
   useEffect(() => {
     const current = getSession();
@@ -93,10 +90,22 @@ export function DashboardSidebar({ activeItem = "Dashboard" }: { activeItem?: st
       <div className="mt-10 border-t border-[#deddd6] pt-5">
         <p className="text-[8px] font-semibold tracking-[0.2em] text-[#aaa28f]">JAPAN OPERATIONS</p>
         <p className="mt-2 text-[10px] text-[#77786f]">{session && !isAdmin(session) ? "Guide workspace" : "Autumn season · 2026"}</p>
-        <button type="button" onClick={signOut} className="mt-4 text-[9px] text-[#77786f] underline underline-offset-4 hover:text-[#292b26]">Sign out</button>
-        <button type="button" onClick={signOutEverywhere} className="mt-2 block text-[9px] text-[#77786f] underline underline-offset-4 hover:text-[#292b26]">Sign out on all devices</button>
+        <AccountLinks className="mt-4 space-y-2 text-[9px]" />
       </div>
     </aside>
+  );
+}
+
+/** Change password and sign out, at the foot of the sidebar and of the mobile menu. */
+export function AccountLinks({ className, onNavigate }: { className: string; onNavigate?: () => void }) {
+  const { signOut, signOutEverywhere } = useSignOut();
+  const linkClass = "block text-[#77786f] underline underline-offset-4 hover:text-[#292b26]";
+  return (
+    <div className={className}>
+      <Link href="/change-password" onClick={onNavigate} className={linkClass}>Change password</Link>
+      <button type="button" onClick={signOut} className={linkClass}>Sign out</button>
+      <button type="button" onClick={signOutEverywhere} className={linkClass}>Sign out on all devices</button>
+    </div>
   );
 }
 

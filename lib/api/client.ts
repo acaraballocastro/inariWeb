@@ -63,6 +63,22 @@ export function isAdmin(session: Session | null) {
 }
 
 export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  return (await send<T>(path, options)).data;
+}
+
+/** One page of a listing and how many rows match in total. */
+export type Page<T> = { items: T[]; total: number };
+
+/** Appends `limit` and `offset` to a listing path; the total comes in X-Total-Count. */
+export async function requestPage<T>(path: string, page: { limit: number; offset: number }, options: RequestInit = {}): Promise<Page<T>> {
+  const separator = path.includes("?") ? "&" : "?";
+  const { data, response } = await send<T[] | null>(`${path}${separator}limit=${page.limit}&offset=${page.offset}`, options);
+  const items = data ?? [];
+  const total = response.headers.get("X-Total-Count");
+  return { items, total: total === null ? page.offset + items.length : Number(total) };
+}
+
+async function send<T>(path: string, options: RequestInit): Promise<{ data: T; response: Response }> {
   const headers = new Headers(options.headers);
   headers.set("Content-Type", "application/json");
 
@@ -70,7 +86,7 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
   try {
     response = await fetch(`${apiUrl}${path}`, { ...options, headers, credentials: "include" });
   } catch {
-    throw new ApiError("No se pudo conectar con el servidor.", 0);
+    throw new ApiError("Could not connect to the server.", 0);
   }
 
   const bodyText = await response.text();
@@ -89,7 +105,7 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
       ? body.error
       : typeof body === "string" && body
         ? body
-        : "La operación no pudo completarse.";
+        : "The operation could not be completed.";
     const code = typeof body === "object" && body !== null && "code" in body && typeof body.code === "string"
       ? body.code
       : undefined;
@@ -105,10 +121,10 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
   }
 
   if (typeof body === "object" && body !== null && "data" in body) {
-    return (body as ApiEnvelope<T>).data as T;
+    return { data: (body as ApiEnvelope<T>).data as T, response };
   }
 
-  return body as T;
+  return { data: body as T, response };
 }
 
 export { apiUrl };

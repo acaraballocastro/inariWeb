@@ -23,7 +23,7 @@ export function PlacesScreen() {
   useEffect(() => {
     Promise.all([listPlaces(), listZones()])
       .then(([placeItems, zoneItems]) => { setPlaces(placeItems); setZones(zoneItems ?? []); })
-      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "No se pudieron cargar los lugares."))
+      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "Could not load the places."))
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -42,7 +42,7 @@ export function PlacesScreen() {
       setPlaces((currentPlaces) => currentPlaces.map((currentPlace) => currentPlace.id === place.id ? place : currentPlace));
       setEditingId(null);
     } catch (requestError) {
-      setActionError(requestError instanceof Error ? requestError.message : "No se pudo actualizar el lugar.");
+      setActionError(requestError instanceof Error ? requestError.message : "Could not update the place.");
     }
   }
 
@@ -53,7 +53,7 @@ export function PlacesScreen() {
       await deletePlace(place.id);
       setPlaces((currentPlaces) => currentPlaces.filter((currentPlace) => currentPlace.id !== place.id));
     } catch (requestError) {
-      setActionError(requestError instanceof Error ? requestError.message : "No se pudo eliminar el lugar.");
+      setActionError(requestError instanceof Error ? requestError.message : "Could not delete the place.");
     }
   }
 
@@ -96,7 +96,7 @@ function CreateForm({ zones, onCreated, onError }: { zones: Zone[]; onCreated: (
   const [description, setDescription] = useState("");
   const [zoneId, setZoneId] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  async function submit(event: FormEvent) { event.preventDefault(); if (!name.trim()) { onError("Completa los campos requeridos."); return; } setIsSaving(true); onError(""); try { onCreated(await createPlace(toInput({ name, description, zone_id: zoneId, is_active: true }))); } catch (requestError) { onError(requestError instanceof Error ? requestError.message : "No se pudo crear el lugar."); } finally { setIsSaving(false); } }
+  async function submit(event: FormEvent) { event.preventDefault(); if (!name.trim()) { onError("Fill in the required fields."); return; } setIsSaving(true); onError(""); try { onCreated(await createPlace(toInput({ name, description, zone_id: zoneId, is_active: true }))); } catch (requestError) { onError(requestError instanceof Error ? requestError.message : "Could not create the place."); } finally { setIsSaving(false); } }
   return <form onSubmit={submit} className="mt-5 grid gap-3 border-b border-[#ecebe5] pb-5 sm:grid-cols-2 lg:grid-cols-4"><label className="text-[9px] text-[#77786f]">Name *<input value={name} onChange={(event) => setName(event.target.value)} placeholder="Fushimi Inari Taisha" className={`${inputClass} mt-2`} /></label><label className="text-[9px] text-[#77786f]">Description<input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Shrine with thousands of torii gates" className={`${inputClass} mt-2`} /></label><label className="text-[9px] text-[#77786f]">Zone<span className="mt-2 block"><ZoneSelect zones={zones} value={zoneId} onChange={setZoneId} emptyLabel="No zone" /></span></label><button type="submit" disabled={isSaving} className="h-9 self-end bg-[#292b26] px-4 text-[9px] font-medium text-white disabled:opacity-60">{isSaving ? "Creating..." : "Create"}</button></form>;
 }
 

@@ -20,7 +20,7 @@ export function UsersScreen() {
   useEffect(() => {
     listUsers()
       .then(setUsers)
-      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "No se pudieron cargar los usuarios."))
+      .catch((requestError) => setError(requestError instanceof Error ? requestError.message : "Could not load the users."))
       .finally(() => setIsLoading(false));
   }, []);
   const filteredUsers = useMemo(() => {
@@ -33,7 +33,7 @@ export function UsersScreen() {
     setFormError("");
     setNotice("");
     if (!newUser.name.trim() || !newUser.email.trim() || !newUser.phone.trim()) {
-      setFormError("Completa nombre, email y teléfono.");
+      setFormError("Enter a name, email and phone.");
       return;
     }
     setIsCreating(true);
@@ -44,7 +44,7 @@ export function UsersScreen() {
       setNewUser({ name: "", email: "", phone: "", role: "GUIDE" });
       setShowCreateForm(false);
     } catch (requestError) {
-      setFormError(requestError instanceof Error ? requestError.message : "No se pudo crear el usuario.");
+      setFormError(requestError instanceof Error ? requestError.message : "Could not create the user.");
     } finally {
       setIsCreating(false);
     }
@@ -57,7 +57,7 @@ export function UsersScreen() {
       setUsers((currentUsers) => currentUsers.map((currentUser) => currentUser.id === updatedUser.id ? updatedUser : currentUser));
       setEditingUserId(null);
     } catch (requestError) {
-      setFormError(requestError instanceof Error ? requestError.message : "No se pudo actualizar el usuario.");
+      setFormError(requestError instanceof Error ? requestError.message : "Could not update the user.");
     }
   }
 
@@ -69,7 +69,7 @@ export function UsersScreen() {
       await resendInvitation(user.id);
       setNotice(`New invitation sent to ${user.email} with a new temporary password.`);
     } catch (requestError) {
-      setFormError(requestError instanceof Error ? requestError.message : "No se pudo reenviar la invitación.");
+      setFormError(requestError instanceof Error ? requestError.message : "Could not resend the invitation.");
       // The user may have chosen a password meanwhile: refresh the list.
       listUsers().then(setUsers).catch(() => undefined);
     }
@@ -83,7 +83,7 @@ export function UsersScreen() {
       await closeUserSessions(user.id);
       setNotice(`${user.name} was signed out on every device.`);
     } catch (requestError) {
-      setFormError(requestError instanceof Error ? requestError.message : "No se pudieron cerrar las sesiones.");
+      setFormError(requestError instanceof Error ? requestError.message : "Could not close the sessions.");
     }
   }
 
@@ -96,7 +96,7 @@ export function UsersScreen() {
       setUsers((currentUsers) => currentUsers.filter((currentUser) => currentUser.id !== user.id));
       setNotice(`${user.name} was deleted permanently.`);
     } catch (requestError) {
-      setFormError(requestError instanceof Error ? requestError.message : "No se pudo borrar el usuario.");
+      setFormError(requestError instanceof Error ? requestError.message : "Could not delete the user.");
     }
   }
 
@@ -107,7 +107,7 @@ export function UsersScreen() {
       await deactivateUser(user.id);
       setUsers((currentUsers) => currentUsers.map((currentUser) => currentUser.id === user.id ? { ...currentUser, is_active: false } : currentUser));
     } catch (requestError) {
-      setFormError(requestError instanceof Error ? requestError.message : "No se pudo desactivar el usuario.");
+      setFormError(requestError instanceof Error ? requestError.message : "Could not deactivate the user.");
     }
   }
 

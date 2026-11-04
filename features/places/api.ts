@@ -17,8 +17,15 @@ export type PlaceInput = {
   is_active: boolean;
 };
 
+export type PlaceWithZone = { place: Place; zone: { id: string; name: string } | null };
+
+/** Every place with the zone it belongs to. */
+export function listPlacesWithZone() {
+  return request<PlaceWithZone[] | null>("/places").then((items) => items ?? []);
+}
+
 export function listPlaces() {
-  return request<{ place: Place; zone: { id: string; name: string } | null }[] | null>("/places").then((items) => (items ?? []).map((item) => item.place));
+  return listPlacesWithZone().then((items) => items.map((item) => item.place));
 }
 
 export function createPlace(input: PlaceInput) {

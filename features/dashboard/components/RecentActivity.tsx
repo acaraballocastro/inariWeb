@@ -1,6 +1,7 @@
 import Link from "next/link";
 
-import { formatClock, formatShortDate, toDayKey, type DashboardActivity } from "../api";
+import { toDayKey } from "@/lib/datetime";
+import { formatClock, formatShortDate, type DashboardActivity } from "../api";
 
 export function RecentActivity({ activity, today }: { activity: DashboardActivity[] | null; today: Date | null }) {
   const todayKey = today ? toDayKey(today) : null;
