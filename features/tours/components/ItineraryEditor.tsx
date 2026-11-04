@@ -15,7 +15,7 @@ const stopTypes = ["PLACE", "ACTIVITY", "OTHER"] as const;
 
 type StopDraft = { start_time: string; end_time: string; type: string; place_id: string; activity_id: string; notes: string };
 
-const inputClass = "mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]";
+const inputClass = "mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-body outline-none focus:border-[#b5a786]";
 
 /** `onPlaceCreated` / `onActivityCreated` let the screen add what is created here to its own lists. */
 export function ItineraryEditor({ tourDay, places: givenPlaces, activities: givenActivities, onCountChange, onPlaceCreated, onActivityCreated, readOnly = false }: { tourDay: TourDay; places: ItineraryPlace[]; activities: ItineraryActivity[]; onCountChange?: (count: number) => void; onPlaceCreated?: (place: ItineraryPlace) => void; onActivityCreated?: (activity: ItineraryActivity) => void; readOnly?: boolean }) {
@@ -133,28 +133,28 @@ export function ItineraryEditor({ tourDay, places: givenPlaces, activities: give
 
   const stopForm = (submitLabel: string) => (
     <form onSubmit={handleSubmit} className="grid gap-4 py-4 sm:grid-cols-2">
-      <label className="text-[9px]">Start time *<TimeInput value={draft.start_time} onChange={(start_time) => setDraft({ ...draft, start_time })} disabled={isSaving} className={inputClass} ariaLabel="Start time" /></label>
-      <label className="text-[9px]">End time<TimeInput value={draft.end_time} onChange={(end_time) => setDraft({ ...draft, end_time })} disabled={isSaving} className={inputClass} ariaLabel="End time" /></label>
-      <label className="text-[9px]">Type<Select value={draft.type} onChange={(type) => setDraft({ ...draft, type })} options={stopTypes.map((type) => ({ value: type, label: formatType(type) }))} disabled={isSaving} className={inputClass} ariaLabel="Type" /></label>
-      {draft.type === "PLACE" && <label className="text-[9px]">Place *<Combobox value={draft.place_id} options={placeOptions} onChange={(placeId) => setDraft({ ...draft, place_id: placeId })} onCreate={addPlace} noun="place" placeholder="Search or create a place..." disabled={isSaving} inputClass={inputClass} /></label>}
-      {draft.type === "ACTIVITY" && <label className="text-[9px]">Activity *<Combobox value={draft.activity_id} options={activityOptions} onChange={(activityId) => setDraft({ ...draft, activity_id: activityId })} onCreate={addActivity} noun="activity" placeholder="Search or create an activity..." disabled={isSaving} inputClass={inputClass} /></label>}
-      <label className="text-[9px] sm:col-span-2">Notes<textarea value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} placeholder="What happens at this stop..." className="mt-2 min-h-16 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 py-2 text-[10px] outline-none focus:border-[#b5a786]" /></label>
-      <div className="flex gap-2 sm:col-span-2"><button type="submit" disabled={isSaving} className="h-9 bg-[#292b26] px-4 text-[9px] text-white hover:bg-[#41443b] disabled:opacity-60">{isSaving ? "Saving..." : submitLabel}</button><button type="button" onClick={() => setEditingId(null)} disabled={isSaving} className="h-9 border border-[#deddd6] px-4 text-[9px] hover:bg-[#f8f7f3] disabled:opacity-50">Cancel</button></div>
+      <label className="text-meta">Start time *<TimeInput value={draft.start_time} onChange={(start_time) => setDraft({ ...draft, start_time })} disabled={isSaving} className={inputClass} ariaLabel="Start time" /></label>
+      <label className="text-meta">End time<TimeInput value={draft.end_time} onChange={(end_time) => setDraft({ ...draft, end_time })} disabled={isSaving} className={inputClass} ariaLabel="End time" /></label>
+      <label className="text-meta">Type<Select value={draft.type} onChange={(type) => setDraft({ ...draft, type })} options={stopTypes.map((type) => ({ value: type, label: formatType(type) }))} disabled={isSaving} className={inputClass} ariaLabel="Type" /></label>
+      {draft.type === "PLACE" && <label className="text-meta">Place *<Combobox value={draft.place_id} options={placeOptions} onChange={(placeId) => setDraft({ ...draft, place_id: placeId })} onCreate={addPlace} noun="place" placeholder="Search or create a place..." disabled={isSaving} inputClass={inputClass} /></label>}
+      {draft.type === "ACTIVITY" && <label className="text-meta">Activity *<Combobox value={draft.activity_id} options={activityOptions} onChange={(activityId) => setDraft({ ...draft, activity_id: activityId })} onCreate={addActivity} noun="activity" placeholder="Search or create an activity..." disabled={isSaving} inputClass={inputClass} /></label>}
+      <label className="text-meta sm:col-span-2">Notes<textarea value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} placeholder="What happens at this stop..." className="mt-2 min-h-16 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 py-2 text-body outline-none focus:border-[#b5a786]" /></label>
+      <div className="flex gap-2 sm:col-span-2"><button type="submit" disabled={isSaving} className="h-9 bg-[#292b26] px-4 text-meta text-white hover:bg-[#41443b] disabled:opacity-60">{isSaving ? "Saving..." : submitLabel}</button><button type="button" onClick={() => setEditingId(null)} disabled={isSaving} className="h-9 border border-[#deddd6] px-4 text-meta hover:bg-[#f8f7f3] disabled:opacity-50">Cancel</button></div>
     </form>
   );
 
   return (
     <div>
-      {error && <p role="alert" className="mt-4 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-[10px] text-[#9b6f37]">{error}</p>}
-      {isLoading && <p className="mt-5 text-[10px] text-[#85867c]">Loading itinerary...</p>}
-      {!isLoading && items.length === 0 && editingId !== "new" && <p className="mt-5 text-[10px] text-[#85867c]">No itinerary items yet.</p>}
+      {error && <p role="alert" className="mt-4 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-body text-[#9b6f37]">{error}</p>}
+      {isLoading && <p className="mt-5 text-body text-[#85867c]">Loading itinerary...</p>}
+      {!isLoading && items.length === 0 && editingId !== "new" && <p className="mt-5 text-body text-[#85867c]">No itinerary items yet.</p>}
       <div className="mt-5 divide-y divide-[#ecebe5]">
         {items.map((item, index) => editingId === item.id ? <div key={item.id}>{stopForm("Save stop")}</div> : (
           <article key={item.id} className="grid gap-3 py-4 sm:grid-cols-[72px_20px_minmax(0,1fr)_auto]">
-            <span className="text-[10px] text-[#9b8353]">{formatClock(item.start_time)}{item.end_time ? ` – ${formatClock(item.end_time)}` : ""}</span>
+            <span className="text-body text-[#9b8353]">{formatClock(item.start_time)}{item.end_time ? ` – ${formatClock(item.end_time)}` : ""}</span>
             <span className="relative mt-1 flex h-3 w-3 items-center justify-center rounded-full border border-[#b5a786]" aria-hidden="true" />
-            <div className="min-w-0"><h3 className="text-[11px]">{describeStop(item)}</h3><p className="mt-1 text-[9px] text-[#9b8353]">{item.type ? formatType(item.type) : "Stop"}</p>{item.notes && <p className="mt-2 text-[10px] leading-relaxed text-[#85867c]">{item.notes}</p>}</div>
-            {!readOnly && <div className="flex items-start gap-1 text-[9px]">
+            <div className="min-w-0"><h3 className="text-lead">{describeStop(item)}</h3><p className="mt-1 text-meta text-[#9b8353]">{item.type ? formatType(item.type) : "Stop"}</p>{item.notes && <p className="mt-2 text-body leading-relaxed text-[#85867c]">{item.notes}</p>}</div>
+            {!readOnly && <div className="flex items-start gap-1 text-meta">
               <button type="button" aria-label="Move up" disabled={isSaving || editingId !== null || index === 0} onClick={() => handleMove(index, -1)} className="h-8 w-8 border border-[#deddd6] hover:bg-[#f8f7f3] disabled:opacity-40">↑</button>
               <button type="button" aria-label="Move down" disabled={isSaving || editingId !== null || index === items.length - 1} onClick={() => handleMove(index, 1)} className="h-8 w-8 border border-[#deddd6] hover:bg-[#f8f7f3] disabled:opacity-40">↓</button>
               <button type="button" disabled={isSaving || editingId !== null} onClick={() => { setError(""); setEditingId(item.id); setDraft(toStopDraft(item)); }} className="h-8 border border-[#deddd6] px-3 hover:bg-[#f8f7f3] disabled:opacity-40">Edit</button>
@@ -164,7 +164,7 @@ export function ItineraryEditor({ tourDay, places: givenPlaces, activities: give
         ))}
         {editingId === "new" && stopForm("Add stop")}
       </div>
-      {!readOnly && editingId === null && !isLoading && <button type="button" onClick={startCreating} className="mt-4 h-9 border border-[#deddd6] px-3 text-[9px] hover:bg-[#f8f7f3]">+ Add stop</button>}
+      {!readOnly && editingId === null && !isLoading && <button type="button" onClick={startCreating} className="mt-4 h-9 border border-[#deddd6] px-3 text-meta hover:bg-[#f8f7f3]">+ Add stop</button>}
     </div>
   );
 }

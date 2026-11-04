@@ -97,9 +97,9 @@ export function AssignmentsScreen() {
           <DashboardHeader breadcrumb="Workspace / Assignments" />
           <div className="px-5 pb-10 sm:px-8 lg:px-10"><div className="mx-auto max-w-[1190px]">
             <header className="border-b border-[#deddd6] pb-6 pt-8 sm:pt-10">
-              <p className="text-[9px] font-semibold tracking-[0.2em] text-[#9b8353]">OPERATIONS / ASSIGNMENTS</p>
+              <p className="text-meta font-semibold tracking-[0.2em] text-[#9b8353]">OPERATIONS / ASSIGNMENTS</p>
               <h1 className="mt-3 font-serif text-3xl tracking-[-0.04em] sm:text-[36px]">Assignments</h1>
-              <p className="mt-2 max-w-[600px] text-[11px] text-[#85867c]">Upcoming days without a guide and preassignments awaiting an answer. Select several days to assign them at once: the guide&apos;s blocked dates and daily limit are checked for all of them before any changes.</p>
+              <p className="mt-2 max-w-[600px] text-lead text-[#85867c]">Upcoming days without a guide and preassignments awaiting an answer. Select several days to assign them at once: the guide&apos;s blocked dates and daily limit are checked for all of them before any changes.</p>
             </header>
 
             <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
@@ -107,33 +107,33 @@ export function AssignmentsScreen() {
                 <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#ecebe5] pb-5">
                   <div className="flex gap-2">
                     {(["unassigned", "awaiting"] as View[]).map((option) => (
-                      <button key={option} type="button" onClick={() => { setView(option); setSelected(new Set()); }} className={`h-8 px-3 text-[9px] ${view === option ? "bg-[#292b26] text-white" : "border border-[#deddd6] text-[#66685f] hover:bg-[#f8f7f3]"}`}>
+                      <button key={option} type="button" onClick={() => { setView(option); setSelected(new Set()); }} className={`h-8 px-3 text-meta ${view === option ? "bg-[#292b26] text-white" : "border border-[#deddd6] text-[#66685f] hover:bg-[#f8f7f3]"}`}>
                         {option === "unassigned" ? `Without guide (${(days ?? []).filter((day) => !day.guide_id).length})` : `Awaiting answer (${(days ?? []).filter((day) => day.status === "GUIDE_PREASSIGNED").length})`}
                       </button>
                     ))}
                   </div>
-                  <label className="flex items-center gap-2 text-[9px]">Zone<span className="w-44"><Select value={zoneFilter} onChange={setZoneFilter} options={[{ value: "", label: "All zones" }, ...zones.map((zone) => ({ value: zone.id, label: zone.name }))]} className="h-8 w-full border border-[#e3e1da] bg-[#f8f7f3] px-2 text-[9px] outline-none focus:border-[#b5a786]" ariaLabel="Zone" /></span></label>
+                  <label className="flex items-center gap-2 text-meta">Zone<span className="w-44"><Select value={zoneFilter} onChange={setZoneFilter} options={[{ value: "", label: "All zones" }, ...zones.map((zone) => ({ value: zone.id, label: zone.name }))]} className="h-8 w-full border border-[#e3e1da] bg-[#f8f7f3] px-2 text-meta outline-none focus:border-[#b5a786]" ariaLabel="Zone" /></span></label>
                 </div>
 
-                {error && <p role="alert" className="mt-4 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-[10px] text-[#9b6f37]">{error}</p>}
+                {error && <p role="alert" className="mt-4 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-body text-[#9b6f37]">{error}</p>}
                 <MissingDataNotice missing={missing} className="mt-4" />
-                {notice && <p className="mt-4 bg-[#eef0e9] p-3 text-[10px] text-[#68705d]">{notice}</p>}
-                {!days && !error && <p className="mt-5 text-[10px] text-[#85867c]">Loading tour days...</p>}
-                {days && groups.length === 0 && <p className="mt-5 text-[10px] text-[#85867c]">{view === "unassigned" ? "Every upcoming day has a guide." : "No preassignments waiting for an answer."}</p>}
+                {notice && <p className="mt-4 bg-[#eef0e9] p-3 text-body text-[#68705d]">{notice}</p>}
+                {!days && !error && <p className="mt-5 text-body text-[#85867c]">Loading tour days...</p>}
+                {days && groups.length === 0 && <p className="mt-5 text-body text-[#85867c]">{view === "unassigned" ? "Every upcoming day has a guide." : "No preassignments waiting for an answer."}</p>}
 
                 {groups.map(([date, items]) => (
                   <div key={date} className="mt-5">
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#9b8353]">{formatJst(items[0].start_datetime, { weekday: "long", day: "numeric", month: "long" })}</p>
+                    <p className="text-label font-semibold uppercase tracking-[0.18em] text-[#9b8353]">{formatJst(items[0].start_datetime, { weekday: "long", day: "numeric", month: "long" })}</p>
                     <div className="mt-2 divide-y divide-[#f0efe9] border-y border-[#f0efe9]">
                       {items.map((day) => (
                         <label key={day.id} className="grid cursor-pointer grid-cols-[20px_minmax(0,1fr)_auto] items-start gap-3 py-3 hover:bg-[#fbfaf7]">
                           <input type="checkbox" checked={selected.has(day.id)} onChange={() => toggle(day.id)} className="mt-0.5" />
                           <div className="min-w-0">
-                            <Link href={`/tours/${day.id}`} onClick={(event) => event.stopPropagation()} className="text-[10px] hover:underline">{day.title || day.code || "Tour day"}</Link>
-                            <p className="mt-1 text-[8px] text-[#85867c]">{[day.code, formatJstClock(day.start_datetime), formatDuration(day.duration), zoneName(day.zone_id) ?? "No zone", day.people_count ? `${day.people_count} guests` : null].filter(Boolean).join(" · ")}</p>
-                            {day.status === "GUIDE_PREASSIGNED" && <p className="mt-1 text-[8px] text-[#9b8353]">Preassigned to {guideName(day.guide_id)}</p>}
+                            <Link href={`/tours/${day.id}`} onClick={(event) => event.stopPropagation()} className="text-body hover:underline">{day.title || day.code || "Tour day"}</Link>
+                            <p className="mt-1 text-label text-[#85867c]">{[day.code, formatJstClock(day.start_datetime), formatDuration(day.duration), zoneName(day.zone_id) ?? "No zone", day.people_count ? `${day.people_count} guests` : null].filter(Boolean).join(" · ")}</p>
+                            {day.status === "GUIDE_PREASSIGNED" && <p className="mt-1 text-label text-[#9b8353]">Preassigned to {guideName(day.guide_id)}</p>}
                           </div>
-                          <span className="bg-[#ebe7da] px-2 py-1 text-[8px] text-[#77786f]">{formatStatus(day.status)}</span>
+                          <span className="bg-[#ebe7da] px-2 py-1 text-label text-[#77786f]">{formatStatus(day.status)}</span>
                         </label>
                       ))}
                     </div>
@@ -143,11 +143,11 @@ export function AssignmentsScreen() {
 
               <aside className="h-fit bg-white p-5 sm:p-6 xl:sticky xl:top-5">
                 <h2 className="font-serif text-xl">Assign</h2>
-                <p className="mt-2 text-[10px] text-[#85867c]">{selectedDays.length ? `${selectedDays.length} day${selectedDays.length === 1 ? "" : "s"} selected` : "Select days on the left."}</p>
-                <label className="mt-4 block text-[9px]">Guide<Combobox value={guideId} onChange={setGuideId} options={sortedGuides.map((item) => ({ id: item.guide.id, label: item.guide.name, detail: item.zones.map((zone) => zone.name).join(", ") || null }))} noun="guide" placeholder="Search a guide..." disabled={isSaving} inputClass="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]" /></label>
-                <button type="button" disabled={isSaving || !guideId || selectedDays.length === 0} onClick={handleAssign} className="mt-3 h-9 w-full bg-[#292b26] text-[9px] text-white hover:bg-[#41443b] disabled:opacity-50">{isSaving ? "Assigning..." : "Assign guide"}</button>
-                {selectedDays.length > 0 && <button type="button" onClick={() => setSelected(new Set())} className="mt-2 text-[9px] underline underline-offset-2">Clear selection</button>}
-                <p className="mt-4 text-[8px] leading-relaxed text-[#85867c]">Pending days become preassigned and the guide has 24 hours to answer. Paid days keep their status with the new guide.</p>
+                <p className="mt-2 text-body text-[#85867c]">{selectedDays.length ? `${selectedDays.length} day${selectedDays.length === 1 ? "" : "s"} selected` : "Select days on the left."}</p>
+                <label className="mt-4 block text-meta">Guide<Combobox value={guideId} onChange={setGuideId} options={sortedGuides.map((item) => ({ id: item.guide.id, label: item.guide.name, detail: item.zones.map((zone) => zone.name).join(", ") || null }))} noun="guide" placeholder="Search a guide..." disabled={isSaving} inputClass="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-body outline-none focus:border-[#b5a786]" /></label>
+                <button type="button" disabled={isSaving || !guideId || selectedDays.length === 0} onClick={handleAssign} className="mt-3 h-9 w-full bg-[#292b26] text-meta text-white hover:bg-[#41443b] disabled:opacity-50">{isSaving ? "Assigning..." : "Assign guide"}</button>
+                {selectedDays.length > 0 && <button type="button" onClick={() => setSelected(new Set())} className="mt-2 text-meta underline underline-offset-2">Clear selection</button>}
+                <p className="mt-4 text-label leading-relaxed text-[#85867c]">Pending days become preassigned and the guide has 24 hours to answer. Paid days keep their status with the new guide.</p>
               </aside>
             </div>
           </div></div>

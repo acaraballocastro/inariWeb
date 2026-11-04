@@ -140,18 +140,18 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
           <div className="px-5 pb-10 sm:px-8 lg:px-10">
             <div className="mx-auto max-w-[1190px]">
               <header className="pb-6 pt-8 sm:pt-10">
-                <Link href={backLink.href} className="inline-flex bg-[#e9e5d7] px-3 py-2 text-[9px] text-[#5d5e55] transition-colors hover:bg-[#ded8c7]">← {backLink.label}</Link>
-                {error && <p role="alert" className="mt-6 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-[10px] text-[#9b6f37]">{error}<button type="button" onClick={() => setError("")} className="ml-3 underline">Dismiss</button></p>}
+                <Link href={backLink.href} className="inline-flex bg-[#e9e5d7] px-3 py-2 text-meta text-[#5d5e55] transition-colors hover:bg-[#ded8c7]">← {backLink.label}</Link>
+                {error && <p role="alert" className="mt-6 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-body text-[#9b6f37]">{error}<button type="button" onClick={() => setError("")} className="ml-3 underline">Dismiss</button></p>}
                 {context && <MissingDataNotice missing={context.missing} className="mt-6" />}
-                {!context && !error && <p className="mt-6 text-[10px] text-[#85867c]">Loading tour day...</p>}
+                {!context && !error && <p className="mt-6 text-body text-[#85867c]">Loading tour day...</p>}
                 {tourDay && (
                   <div className="mt-6 flex flex-wrap items-start justify-between gap-5">
                     <div>
-                      <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#9b8353]">TOUR DAY / {formatLongDate(tourDay.start_datetime)}</p>
+                      <p className="text-meta font-semibold uppercase tracking-[0.2em] text-[#9b8353]">TOUR DAY / {formatLongDate(tourDay.start_datetime)}</p>
                       <h1 className="mt-3 font-serif text-3xl tracking-[-0.04em] sm:text-[38px]">{tourDay.title || "Untitled tour day"}</h1>
-                      <p className="mt-2 text-[11px] text-[#85867c]">{context.reservation?.title ? `Part of ${context.reservation.title}.` : "Operational day linked to a reservation."}</p>
+                      <p className="mt-2 text-lead text-[#85867c]">{context.reservation?.title ? `Part of ${context.reservation.title}.` : "Operational day linked to a reservation."}</p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-[9px]">
+                    <div className="flex flex-wrap items-center gap-2 text-meta">
                       <span className="bg-[#e9e5d7] px-3 py-2 text-[#77786f]">{formatStatus(tourDay.status)}</span>
                       <span className="border border-[#deddd6] px-3 py-2 text-[#85867c]">{tourDay.code || tourDay.id.slice(0, 8)}</span>
                       {tourDay.status === "GUIDE_PREASSIGNED" && <button type="button" disabled={isSaving} onClick={() => runAction(() => confirmTourDay(tourDay.id), "Could not confirm the tour day.")} className="h-8 bg-[#292b26] px-3 text-white hover:bg-[#41443b] disabled:opacity-60">{admin ? "Confirm guide" : "Accept tour"}</button>}
@@ -192,8 +192,8 @@ function TourOverview({ context, onZoneCreated, canEdit, isEditing, draft, isSav
   return (
     <section className="bg-white p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#ecebe5] pb-5">
-        <div><h2 className="font-serif text-xl">Tour overview</h2><p className="mt-2 text-[10px] text-[#85867c]">The operational details for this experience.</p></div>
-        {canEdit && !isEditing && <button type="button" onClick={onEdit} className="h-9 border border-[#deddd6] px-3 text-[9px] hover:bg-[#f8f7f3]">Edit</button>}
+        <div><h2 className="font-serif text-xl">Tour overview</h2><p className="mt-2 text-body text-[#85867c]">The operational details for this experience.</p></div>
+        {canEdit && !isEditing && <button type="button" onClick={onEdit} className="h-9 border border-[#deddd6] px-3 text-meta hover:bg-[#f8f7f3]">Edit</button>}
       </div>
       {isEditing ? <TourDayForm draft={draft} zones={zones} onChange={onChange} onZoneCreated={onZoneCreated} onSubmit={onSave} onCancel={onCancel} isSaving={isSaving} submitLabel="Save changes" /> : (
         <div className="grid gap-x-8 gap-y-5 pt-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -227,23 +227,23 @@ function AssignmentPanel({ tourDay, guides, disabled, onAssign, onUnassign }: { 
         <>
           <div className="mt-5 flex items-center gap-3 border-b border-[#ecebe5] pb-5">
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e9e5d7] font-serif text-lg">{initials(assigned?.guide.name ?? "?")}</span>
-            <div className="min-w-0"><p className="text-[11px]">{assigned ? <Link href={`/guides/${assigned.guide.id}`} className="hover:underline">{assigned.guide.name}</Link> : tourDay.guide_id}</p><p className="mt-1 text-[9px] text-[#85867c]">{assigned ? describeGuide(assigned) : "Guide details unavailable"}</p></div>
+            <div className="min-w-0"><p className="text-lead">{assigned ? <Link href={`/guides/${assigned.guide.id}`} className="hover:underline">{assigned.guide.name}</Link> : tourDay.guide_id}</p><p className="mt-1 text-meta text-[#85867c]">{assigned ? describeGuide(assigned) : "Guide details unavailable"}</p></div>
           </div>
-          <div className="mt-4 flex items-center justify-between text-[9px]"><span className="text-[#85867c]">Assignment status</span><span className="bg-[#e9e5d7] px-3 py-1 text-[#77786f]">{formatStatus(tourDay.status)}</span></div>
+          <div className="mt-4 flex items-center justify-between text-meta"><span className="text-[#85867c]">Assignment status</span><span className="bg-[#e9e5d7] px-3 py-1 text-[#77786f]">{formatStatus(tourDay.status)}</span></div>
           {canChangeGuide(tourDay.status) && (
             <>
-              <label className="mt-5 block text-[9px]">Change guide<Combobox value={selectedGuideId} onChange={setSelectedGuideId} options={guides.filter((item) => item.guide.id !== tourDay.guide_id).map(guideOption)} noun="guide" placeholder="Search another guide..." disabled={disabled} inputClass="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]" /></label>
-              {isPaid(tourDay.status) && <p className="mt-2 text-[8px] text-[#85867c]">The day is already paid: it keeps its status with the new guide.</p>}
-              <button type="button" disabled={disabled || !selectedGuideId} onClick={() => { onAssign(selectedGuideId); setSelectedGuideId(""); }} className="mt-3 h-9 w-full bg-[#292b26] text-[9px] text-white hover:bg-[#41443b] disabled:opacity-50">Change guide</button>
+              <label className="mt-5 block text-meta">Change guide<Combobox value={selectedGuideId} onChange={setSelectedGuideId} options={guides.filter((item) => item.guide.id !== tourDay.guide_id).map(guideOption)} noun="guide" placeholder="Search another guide..." disabled={disabled} inputClass="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-body outline-none focus:border-[#b5a786]" /></label>
+              {isPaid(tourDay.status) && <p className="mt-2 text-label text-[#85867c]">The day is already paid: it keeps its status with the new guide.</p>}
+              <button type="button" disabled={disabled || !selectedGuideId} onClick={() => { onAssign(selectedGuideId); setSelectedGuideId(""); }} className="mt-3 h-9 w-full bg-[#292b26] text-meta text-white hover:bg-[#41443b] disabled:opacity-50">Change guide</button>
             </>
           )}
-          {canUnassign(tourDay.status) && <button type="button" disabled={disabled} onClick={() => tourDay.guide_id && onUnassign(tourDay.guide_id)} className="mt-3 h-9 w-full border border-[#deddd6] text-[9px] hover:bg-[#f8f7f3] disabled:opacity-50">Unassign guide</button>}
+          {canUnassign(tourDay.status) && <button type="button" disabled={disabled} onClick={() => tourDay.guide_id && onUnassign(tourDay.guide_id)} className="mt-3 h-9 w-full border border-[#deddd6] text-meta hover:bg-[#f8f7f3] disabled:opacity-50">Unassign guide</button>}
         </>
       ) : (
         <>
-          <p className="mt-4 text-[10px] text-[#85867c]">{isPaid(tourDay.status) ? "No guide: the day is paid and needs one (it keeps its status)." : "No guide assigned yet."}</p>
-          <label className="mt-4 block text-[9px]">Guide<Combobox value={selectedGuideId} onChange={setSelectedGuideId} options={guides.map(guideOption)} noun="guide" placeholder="Search a guide..." disabled={disabled} inputClass="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]" /></label>
-          <button type="button" disabled={disabled || !selectedGuideId} onClick={() => onAssign(selectedGuideId)} className="mt-3 h-9 w-full bg-[#292b26] text-[9px] text-white hover:bg-[#41443b] disabled:opacity-50">Assign guide</button>
+          <p className="mt-4 text-body text-[#85867c]">{isPaid(tourDay.status) ? "No guide: the day is paid and needs one (it keeps its status)." : "No guide assigned yet."}</p>
+          <label className="mt-4 block text-meta">Guide<Combobox value={selectedGuideId} onChange={setSelectedGuideId} options={guides.map(guideOption)} noun="guide" placeholder="Search a guide..." disabled={disabled} inputClass="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-body outline-none focus:border-[#b5a786]" /></label>
+          <button type="button" disabled={disabled || !selectedGuideId} onClick={() => onAssign(selectedGuideId)} className="mt-3 h-9 w-full bg-[#292b26] text-meta text-white hover:bg-[#41443b] disabled:opacity-50">Assign guide</button>
         </>
       )}
     </section>
@@ -258,9 +258,9 @@ function GuideAssignmentNote({ tourDay }: { tourDay: TourDay }) {
       : "You are the guide for this tour. Report anything unusual as an incident.";
   return (
     <section className="bg-[#e9e5d7] p-5 sm:p-6">
-      <p className="text-[8px] font-semibold tracking-[0.2em] text-[#9b8353]">YOUR ASSIGNMENT</p>
+      <p className="text-label font-semibold tracking-[0.2em] text-[#9b8353]">YOUR ASSIGNMENT</p>
       <p className="mt-3 font-serif text-xl">{formatStatus(tourDay.status)}</p>
-      <p className="mt-3 text-[10px] leading-relaxed text-[#5d5e55]">{note}</p>
+      <p className="mt-3 text-body leading-relaxed text-[#5d5e55]">{note}</p>
     </section>
   );
 }
@@ -269,7 +269,7 @@ function ItineraryPanel({ tourDay, places, activities, onPlaceCreated, onActivit
   const [stopCount, setStopCount] = useState(0);
   return (
     <section className="bg-white p-5 sm:p-6">
-      <div className="flex items-start justify-between gap-4"><div><h2 className="font-serif text-xl">Day itinerary</h2><p className="mt-2 text-[10px] text-[#85867c]">A considered route, arranged from morning to afternoon.</p></div><span className="text-[9px] text-[#9b8353]">{stopCount} STOPS</span></div>
+      <div className="flex items-start justify-between gap-4"><div><h2 className="font-serif text-xl">Day itinerary</h2><p className="mt-2 text-body text-[#85867c]">A considered route, arranged from morning to afternoon.</p></div><span className="text-meta text-[#9b8353]">{stopCount} STOPS</span></div>
       <ItineraryEditor tourDay={tourDay} places={places} activities={activities} onCountChange={setStopCount} onPlaceCreated={onPlaceCreated} onActivityCreated={onActivityCreated} readOnly={readOnly} />
     </section>
   );
@@ -290,11 +290,11 @@ function TourResources({ tourDay }: { tourDay: TourDay }) {
 }
 
 function Info({ label, value }: { label: string; value: ReactNode }) {
-  return <div><p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#9b8353]">{label}</p><p className="mt-2 break-words text-[10px] text-[#55574f]">{value}</p></div>;
+  return <div><p className="text-label font-semibold uppercase tracking-[0.18em] text-[#9b8353]">{label}</p><p className="mt-2 break-words text-body text-[#55574f]">{value}</p></div>;
 }
 
 function Resource({ label, value }: { label: string; value: string }) {
-  return <div className="border-b border-[#ecebe5] pb-3 last:border-0 last:pb-0"><p className="text-[8px] font-semibold uppercase tracking-[0.18em] text-[#9b8353]">{label}</p><p className="mt-2 whitespace-pre-line text-[10px] text-[#85867c]">{value}</p></div>;
+  return <div className="border-b border-[#ecebe5] pb-3 last:border-0 last:pb-0"><p className="text-label font-semibold uppercase tracking-[0.18em] text-[#9b8353]">{label}</p><p className="mt-2 whitespace-pre-line text-body text-[#85867c]">{value}</p></div>;
 }
 
 function describeGuide(detail: GuideDetail) {

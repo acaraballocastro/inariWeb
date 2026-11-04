@@ -137,12 +137,12 @@ export function Combobox({ value, options, onChange, onCreate, noun, placeholder
         className={`${inputClass} ${showClear ? "pr-8" : ""}`}
       />
       {showClear && (
-        <button type="button" aria-label={`Clear the ${noun}`} onMouseDown={(event) => event.preventDefault()} onClick={() => { pick(""); inputRef.current?.focus(); }} className="absolute bottom-0 right-0 flex h-9 w-8 items-center justify-center text-[11px] text-[#96968b] hover:text-[#292b26]">×</button>
+        <button type="button" aria-label={`Clear the ${noun}`} onMouseDown={(event) => event.preventDefault()} onClick={() => { pick(""); inputRef.current?.focus(); }} className="absolute bottom-0 right-0 flex h-9 w-8 items-center justify-center text-lead text-[#96968b] hover:text-[#292b26]">×</button>
       )}
       </div>
       {isOpen && (
         <ul id={listId} role="listbox" className="absolute z-30 mt-1 max-h-56 w-full overflow-y-auto border border-[#deddd6] bg-[#fffefa] py-1 shadow-[0_8px_18px_rgba(42,43,38,0.08)]">
-          {rows.length === 0 && <li className="px-3 py-2 text-[9px] text-[#96968b]">{typed.trim() ? `No ${noun} matches “${typed.trim()}”.` : `No ${plural} yet.`}</li>}
+          {rows.length === 0 && <li className="px-3 py-2 text-meta text-[#96968b]">{typed.trim() ? `No ${noun} matches “${typed.trim()}”.` : `No ${plural} yet.`}</li>}
           {rows.map((row, index) => (
             <li
               key={row.kind === "option" ? row.option.id : "create"}
@@ -153,12 +153,12 @@ export function Combobox({ value, options, onChange, onCreate, noun, placeholder
               onMouseDown={(event) => event.preventDefault()}
               onMouseEnter={() => setActive(index)}
               onClick={() => choose(row)}
-              className={`cursor-pointer px-3 py-2 text-[10px] ${index === active ? "bg-[#f1ede2]" : ""} ${row.kind === "create" ? "border-t border-[#ecebe5] text-[#9b8353]" : "text-[#292b26]"}`}
+              className={`cursor-pointer px-3 py-2 text-body ${index === active ? "bg-[#f1ede2]" : ""} ${row.kind === "create" ? "border-t border-[#ecebe5] text-[#9b8353]" : "text-[#292b26]"}`}
             >
               {row.kind === "option" ? (
                 <>
-                  <span className="block truncate">{row.option.label}{row.option.id === value && <span className="ml-2 text-[8px] text-[#9b8353]">Selected</span>}</span>
-                  {row.option.detail && <span className="mt-0.5 block truncate text-[8px] text-[#85867c]">{row.option.detail}</span>}
+                  <span className="block truncate">{row.option.label}{row.option.id === value && <span className="ml-2 text-label text-[#9b8353]">Selected</span>}</span>
+                  {row.option.detail && <span className="mt-0.5 block truncate text-label text-[#85867c]">{row.option.detail}</span>}
                 </>
               ) : (
                 <span className="block truncate">{isCreating ? `Creating ${noun}…` : `+ Create ${noun} “${row.name}”`}</span>
@@ -167,7 +167,7 @@ export function Combobox({ value, options, onChange, onCreate, noun, placeholder
           ))}
         </ul>
       )}
-      {error && <p role="alert" className="mt-1 text-[9px] text-[#9b6f37]">{error}</p>}
+      {error && <p role="alert" className="mt-1 text-meta text-[#9b6f37]">{error}</p>}
     </div>
   );
 }

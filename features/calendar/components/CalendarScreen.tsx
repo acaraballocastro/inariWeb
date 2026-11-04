@@ -63,14 +63,14 @@ export function CalendarScreen() {
           <div className="px-5 pb-10 sm:px-8 lg:px-10">
             <div className="mx-auto max-w-[1190px]">
               <header className="pb-6 pt-8 sm:pt-10">
-                <p className="text-[9px] font-semibold tracking-[0.2em] text-[#9b8353]">OPERATIONS / PLANNING</p>
+                <p className="text-meta font-semibold tracking-[0.2em] text-[#9b8353]">OPERATIONS / PLANNING</p>
                 <h1 className="mt-3 font-serif text-3xl tracking-[-0.04em] sm:text-[36px]">Calendar</h1>
-                <p className="mt-2 text-[11px] text-[#85867c]">Keep every journey moving with a clear view of the season ahead.</p>
+                <p className="mt-2 text-lead text-[#85867c]">Keep every journey moving with a clear view of the season ahead.</p>
               </header>
-              {error && <p role="alert" className="mb-5 bg-[#f4e4df] px-4 py-3 text-[10px] text-[#8a3b2c]">{error}</p>}
+              {error && <p role="alert" className="mb-5 bg-[#f4e4df] px-4 py-3 text-body text-[#8a3b2c]">{error}</p>}
               <MissingDataNotice missing={missing} className="mb-5" />
               <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_260px]">
-                {month ? <OperationsCalendar month={month} days={days} today={today} guideName={guideName} zoneName={zoneName} onMonthChange={(next) => { setDays(null); setMonth(next); }} /> : <section className="bg-white p-5 text-[10px] text-[#85867c] sm:p-6">Loading calendar…</section>}
+                {month ? <OperationsCalendar month={month} days={days} today={today} guideName={guideName} zoneName={zoneName} onMonthChange={(next) => { setDays(null); setMonth(next); }} /> : <section className="bg-white p-5 text-body text-[#85867c] sm:p-6">Loading calendar…</section>}
                 <CalendarSummary days={days} today={today} guideName={guideName} />
               </div>
             </div>
@@ -89,18 +89,18 @@ function CalendarSummary({ days, today, guideName }: { days: TourDay[] | null; t
   return (
     <aside className="space-y-5">
       <section className="bg-white p-5 sm:p-6">
-        <p className="text-[8px] font-semibold tracking-[0.2em] text-[#9b8353]">TODAY{today ? ` · ${formatJst(`${today}T00:00:00+09:00`, { day: "numeric", month: "short" }).toUpperCase()}` : ""}</p>
+        <p className="text-label font-semibold tracking-[0.2em] text-[#9b8353]">TODAY{today ? ` · ${formatJst(`${today}T00:00:00+09:00`, { day: "numeric", month: "short" }).toUpperCase()}` : ""}</p>
         <h2 className="mt-3 font-serif text-xl">Schedule</h2>
         <div className="mt-5 space-y-4">
           {/* Today's days are only listed while the current month is shown. */}
-          {days && todays.length === 0 && <p className="text-[9px] text-[#96968b]">No tours today in this view.</p>}
+          {days && todays.length === 0 && <p className="text-meta text-[#96968b]">No tours today in this view.</p>}
           {todays.map((day) => (
-            <Link key={day.id} href={`/tours/${day.id}`} className="block border-l-2 border-[#b9c8b5] pl-3 hover:bg-[#fbfaf7]"><p className="text-[9px] text-[#9b8353]">{formatJstClock(day.start_datetime)}</p><p className="mt-1 text-[10px]">{day.title || day.code || "Tour day"}</p><p className="mt-1 text-[8px] text-[#85867c]">{[guideName(day.guide_id) ?? "No guide", day.people_count ? `${day.people_count} guests` : null].filter(Boolean).join(" · ")}</p></Link>
+            <Link key={day.id} href={`/tours/${day.id}`} className="block border-l-2 border-[#b9c8b5] pl-3 hover:bg-[#fbfaf7]"><p className="text-meta text-[#9b8353]">{formatJstClock(day.start_datetime)}</p><p className="mt-1 text-body">{day.title || day.code || "Tour day"}</p><p className="mt-1 text-label text-[#85867c]">{[guideName(day.guide_id) ?? "No guide", day.people_count ? `${day.people_count} guests` : null].filter(Boolean).join(" · ")}</p></Link>
           ))}
         </div>
       </section>
       <section className="bg-[#e9e5d7] p-5 sm:p-6">
-        <p className="text-[8px] font-semibold tracking-[0.2em] text-[#9b8353]">THIS MONTH</p>
+        <p className="text-label font-semibold tracking-[0.2em] text-[#9b8353]">THIS MONTH</p>
         <div className="mt-5 space-y-4">
           <SummaryItem label="Scheduled tour days" value={count(active.length)} />
           <SummaryItem label="Without guide" value={count(active.filter((day) => !day.guide_id).length)} />
@@ -113,5 +113,5 @@ function CalendarSummary({ days, today, guideName }: { days: TourDay[] | null; t
 }
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
-  return <div className="flex items-center justify-between border-b border-[#d7d1c1] pb-3 text-[10px] last:border-0 last:pb-0"><span>{label}</span><strong className="font-serif text-lg font-normal">{value}</strong></div>;
+  return <div className="flex items-center justify-between border-b border-[#d7d1c1] pb-3 text-body last:border-0 last:pb-0"><span>{label}</span><strong className="font-serif text-lg font-normal">{value}</strong></div>;
 }

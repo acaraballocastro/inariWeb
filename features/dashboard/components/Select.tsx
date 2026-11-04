@@ -103,7 +103,7 @@ export function Select({ value, onChange, options, disabled = false, className, 
         className={`${className} flex items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:opacity-60`}
       >
         <span className={`truncate ${selected ? "" : "text-[#aaa99f]"}`}>{selected?.label ?? placeholder}</span>
-        <span aria-hidden="true" className={`shrink-0 text-[10px] text-[#9b8353] transition-transform ${isOpen ? "rotate-180" : ""}`}>⌄</span>
+        <span aria-hidden="true" className={`shrink-0 text-body text-[#9b8353] transition-transform ${isOpen ? "rotate-180" : ""}`}>⌄</span>
       </button>
       {isOpen && (
         // Inside a <label>, a click here would otherwise be passed on to the
@@ -111,7 +111,7 @@ export function Select({ value, onChange, options, disabled = false, className, 
         <ul id={listId} role="listbox" onClick={(event) => event.preventDefault()} className="absolute z-30 mt-1 max-h-60 min-w-full overflow-y-auto border border-[#deddd6] bg-[#fffefa] py-1 shadow-[0_8px_18px_rgba(42,43,38,0.08)]">
           {groups.map((group, groupIndex) => (
             <li key={group.label || "options"} role="presentation">
-              {group.label && <p className="px-3 pb-1 pt-2 text-[8px] font-semibold uppercase tracking-[0.16em] text-[#aaa28f]">{group.label}</p>}
+              {group.label && <p className="px-3 pb-1 pt-2 text-label font-semibold uppercase tracking-[0.16em] text-[#aaa28f]">{group.label}</p>}
               <ul role="group" aria-label={group.label || undefined}>
                 {group.options.map((option, position) => {
                   const optionIndex = offsets[groupIndex] + position;
@@ -123,20 +123,20 @@ export function Select({ value, onChange, options, disabled = false, className, 
                       aria-selected={option.value === value}
                       onMouseEnter={() => setActive(optionIndex)}
                       onClick={() => pick(option)}
-                      className={`flex cursor-pointer items-center justify-between gap-3 whitespace-nowrap px-3 py-2 text-[10px] text-[#292b26] ${optionIndex === active ? "bg-[#f1ede2]" : ""}`}
+                      className={`flex cursor-pointer items-center justify-between gap-3 whitespace-nowrap px-3 py-2 text-body text-[#292b26] ${optionIndex === active ? "bg-[#f1ede2]" : ""}`}
                     >
                       <span className="min-w-0">
                         <span className="block truncate">{option.label}</span>
-                        {option.detail && <span className="mt-0.5 block truncate text-[8px] text-[#85867c]">{option.detail}</span>}
+                        {option.detail && <span className="mt-0.5 block truncate text-label text-[#85867c]">{option.detail}</span>}
                       </span>
-                      {option.value === value && <span aria-hidden="true" className="text-[9px] text-[#9b8353]">✓</span>}
+                      {option.value === value && <span aria-hidden="true" className="text-meta text-[#9b8353]">✓</span>}
                     </li>
                   );
                 })}
               </ul>
             </li>
           ))}
-          {flat.length === 0 && <li className="px-3 py-2 text-[9px] text-[#96968b]">Nothing to choose.</li>}
+          {flat.length === 0 && <li className="px-3 py-2 text-meta text-[#96968b]">Nothing to choose.</li>}
         </ul>
       )}
     </div>

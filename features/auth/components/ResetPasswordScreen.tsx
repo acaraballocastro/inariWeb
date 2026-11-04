@@ -45,7 +45,7 @@ export function ResetPasswordScreen({ token }: { token: string }) {
   if (isDone) {
     return (
       <AuthCard eyebrow="SECURITY / RESET" title="Password updated">
-        <p className="mt-3 text-[11px] leading-relaxed text-[#85867c]">You can now sign in with your new password.</p>
+        <p className="mt-3 text-lead leading-relaxed text-[#85867c]">You can now sign in with your new password.</p>
         <Link href="/" className={authButtonClass}>Sign in</Link>
       </AuthCard>
     );
@@ -54,7 +54,7 @@ export function ResetPasswordScreen({ token }: { token: string }) {
   if (isLinkInvalid) {
     return (
       <AuthCard eyebrow="SECURITY / RESET" title="This link no longer works">
-        <p className="mt-3 text-[11px] leading-relaxed text-[#85867c]">Reset links work once and expire after 1 hour. Ask for a new one.</p>
+        <p className="mt-3 text-lead leading-relaxed text-[#85867c]">Reset links work once and expire after 1 hour. Ask for a new one.</p>
         <Link href="/forgot-password" className={authButtonClass}>Send a new link</Link>
         <Link href="/" className={`mt-4 inline-block ${authLinkClass}`}>Back to sign in</Link>
       </AuthCard>
@@ -63,11 +63,11 @@ export function ResetPasswordScreen({ token }: { token: string }) {
 
   return (
     <AuthCard eyebrow="SECURITY / RESET" title="Choose a new password">
-      <p className="mt-3 text-[11px] leading-relaxed text-[#85867c]">At least 8 characters, with an uppercase letter, a lowercase letter, a number and a symbol.</p>
+      <p className="mt-3 text-lead leading-relaxed text-[#85867c]">At least 8 characters, with an uppercase letter, a lowercase letter, a number and a symbol.</p>
       <form onSubmit={handleSubmit} className="mt-6">
-        <label className="block text-[10px] text-[#77796f]">New password<input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className={authInputClass} /></label>
-        <label className="mt-4 block text-[10px] text-[#77796f]">Confirm new password<input type="password" autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} className={authInputClass} /></label>
-        {error && <p role="alert" className="mt-4 text-[10px] leading-relaxed text-[#9b6f37]">{error}</p>}
+        <label className="block text-body text-[#77796f]">New password<input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} className={authInputClass} /></label>
+        <label className="mt-4 block text-body text-[#77796f]">Confirm new password<input type="password" autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} className={authInputClass} /></label>
+        {error && <p role="alert" className="mt-4 text-body leading-relaxed text-[#9b6f37]">{error}</p>}
         <button type="submit" disabled={isSubmitting} className={authButtonClass}>{isSubmitting ? "Updating..." : "Update password"}</button>
       </form>
     </AuthCard>

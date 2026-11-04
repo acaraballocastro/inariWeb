@@ -34,8 +34,8 @@ export function ForgotPasswordScreen() {
   if (isSent) {
     return (
       <AuthCard eyebrow="SECURITY / RESET" title="Check your email">
-        <p className="mt-3 text-[11px] leading-relaxed text-[#85867c]">If <span className="text-[#292b26]">{email.trim()}</span> belongs to an active account, we have sent it a link to choose a new password. The link works once and expires in 1 hour.</p>
-        <p className="mt-3 text-[11px] leading-relaxed text-[#85867c]">Nothing arrived? Check your spam folder or ask your workspace administrator.</p>
+        <p className="mt-3 text-lead leading-relaxed text-[#85867c]">If <span className="text-[#292b26]">{email.trim()}</span> belongs to an active account, we have sent it a link to choose a new password. The link works once and expires in 1 hour.</p>
+        <p className="mt-3 text-lead leading-relaxed text-[#85867c]">Nothing arrived? Check your spam folder or ask your workspace administrator.</p>
         <Link href="/" className={`mt-6 inline-block ${authLinkClass}`}>Back to sign in</Link>
       </AuthCard>
     );
@@ -43,10 +43,10 @@ export function ForgotPasswordScreen() {
 
   return (
     <AuthCard eyebrow="SECURITY / RESET" title="Forgot your password?">
-      <p className="mt-3 text-[11px] leading-relaxed text-[#85867c]">Enter the email of your account and we will send you a link to choose a new one.</p>
+      <p className="mt-3 text-lead leading-relaxed text-[#85867c]">Enter the email of your account and we will send you a link to choose a new one.</p>
       <form onSubmit={handleSubmit} className="mt-6">
-        <label className="block text-[10px] text-[#77796f]">Email<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={authInputClass} /></label>
-        {error && <p role="alert" className="mt-4 text-[10px] leading-relaxed text-[#9b6f37]">{error}</p>}
+        <label className="block text-body text-[#77796f]">Email<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className={authInputClass} /></label>
+        {error && <p role="alert" className="mt-4 text-body leading-relaxed text-[#9b6f37]">{error}</p>}
         <button type="submit" disabled={isSubmitting} className={authButtonClass}>{isSubmitting ? "Sending..." : "Send reset link"}</button>
       </form>
       <Link href="/" className={`mt-4 inline-block ${authLinkClass}`}>Back to sign in</Link>

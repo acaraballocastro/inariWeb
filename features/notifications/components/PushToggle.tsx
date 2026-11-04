@@ -37,10 +37,10 @@ export function PushToggle({ compact = false }: { compact?: boolean }) {
   if (!state) return null;
   const canToggle = state === "on" || state === "off";
   return (
-    <div className={compact ? "text-[9px]" : "text-[10px]"}>
+    <div className={compact ? "text-meta" : "text-body"}>
       <p className="text-[#85867c]">{hints[state]}</p>
       {canToggle && (
-        <button type="button" disabled={isBusy} onClick={toggle} className={`mt-2 h-8 px-3 text-[9px] disabled:opacity-60 ${state === "on" ? "border border-[#deddd6] hover:bg-[#f8f7f3]" : "bg-[#292b26] text-white hover:bg-[#41443b]"}`}>
+        <button type="button" disabled={isBusy} onClick={toggle} className={`mt-2 h-8 px-3 text-meta disabled:opacity-60 ${state === "on" ? "border border-[#deddd6] hover:bg-[#f8f7f3]" : "bg-[#292b26] text-white hover:bg-[#41443b]"}`}>
           {isBusy ? "…" : state === "on" ? "Turn off on this device" : "Enable notifications on this device"}
         </button>
       )}

@@ -60,8 +60,8 @@ export function toTourDayInput(draft: TourDayDraft): { input: TourDayFormInput }
   };
 }
 
-const inputClass = "mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]";
-const textareaClass = "mt-2 min-h-20 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 py-2 text-[10px] outline-none focus:border-[#b5a786]";
+const inputClass = "mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-body outline-none focus:border-[#b5a786]";
+const textareaClass = "mt-2 min-h-20 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 py-2 text-body outline-none focus:border-[#b5a786]";
 
 /** `onZoneCreated` lets the screen add a zone created here to its own list. */
 export function TourDayForm({ draft, zones, onChange, onZoneCreated, onSubmit, onCancel, isSaving, submitLabel }: { draft: TourDayDraft; zones: Zone[]; onChange: (draft: TourDayDraft) => void; onZoneCreated?: (zone: Zone) => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void; onCancel: () => void; isSaving: boolean; submitLabel: string }) {
@@ -73,16 +73,16 @@ export function TourDayForm({ draft, zones, onChange, onZoneCreated, onSubmit, o
   }
   return (
     <form onSubmit={onSubmit} className="mt-5 grid gap-4 sm:grid-cols-2">
-      <label className="text-[9px] sm:col-span-2">Title *<input required value={draft.title} onChange={(event) => onChange({ ...draft, title: event.target.value })} placeholder="e.g. Kyoto's eastern lanes" className={inputClass} /></label>
-      <label className="text-[9px]">Start date and time (JST) *<DateTimeInput value={draft.start_datetime} onChange={(start_datetime) => onChange({ ...draft, start_datetime })} disabled={isSaving} className={inputClass} ariaLabel="Start" /></label>
-      <label className="text-[9px]">Duration<input value={draft.duration} onChange={(event) => onChange({ ...draft, duration: event.target.value })} placeholder="e.g. 6h" className={inputClass} /></label>
-      <label className="text-[9px]">Zone<Combobox value={draft.zone_id} options={zoneOptions} onChange={(zoneId) => onChange({ ...draft, zone_id: zoneId })} onCreate={addZone} noun="zone" placeholder="Search or create a zone..." emptyLabel="No zone assigned" disabled={isSaving} inputClass={inputClass} /></label>
-      <label className="text-[9px]">Guests<input type="number" min="1" step="1" value={draft.people_count} onChange={(event) => onChange({ ...draft, people_count: event.target.value })} className={inputClass} /></label>
-      <label className="text-[9px]">Meeting point<input value={draft.meeting_point} onChange={(event) => onChange({ ...draft, meeting_point: event.target.value })} className={inputClass} /></label>
-      <label className="text-[9px]">Remuneration<input type="number" min="0" step="any" value={draft.remuneration} onChange={(event) => onChange({ ...draft, remuneration: event.target.value })} className={inputClass} /></label>
-      <label className="text-[9px] sm:col-span-2">Guide notes<textarea value={draft.guide_liability_notes} onChange={(event) => onChange({ ...draft, guide_liability_notes: event.target.value })} className={textareaClass} /></label>
-      <label className="text-[9px] sm:col-span-2">Customer notes<textarea value={draft.customer_liability_notes} onChange={(event) => onChange({ ...draft, customer_liability_notes: event.target.value })} className={textareaClass} /></label>
-      <div className="flex gap-2 sm:col-span-2"><button type="submit" disabled={isSaving} className="h-9 bg-[#292b26] px-4 text-[9px] text-white hover:bg-[#41443b] disabled:opacity-60">{isSaving ? "Saving..." : submitLabel}</button><button type="button" onClick={onCancel} disabled={isSaving} className="h-9 border border-[#deddd6] px-4 text-[9px] hover:bg-[#f8f7f3] disabled:opacity-50">Cancel</button></div>
+      <label className="text-meta sm:col-span-2">Title *<input required value={draft.title} onChange={(event) => onChange({ ...draft, title: event.target.value })} placeholder="e.g. Kyoto's eastern lanes" className={inputClass} /></label>
+      <label className="text-meta">Start date and time (JST) *<DateTimeInput value={draft.start_datetime} onChange={(start_datetime) => onChange({ ...draft, start_datetime })} disabled={isSaving} className={inputClass} ariaLabel="Start" /></label>
+      <label className="text-meta">Duration<input value={draft.duration} onChange={(event) => onChange({ ...draft, duration: event.target.value })} placeholder="e.g. 6h" className={inputClass} /></label>
+      <label className="text-meta">Zone<Combobox value={draft.zone_id} options={zoneOptions} onChange={(zoneId) => onChange({ ...draft, zone_id: zoneId })} onCreate={addZone} noun="zone" placeholder="Search or create a zone..." emptyLabel="No zone assigned" disabled={isSaving} inputClass={inputClass} /></label>
+      <label className="text-meta">Guests<input type="number" min="1" step="1" value={draft.people_count} onChange={(event) => onChange({ ...draft, people_count: event.target.value })} className={inputClass} /></label>
+      <label className="text-meta">Meeting point<input value={draft.meeting_point} onChange={(event) => onChange({ ...draft, meeting_point: event.target.value })} className={inputClass} /></label>
+      <label className="text-meta">Remuneration<input type="number" min="0" step="any" value={draft.remuneration} onChange={(event) => onChange({ ...draft, remuneration: event.target.value })} className={inputClass} /></label>
+      <label className="text-meta sm:col-span-2">Guide notes<textarea value={draft.guide_liability_notes} onChange={(event) => onChange({ ...draft, guide_liability_notes: event.target.value })} className={textareaClass} /></label>
+      <label className="text-meta sm:col-span-2">Customer notes<textarea value={draft.customer_liability_notes} onChange={(event) => onChange({ ...draft, customer_liability_notes: event.target.value })} className={textareaClass} /></label>
+      <div className="flex gap-2 sm:col-span-2"><button type="submit" disabled={isSaving} className="h-9 bg-[#292b26] px-4 text-meta text-white hover:bg-[#41443b] disabled:opacity-60">{isSaving ? "Saving..." : submitLabel}</button><button type="button" onClick={onCancel} disabled={isSaving} className="h-9 border border-[#deddd6] px-4 text-meta hover:bg-[#f8f7f3] disabled:opacity-50">Cancel</button></div>
     </form>
   );
 }

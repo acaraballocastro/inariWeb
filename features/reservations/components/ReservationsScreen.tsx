@@ -193,7 +193,7 @@ export function ReservationsScreen() {
   }, []);
 
   const filterInputClass =
-    "mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]";
+    "mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-body outline-none focus:border-[#b5a786]";
 
   return (
     <main className="min-h-dvh bg-[#f1f0ec] text-[#292b26]">
@@ -207,7 +207,7 @@ export function ReservationsScreen() {
             <div className="mx-auto max-w-[1190px]">
               <header className="flex flex-col gap-5 pb-6 pt-8 sm:flex-row sm:items-end sm:justify-between sm:pt-10">
                 <div>
-                  <p className="text-[9px] font-semibold tracking-[0.2em] text-[#9b8353]">
+                  <p className="text-meta font-semibold tracking-[0.2em] text-[#9b8353]">
                     OPERATIONS / AUTUMN 2026
                   </p>
 
@@ -215,7 +215,7 @@ export function ReservationsScreen() {
                     Reservations
                   </h1>
 
-                  <p className="mt-2 max-w-xl text-[11px] text-[#85867c]">
+                  <p className="mt-2 max-w-xl text-lead text-[#85867c]">
                     Every journey, thoughtfully organised. Manage your
                     upcoming reservations and their operational details.
                   </p>
@@ -224,7 +224,7 @@ export function ReservationsScreen() {
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(true)}
-                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 bg-[#292b26] px-5 text-[10px] text-white transition-colors hover:bg-[#41443b]"
+                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 bg-[#292b26] px-5 text-body text-white transition-colors hover:bg-[#41443b]"
                 >
                   <span className="text-base leading-none">+</span>
                   Create reservation
@@ -238,13 +238,13 @@ export function ReservationsScreen() {
                   <h2 className="font-serif text-xl">
                     The journeys ahead
                   </h2>
-                  <p className="mt-2 text-[9px] text-[#96968b]">
+                  <p className="mt-2 text-meta text-[#96968b]">
                     Most recent start first · All dates in Japan Standard Time
                   </p>
                 </div>
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_repeat(4,minmax(0,1fr))]">
-                  <label className="text-[9px]">
+                  <label className="text-meta">
                     Search reservation
                     <input
                       type="search"
@@ -258,7 +258,7 @@ export function ReservationsScreen() {
                     />
                   </label>
 
-                  <label className="text-[9px]">
+                  <label className="text-meta">
                     From
                     <DateInput
                       value={filters.from}
@@ -270,7 +270,7 @@ export function ReservationsScreen() {
                     />
                   </label>
 
-                  <label className="text-[9px]">
+                  <label className="text-meta">
                     To
                     <DateInput
                       value={filters.to}
@@ -282,7 +282,7 @@ export function ReservationsScreen() {
                     />
                   </label>
 
-                  <label className="text-[9px]">
+                  <label className="text-meta">
                     Agency
                     <Combobox
                       value={filters.agencyId}
@@ -294,7 +294,7 @@ export function ReservationsScreen() {
                     />
                   </label>
 
-                  <label className="text-[9px]">
+                  <label className="text-meta">
                     Guide
                     <Combobox
                       value={filters.guideId}
@@ -309,14 +309,14 @@ export function ReservationsScreen() {
 
                 <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                   <div className="min-w-0">
-                    <p className="mb-2 text-[9px]">Status</p>
+                    <p className="mb-2 text-meta">Status</p>
                     <div className="flex flex-wrap gap-1">
                       {statusFilters.map(({ label }) => (
                         <button
                           key={label}
                           type="button"
                           onClick={() => updateFilters({ status: label })}
-                          className={`h-9 px-3 text-[9px] transition-colors ${
+                          className={`h-9 px-3 text-meta transition-colors ${
                             filters.status === label
                               ? "bg-[#e9e5d7] text-[#55574f]"
                               : "bg-[#f8f7f3] text-[#96968b] hover:bg-[#ebe9e1]"
@@ -334,7 +334,7 @@ export function ReservationsScreen() {
                       setQuery("");
                       updateFilters(emptyFilters);
                     }}
-                    className="h-9 shrink-0 border border-[#deddd6] px-3 text-[9px] hover:bg-[#f8f7f3]"
+                    className="h-9 shrink-0 border border-[#deddd6] px-3 text-meta hover:bg-[#f8f7f3]"
                   >
                     Reset
                   </button>
@@ -345,7 +345,7 @@ export function ReservationsScreen() {
                 {error && (
                   <div
                     role="alert"
-                    className="mt-5 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-[10px] text-[#9b6f37]"
+                    className="mt-5 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-body text-[#9b6f37]"
                   >
                     {error}
                     <button
@@ -359,7 +359,7 @@ export function ReservationsScreen() {
                 )}
 
                 {isLoading && (
-                  <p className="mt-6 text-[10px] text-[#85867c]">
+                  <p className="mt-6 text-body text-[#85867c]">
                     Loading reservations...
                   </p>
                 )}
@@ -367,7 +367,7 @@ export function ReservationsScreen() {
                 {!isLoading &&
                   !error &&
                   reservations.length === 0 && (
-                    <p className="mt-6 text-[10px] text-[#85867c]">
+                    <p className="mt-6 text-body text-[#85867c]">
                       No reservations found.
                     </p>
                   )}
@@ -387,7 +387,7 @@ export function ReservationsScreen() {
                 )}
               </section>
 
-              <footer className="pt-8 text-[9px] tracking-[0.03em] text-[#a09f94]">
+              <footer className="pt-8 text-meta tracking-[0.03em] text-[#a09f94]">
                 INARIOPS · RESERVATION MANAGEMENT
               </footer>
             </div>
@@ -437,11 +437,11 @@ function ReservationStats({ stats }: { stats: Stats | null }) {
           key={label}
           className="min-h-[100px] bg-white p-4"
         >
-          <p className="text-[9px] text-[#8b8c82]">{label}</p>
+          <p className="text-meta text-[#8b8c82]">{label}</p>
           <p className="mt-3 font-serif text-2xl leading-none">
             {value === undefined ? "—" : String(value).padStart(2, "0")}
           </p>
-          <p className="mt-2 text-[8px] text-[#aaa99f]">
+          <p className="mt-2 text-label text-[#aaa99f]">
             {note}
           </p>
         </article>
@@ -510,7 +510,7 @@ function ReservationTable({
     <div className="mt-6 overflow-x-auto">
       <div className="min-w-[1020px]">
         <div
-          className={`grid ${columns} gap-3 border-b border-[#ecebe5] pb-3 text-[8px] font-semibold tracking-[0.16em] text-[#a19a87]`}
+          className={`grid ${columns} gap-3 border-b border-[#ecebe5] pb-3 text-label font-semibold tracking-[0.16em] text-[#a19a87]`}
         >
           <span>RESERVATION</span>
           <span>AGENCY</span>
@@ -545,13 +545,13 @@ function ReservationRow({
   return (
     <Link
       href={`/reservations/${encodeURIComponent(reservation.code)}`}
-      className={`grid ${columns} items-center gap-3 py-4 text-[9px] hover:bg-[#fbfaf7]`}
+      className={`grid ${columns} items-center gap-3 py-4 text-meta hover:bg-[#fbfaf7]`}
     >
       <div className="min-w-0">
-        <p className="truncate text-[8px] text-[#9b9c92]">
+        <p className="truncate text-label text-[#9b9c92]">
           {reservation.code}
         </p>
-        <p className="mt-2 break-words text-[10px]">
+        <p className="mt-2 break-words text-body">
           {reservation.title}
         </p>
       </div>
@@ -570,7 +570,7 @@ function ReservationRow({
         {reservation.customer}
       </span>
 
-      <span className="whitespace-pre-line text-[8px] leading-relaxed text-[#85867c]">
+      <span className="whitespace-pre-line text-label leading-relaxed text-[#85867c]">
         {reservation.dates}
       </span>
 
@@ -580,12 +580,12 @@ function ReservationRow({
 
       <span
         title={formatStatus(reservation.status)}
-        className="inline-flex min-w-0 max-w-full items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap bg-[#e9e5d7] px-2 py-1.5 text-[8px] leading-tight text-[#77786f]"
+        className="inline-flex min-w-0 max-w-full items-center justify-center overflow-hidden text-ellipsis whitespace-nowrap bg-[#e9e5d7] px-2 py-1.5 text-label leading-tight text-[#77786f]"
       >
         {formatStatus(reservation.status)}
       </span>
 
-      <div className="min-w-0 text-[8px] leading-relaxed text-[#85867c]">
+      <div className="min-w-0 text-label leading-relaxed text-[#85867c]">
         <p className="break-words">
           Voucher · {formatStatus(reservation.voucher)}
         </p>

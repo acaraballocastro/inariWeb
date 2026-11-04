@@ -52,13 +52,13 @@ export function LoginPanel() {
           INARI
         </Link>
 
-        <p className="mt-8 text-[10px] tracking-[0.55em] text-[#9b8353]">
+        <p className="mt-8 text-body tracking-[0.55em] text-[#9b8353]">
           TOURS
         </p>
       </header>
 
       <div className="my-auto w-full max-w-[430px] py-12">
-        <p className="text-[10px] font-semibold tracking-[0.16em] text-[#9b8353]">
+        <p className="text-body font-semibold tracking-[0.16em] text-[#9b8353]">
           YOUR OPERATIONS WORKSPACE
         </p>
 
@@ -73,33 +73,33 @@ export function LoginPanel() {
         <form onSubmit={handleSubmit} className="mt-5 max-w-[380px] rounded-md border border-[#e8e6df] bg-white p-4">
           <h2 className="text-xs font-medium text-[#282a25]">Sign in to your workspace</h2>
 
-          <label className="mt-4 block text-[10px] text-[#77796f]">
+          <label className="mt-4 block text-body text-[#77796f]">
             Email
             <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} className="mt-2 h-10 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-xs text-[#282a25] outline-none focus:border-[#b5a786]" />
           </label>
 
-          <label className="mt-3 block text-[10px] text-[#77796f]">
+          <label className="mt-3 block text-body text-[#77796f]">
             Password
             <input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-2 h-10 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-xs text-[#282a25] outline-none focus:border-[#b5a786]" />
           </label>
 
-          {error && <p role="alert" className="mt-3 text-[10px] leading-relaxed text-[#9b6f37]">{error}</p>}
+          {error && <p role="alert" className="mt-3 text-body leading-relaxed text-[#9b6f37]">{error}</p>}
 
           <button type="submit" disabled={isSubmitting} className="mt-4 flex min-h-11 w-full items-center justify-center rounded-[3px] bg-[#252821] px-4 text-xs font-medium text-white transition-colors hover:bg-[#3a3d34] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#252821]">
             {isSubmitting ? "Signing in..." : "Sign in"}
           </button>
 
-          <Link href="/forgot-password" className="mt-3 inline-block text-[10px] text-[#77796f] underline underline-offset-4 hover:text-[#282a25]">
+          <Link href="/forgot-password" className="mt-3 inline-block text-body text-[#77796f] underline underline-offset-4 hover:text-[#282a25]">
             Forgot your password?
           </Link>
         </form>
 
-        <p className="mt-4 max-w-[380px] text-[11px] leading-relaxed text-[#77796f]">
+        <p className="mt-4 max-w-[380px] text-lead leading-relaxed text-[#77796f]">
           Access is managed by your InariOps workspace administrator.
         </p>
       </div>
 
-      <footer className="text-[10px] text-[#77796f]">
+      <footer className="text-body text-[#77796f]">
         © 2026 INARI TOURS · Crafted journeys, considered details.
       </footer>
     </section>

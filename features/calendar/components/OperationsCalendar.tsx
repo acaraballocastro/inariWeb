@@ -44,26 +44,26 @@ export function OperationsCalendar({ month, days, today, guideName, zoneName, on
     <section className="bg-white p-5 sm:p-6">
       <div className="flex flex-col gap-4 border-b border-[#ecebe5] pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-[8px] font-semibold tracking-[0.2em] text-[#9b8353]">OPERATIONS PLANNING</p>
+          <p className="text-label font-semibold tracking-[0.2em] text-[#9b8353]">OPERATIONS PLANNING</p>
           <h2 className="mt-3 font-serif text-2xl">{new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(month.year, month.month - 1, 1)))}</h2>
-          <p className="mt-2 text-[9px] text-[#96968b]">Japan Standard Time · {days ? `${visible.length} tour days` : "Loading…"}</p>
+          <p className="mt-2 text-meta text-[#96968b]">Japan Standard Time · {days ? `${visible.length} tour days` : "Loading…"}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => shift(-1)} aria-label="Previous month" className="border border-[#deddd6] px-3 py-2 text-[9px] text-[#77786f] hover:bg-[#f8f7f3]">‹</button>
-          <button type="button" onClick={goToday} className="border border-[#deddd6] px-3 py-2 text-[9px] text-[#77786f] hover:bg-[#f8f7f3]">Today</button>
-          <button type="button" onClick={() => shift(1)} aria-label="Next month" className="border border-[#deddd6] px-3 py-2 text-[9px] text-[#77786f] hover:bg-[#f8f7f3]">›</button>
+          <button type="button" onClick={() => shift(-1)} aria-label="Previous month" className="border border-[#deddd6] px-3 py-2 text-meta text-[#77786f] hover:bg-[#f8f7f3]">‹</button>
+          <button type="button" onClick={goToday} className="border border-[#deddd6] px-3 py-2 text-meta text-[#77786f] hover:bg-[#f8f7f3]">Today</button>
+          <button type="button" onClick={() => shift(1)} aria-label="Next month" className="border border-[#deddd6] px-3 py-2 text-meta text-[#77786f] hover:bg-[#f8f7f3]">›</button>
         </div>
       </div>
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
         <div className="flex gap-1 bg-[#f8f7f3] p-1">
           {(["Month", "Agenda"] as CalendarView[]).map((option) => (
-            <button key={option} type="button" onClick={() => setView(option)} className={`px-3 py-2 text-[9px] ${view === option ? "bg-white text-[#292b26] shadow-sm" : "text-[#96968b]"}`}>
+            <button key={option} type="button" onClick={() => setView(option)} className={`px-3 py-2 text-meta ${view === option ? "bg-white text-[#292b26] shadow-sm" : "text-[#96968b]"}`}>
               {option}
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap items-center gap-3 text-[8px] text-[#85867c]">
+        <div className="flex flex-wrap items-center gap-3 text-label text-[#85867c]">
           <Legend tone="bg-[#cfc09b]" label="Needs guide / answer" />
           <Legend tone="bg-[#bac8d0]" label="Payment & documents" />
           <Legend tone="bg-[#b9c8b5]" label="Confirmed" />
@@ -82,17 +82,17 @@ function MonthView({ month, byDate, today }: { month: CalendarMonth; byDate: Map
   return (
     <div className="overflow-x-auto">
       <div className="min-w-[640px]">
-        <div className="mt-6 grid grid-cols-7 text-center text-[8px] font-semibold tracking-[0.14em] text-[#a19a87]">{["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map((day) => <span key={day}>{day}</span>)}</div>
+        <div className="mt-6 grid grid-cols-7 text-center text-label font-semibold tracking-[0.14em] text-[#a19a87]">{["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map((day) => <span key={day}>{day}</span>)}</div>
         <div className="mt-2 grid grid-cols-7 border-l border-t border-[#deddd6]">
           {cells.map((key) => {
             const items = byDate.get(key) ?? [];
             const muted = Number(key.slice(5, 7)) !== month.month;
             return (
               <div key={key} className={`min-h-[110px] border-b border-r border-[#deddd6] p-2 text-right ${key === today ? "bg-[#fbf8ed]" : ""}`}>
-                <span className={`text-[9px] ${muted ? "text-[#bbbcb4]" : "text-[#77786f]"}`}>{Number(key.slice(8, 10))}</span>
+                <span className={`text-meta ${muted ? "text-[#bbbcb4]" : "text-[#77786f]"}`}>{Number(key.slice(8, 10))}</span>
                 <div className="mt-2 space-y-1 text-left">
-                  {items.slice(0, 3).map((day) => <Link key={day.id} href={`/tours/${day.id}`} className={`block border-l-2 px-2 py-1.5 hover:brightness-95 ${toneStyles[toneFor(day.status)]}`}><p className="text-[8px] text-[#55574f]">{formatJstClock(day.start_datetime)}</p><p className="mt-1 truncate text-[8px] text-[#77786f]">{day.title || day.code || "Tour day"}</p></Link>)}
-                  {items.length > 3 && <p className="px-1 text-[8px] text-[#96968b]">+{items.length - 3} more</p>}
+                  {items.slice(0, 3).map((day) => <Link key={day.id} href={`/tours/${day.id}`} className={`block border-l-2 px-2 py-1.5 hover:brightness-95 ${toneStyles[toneFor(day.status)]}`}><p className="text-label text-[#55574f]">{formatJstClock(day.start_datetime)}</p><p className="mt-1 truncate text-label text-[#77786f]">{day.title || day.code || "Tour day"}</p></Link>)}
+                  {items.length > 3 && <p className="px-1 text-label text-[#96968b]">+{items.length - 3} more</p>}
                 </div>
               </div>
             );
@@ -104,15 +104,15 @@ function MonthView({ month, byDate, today }: { month: CalendarMonth; byDate: Map
 }
 
 function AgendaView({ days, guideName, zoneName }: { days: TourDay[]; guideName: (id: string | null) => string | null; zoneName: (id: string | null) => string | null }) {
-  if (days.length === 0) return <p className="mt-6 text-[10px] text-[#85867c]">No tour days this month.</p>;
+  if (days.length === 0) return <p className="mt-6 text-body text-[#85867c]">No tour days this month.</p>;
   return (
     <div className="mt-6 divide-y divide-[#ecebe5] border-y border-[#ecebe5]">
       {days.map((day) => (
         <Link key={day.id} href={`/tours/${day.id}`} className="grid gap-3 py-4 hover:bg-[#fbfaf7] sm:grid-cols-[80px_60px_minmax(0,1fr)_130px] sm:items-center">
           <span className="font-serif text-lg">{formatJst(day.start_datetime, { day: "numeric", month: "short" })}</span>
-          <span className="text-[9px] text-[#9b8353]">{formatJstClock(day.start_datetime)}</span>
-          <div className="min-w-0"><p className="text-[10px]">{day.title || day.code || "Tour day"}</p><p className="mt-1 text-[8px] text-[#96968b]">{[day.code, zoneName(day.zone_id), guideName(day.guide_id) ?? "No guide", day.people_count ? `${day.people_count} guests` : null].filter(Boolean).join(" · ")}</p></div>
-          <span className={`w-fit border-l-2 px-2 py-1 text-[8px] ${toneStyles[toneFor(day.status)]}`}>{formatStatus(day.status)}</span>
+          <span className="text-meta text-[#9b8353]">{formatJstClock(day.start_datetime)}</span>
+          <div className="min-w-0"><p className="text-body">{day.title || day.code || "Tour day"}</p><p className="mt-1 text-label text-[#96968b]">{[day.code, zoneName(day.zone_id), guideName(day.guide_id) ?? "No guide", day.people_count ? `${day.people_count} guests` : null].filter(Boolean).join(" · ")}</p></div>
+          <span className={`w-fit border-l-2 px-2 py-1 text-label ${toneStyles[toneFor(day.status)]}`}>{formatStatus(day.status)}</span>
         </Link>
       ))}
     </div>

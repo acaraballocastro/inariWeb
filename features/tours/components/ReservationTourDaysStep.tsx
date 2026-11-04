@@ -68,31 +68,31 @@ export function ReservationTourDaysStep({ reservation, onFinish }: { reservation
 
   return (
     <div className="px-6 py-6 sm:px-8">
-      {error && <p role="alert" className="mb-5 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-[10px] text-[#9b6f37]">{error}</p>}
+      {error && <p role="alert" className="mb-5 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-body text-[#9b6f37]">{error}</p>}
       <MissingDataNotice missing={missing} className="mb-5" />
-      <p className="text-[10px] leading-relaxed text-[#85867c]">One tour day was generated for each date of <span className="text-[#55574f]">{reservation.title || reservation.code || "the reservation"}</span>. Complete their details or add more days.</p>
+      <p className="text-body leading-relaxed text-[#85867c]">One tour day was generated for each date of <span className="text-[#55574f]">{reservation.title || reservation.code || "the reservation"}</span>. Complete their details or add more days.</p>
 
-      {isLoading && <p className="mt-5 text-[10px] text-[#85867c]">Loading tour days...</p>}
-      {!isLoading && tourDays.length === 0 && editingId !== "new" && <p className="mt-5 text-[10px] text-[#85867c]">No tour days linked.</p>}
+      {isLoading && <p className="mt-5 text-body text-[#85867c]">Loading tour days...</p>}
+      {!isLoading && tourDays.length === 0 && editingId !== "new" && <p className="mt-5 text-body text-[#85867c]">No tour days linked.</p>}
 
       <div className="mt-5 divide-y divide-[#ecebe5] border-y border-[#ecebe5]">
         {tourDays.map((day) => editingId === day.id ? (
           <div key={day.id} className="pb-5"><TourDayForm draft={draft} zones={zones} onChange={setDraft} onZoneCreated={(zone) => setZones((current) => [...current, zone])} onSubmit={handleSubmit} onCancel={() => setEditingId(null)} isSaving={isSaving} submitLabel="Save tour day" /></div>
         ) : (
           <article key={day.id} className="grid gap-3 py-4 sm:grid-cols-[100px_minmax(0,1fr)_auto] sm:items-start">
-            <p className="text-[10px] text-[#55574f]">{formatDateTime(day.start_datetime)}</p>
-            <div className="min-w-0"><p className="text-[10px] font-medium">{day.title || day.code || "Untitled tour day"}</p><p className="mt-2 text-[8px] text-[#85867c]">{formatDuration(day.duration) || "Duration not provided"} · {zones.find((zone) => zone.id === day.zone_id)?.name ?? "No zone"} · {day.people_count ?? 0} guests</p><p className="mt-1 text-[8px] text-[#85867c]">{day.meeting_point || "Meeting point not provided"}</p></div>
-            <button type="button" disabled={isSaving || editingId !== null} onClick={() => startEditing(day)} className="h-8 border border-[#deddd6] px-3 text-[9px] hover:bg-[#f8f7f3] disabled:opacity-50">Edit</button>
+            <p className="text-body text-[#55574f]">{formatDateTime(day.start_datetime)}</p>
+            <div className="min-w-0"><p className="text-body font-medium">{day.title || day.code || "Untitled tour day"}</p><p className="mt-2 text-label text-[#85867c]">{formatDuration(day.duration) || "Duration not provided"} · {zones.find((zone) => zone.id === day.zone_id)?.name ?? "No zone"} · {day.people_count ?? 0} guests</p><p className="mt-1 text-label text-[#85867c]">{day.meeting_point || "Meeting point not provided"}</p></div>
+            <button type="button" disabled={isSaving || editingId !== null} onClick={() => startEditing(day)} className="h-8 border border-[#deddd6] px-3 text-meta hover:bg-[#f8f7f3] disabled:opacity-50">Edit</button>
           </article>
         ))}
         {editingId === "new" && <div className="pb-5"><TourDayForm draft={draft} zones={zones} onChange={setDraft} onZoneCreated={(zone) => setZones((current) => [...current, zone])} onSubmit={handleSubmit} onCancel={() => setEditingId(null)} isSaving={isSaving} submitLabel="Create tour day" /></div>}
       </div>
 
-      {editingId === null && !isLoading && <button type="button" onClick={startCreating} className="mt-4 h-9 border border-[#deddd6] px-3 text-[9px] hover:bg-[#f8f7f3]">+ Add tour day</button>}
+      {editingId === null && !isLoading && <button type="button" onClick={startCreating} className="mt-4 h-9 border border-[#deddd6] px-3 text-meta hover:bg-[#f8f7f3]">+ Add tour day</button>}
 
       <footer className="mt-7 flex flex-col-reverse gap-3 border-t border-[#ecebe5] pt-5 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-[9px] text-[#96968b]">{tourDays.length} tour days · You can keep editing them from the reservation.</p>
-        <button type="button" onClick={onFinish} disabled={isSaving || editingId !== null} className="h-10 bg-[#292b26] px-6 text-[10px] text-white transition-colors hover:bg-[#41443b] disabled:cursor-not-allowed disabled:opacity-50">Continue to itinerary</button>
+        <p className="text-meta text-[#96968b]">{tourDays.length} tour days · You can keep editing them from the reservation.</p>
+        <button type="button" onClick={onFinish} disabled={isSaving || editingId !== null} className="h-10 bg-[#292b26] px-6 text-body text-white transition-colors hover:bg-[#41443b] disabled:cursor-not-allowed disabled:opacity-50">Continue to itinerary</button>
       </footer>
     </div>
   );

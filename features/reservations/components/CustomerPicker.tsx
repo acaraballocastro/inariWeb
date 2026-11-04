@@ -51,12 +51,12 @@ export function CustomerPicker({ value, onChange, disabled = false, inputClass, 
   return (
     <div className={labelClass}>
       <span>Customers</span>
-      {value.length === 0 ? <p className="mt-2 text-[9px] text-[#96968b]">No customer assigned.</p> : (
+      {value.length === 0 ? <p className="mt-2 text-meta text-[#96968b]">No customer assigned.</p> : (
         <ul className="mt-2 divide-y divide-[#ecebe5] border border-[#e3e1da]">
           {value.map((customer) => (
             <li key={customer.id ?? customer.email} className="flex items-center justify-between gap-3 px-3 py-2">
-              <div className="min-w-0"><p className="truncate text-[10px] text-[#292b26]">{customer.full_name}{!customer.id && <span className="ml-2 bg-[#e9e5d7] px-1.5 py-0.5 text-[8px] text-[#77786f]">New</span>}</p><p className="mt-0.5 truncate text-[8px] text-[#85867c]">{customer.email || "No email"}{customer.phone ? ` · ${customer.phone}` : ""}</p></div>
-              <button type="button" disabled={disabled} onClick={() => onChange(value.filter((item) => item !== customer))} aria-label={`Remove ${customer.full_name}`} className="text-[9px] text-[#9b6f37] underline underline-offset-2 disabled:opacity-50">Remove</button>
+              <div className="min-w-0"><p className="truncate text-body text-[#292b26]">{customer.full_name}{!customer.id && <span className="ml-2 bg-[#e9e5d7] px-1.5 py-0.5 text-label text-[#77786f]">New</span>}</p><p className="mt-0.5 truncate text-label text-[#85867c]">{customer.email || "No email"}{customer.phone ? ` · ${customer.phone}` : ""}</p></div>
+              <button type="button" disabled={disabled} onClick={() => onChange(value.filter((item) => item !== customer))} aria-label={`Remove ${customer.full_name}`} className="text-meta text-[#9b6f37] underline underline-offset-2 disabled:opacity-50">Remove</button>
             </li>
           ))}
         </ul>
@@ -68,15 +68,15 @@ export function CustomerPicker({ value, onChange, disabled = false, inputClass, 
             <input type="search" value={query} disabled={disabled} onChange={(event) => setQuery(event.target.value)} placeholder="Search an existing customer by name, email, phone or document..." aria-label="Search an existing customer" className={`${inputClass} mt-0!`} />
             {query.trim() && (
               <ul className="mt-1 max-h-48 divide-y divide-[#ecebe5] overflow-y-auto border border-[#e3e1da] bg-white">
-                {matches === null && <li className="px-3 py-2 text-[9px] text-[#96968b]">Searching...</li>}
-                {matches?.length === 0 && <li className="px-3 py-2 text-[9px] text-[#96968b]">No customers found.</li>}
+                {matches === null && <li className="px-3 py-2 text-meta text-[#96968b]">Searching...</li>}
+                {matches?.length === 0 && <li className="px-3 py-2 text-meta text-[#96968b]">No customers found.</li>}
                 {matches?.map((customer) => (
-                  <li key={customer.id}><button type="button" disabled={disabled} onClick={() => addExisting(customer)} className="block w-full px-3 py-2 text-left hover:bg-[#f8f7f3]"><span className="block truncate text-[10px] text-[#292b26]">{customer.full_name}</span><span className="mt-0.5 block truncate text-[8px] text-[#85867c]">{[customer.email, customer.phone, customer.document_number].filter(Boolean).join(" · ") || "No contact data"}</span></button></li>
+                  <li key={customer.id}><button type="button" disabled={disabled} onClick={() => addExisting(customer)} className="block w-full px-3 py-2 text-left hover:bg-[#f8f7f3]"><span className="block truncate text-body text-[#292b26]">{customer.full_name}</span><span className="mt-0.5 block truncate text-label text-[#85867c]">{[customer.email, customer.phone, customer.document_number].filter(Boolean).join(" · ") || "No contact data"}</span></button></li>
                 ))}
               </ul>
             )}
           </div>
-          <button type="button" disabled={disabled} onClick={() => setIsCreating(true)} className="min-h-9 shrink-0 self-stretch border border-[#deddd6] px-4 text-[10px] text-[#292b26] hover:bg-[#f8f7f3] disabled:opacity-50">+ New customer</button>
+          <button type="button" disabled={disabled} onClick={() => setIsCreating(true)} className="min-h-9 shrink-0 self-stretch border border-[#deddd6] px-4 text-body text-[#292b26] hover:bg-[#f8f7f3] disabled:opacity-50">+ New customer</button>
         </div>
       )}
 
@@ -87,8 +87,8 @@ export function CustomerPicker({ value, onChange, disabled = false, inputClass, 
           <label className={labelClass}>Phone<input value={newCustomer.phone} onChange={(event) => setNewCustomer({ ...newCustomer, phone: event.target.value })} className={inputClass} /></label>
           <label className={labelClass}>Document number<input value={newCustomer.document_number} onChange={(event) => setNewCustomer({ ...newCustomer, document_number: event.target.value })} className={inputClass} /></label>
           <label className={labelClass}>Age<input type="number" min={0} step={1} value={newCustomer.age} onChange={(event) => setNewCustomer({ ...newCustomer, age: event.target.value })} className={inputClass} /></label>
-          {error && <p role="alert" className="text-[9px] text-[#9b6f37] sm:col-span-2">{error}</p>}
-          <div className="flex gap-2 sm:col-span-2"><button type="button" onClick={addNew} className="h-9 bg-[#292b26] px-4 text-[9px] text-white hover:bg-[#41443b]">Add customer</button><button type="button" onClick={() => { setIsCreating(false); setNewCustomer(emptyNewCustomer); setError(""); }} className="h-9 border border-[#deddd6] px-4 text-[9px] hover:bg-[#f8f7f3]">Cancel</button></div>
+          {error && <p role="alert" className="text-meta text-[#9b6f37] sm:col-span-2">{error}</p>}
+          <div className="flex gap-2 sm:col-span-2"><button type="button" onClick={addNew} className="h-9 bg-[#292b26] px-4 text-meta text-white hover:bg-[#41443b]">Add customer</button><button type="button" onClick={() => { setIsCreating(false); setNewCustomer(emptyNewCustomer); setError(""); }} className="h-9 border border-[#deddd6] px-4 text-meta hover:bg-[#f8f7f3]">Cancel</button></div>
         </div>
       )}
     </div>

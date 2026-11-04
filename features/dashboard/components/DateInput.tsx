@@ -105,7 +105,7 @@ export function DateInput({ value, onChange, min, max, disabled = false, classNa
 
   const cells = monthCells(month);
   const monthLabel = formatDayKey(`${month.year}-${String(month.month).padStart(2, "0")}-01`, { month: "long", year: "numeric" });
-  const navButton = "flex h-7 w-7 items-center justify-center text-[12px] text-[#66685f] hover:bg-[#f1ede2]";
+  const navButton = "flex h-7 w-7 items-center justify-center text-ui text-[#66685f] hover:bg-[#f1ede2]";
 
   return (
     <div ref={rootRef} className="relative">
@@ -129,11 +129,11 @@ export function DateInput({ value, onChange, min, max, disabled = false, classNa
         <div role="dialog" aria-label={ariaLabel ?? "Choose a date"} onClick={(event) => event.preventDefault()} className="absolute z-30 mt-1 w-[248px] border border-[#deddd6] bg-[#fffefa] p-3 shadow-[0_8px_18px_rgba(42,43,38,0.08)]">
           <div className="flex items-center justify-between">
             <button type="button" aria-label="Previous month" onClick={() => setMonth((current) => shiftMonth(current, -1))} className={navButton}>‹</button>
-            <p aria-live="polite" className="font-serif text-[13px] text-[#292b26]">{monthLabel}</p>
+            <p aria-live="polite" className="font-serif text-ui-lg text-[#292b26]">{monthLabel}</p>
             <button type="button" aria-label="Next month" onClick={() => setMonth((current) => shiftMonth(current, 1))} className={navButton}>›</button>
           </div>
           <div id={gridId} role="grid" aria-label={monthLabel} onKeyDown={handleGridKeyDown} className="mt-2 grid grid-cols-7 gap-0.5 text-center">
-            {weekdays.map((day) => <span key={day} role="columnheader" className="pb-1 text-[8px] font-semibold tracking-[0.12em] text-[#aaa28f]">{day}</span>)}
+            {weekdays.map((day) => <span key={day} role="columnheader" className="pb-1 text-label font-semibold tracking-[0.12em] text-[#aaa28f]">{day}</span>)}
             {cells.map((dayKey) => {
               const inMonth = dayKey.slice(0, 7) === `${month.year}-${String(month.month).padStart(2, "0")}`;
               const isSelected = dayKey === value;
@@ -152,7 +152,7 @@ export function DateInput({ value, onChange, min, max, disabled = false, classNa
                   disabled={!allowed}
                   onClick={() => pick(dayKey)}
                   onFocus={() => setFocusKey(dayKey)}
-                  className={`h-8 text-[10px] outline-none transition-colors focus-visible:ring-1 focus-visible:ring-[#b5a786] disabled:cursor-not-allowed disabled:opacity-30 ${
+                  className={`h-8 text-body outline-none transition-colors focus-visible:ring-1 focus-visible:ring-[#b5a786] disabled:cursor-not-allowed disabled:opacity-30 ${
                     isSelected ? "bg-[#292b26] text-white" : `${inMonth ? "text-[#292b26]" : "text-[#b9b8ae]"} hover:bg-[#f1ede2]`
                   } ${isToday && !isSelected ? "font-semibold text-[#9b8353] underline underline-offset-4" : ""}`}
                 >
@@ -161,7 +161,7 @@ export function DateInput({ value, onChange, min, max, disabled = false, classNa
               );
             })}
           </div>
-          <div className="mt-3 flex items-center justify-between border-t border-[#ecebe5] pt-2 text-[9px]">
+          <div className="mt-3 flex items-center justify-between border-t border-[#ecebe5] pt-2 text-meta">
             <button type="button" disabled={!isWithin(today, min, max)} onClick={() => pick(today)} className="text-[#9b8353] underline underline-offset-4 disabled:opacity-40">Today</button>
             {clearable && value && <button type="button" onClick={() => { onChange(""); close(); }} className="text-[#77786f] underline underline-offset-4 hover:text-[#292b26]">Clear</button>}
           </div>

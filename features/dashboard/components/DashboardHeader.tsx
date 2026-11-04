@@ -25,10 +25,10 @@ export function DashboardHeader({ breadcrumb = "Workspace / Dashboard" }: { brea
   return (
     <header className="flex items-center justify-between border-b border-[#deddd6] bg-[#f5f4f0] px-5 py-4 sm:px-8 lg:px-10">
       <div className="flex min-w-0 items-center gap-3">
-        <button type="button" onClick={() => setIsMenuOpen(true)} aria-label="Open menu" className="flex h-8 w-8 items-center justify-center border border-[#deddd6] text-[13px] text-[#5d5e55] lg:hidden">☰</button>
-        <p className="truncate text-[9px] text-[#aaa99f]">{breadcrumb}</p>
+        <button type="button" onClick={() => setIsMenuOpen(true)} aria-label="Open menu" className="flex h-8 w-8 items-center justify-center border border-[#deddd6] text-ui-lg text-[#5d5e55] lg:hidden">☰</button>
+        <p className="truncate text-meta text-[#aaa99f]">{breadcrumb}</p>
       </div>
-      <div className="flex items-center gap-4 text-[9px] text-[#77786f]">
+      <div className="flex items-center gap-4 text-meta text-[#77786f]">
         {clock && <span className="hidden sm:inline">Tokyo · {clock} JST</span>}
         <NotificationBell />
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e9e5d7] font-medium text-[#5d5e55]">{initials || "·"}</span>
@@ -49,11 +49,11 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
       <button type="button" aria-label="Close menu" onClick={onClose} className="absolute inset-0 bg-[#292b26]/30" />
       <div className="absolute inset-y-0 left-0 w-[260px] max-w-[85vw] overflow-y-auto bg-[#f5f4f0] px-5 py-7 text-[#292b26]">
         <div className="flex items-start justify-between">
-          <p className="font-serif text-[25px] tracking-[0.16em]">INARI<span className="mt-2 block text-[7px] tracking-[0.5em] text-[#9b8353]">TOURS</span></p>
-          <button type="button" onClick={onClose} aria-label="Close menu" className="h-8 w-8 border border-[#deddd6] text-[11px]">✕</button>
+          <p className="font-serif text-[25px] tracking-[0.16em]">INARI<span className="mt-2 block text-micro tracking-[0.5em] text-[#9b8353]">TOURS</span></p>
+          <button type="button" onClick={onClose} aria-label="Close menu" className="h-8 w-8 border border-[#deddd6] text-lead">✕</button>
         </div>
         <NavigationLinks navigation={navigation} sections={sections} onNavigate={onClose} />
-        <AccountLinks className="mt-10 space-y-3 border-t border-[#deddd6] pt-5 text-[10px]" onNavigate={onClose} />
+        <AccountLinks className="mt-10 space-y-3 border-t border-[#deddd6] pt-5 text-body" onNavigate={onClose} />
       </div>
     </div>
   );

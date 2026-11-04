@@ -17,7 +17,7 @@ export function LoginHero() {
       <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-black/5" />
 
       <div className="absolute bottom-8 left-8 right-8 bg-[#252821] px-5 py-5 text-white sm:px-6 sm:py-6">
-        <p className="text-[9px] font-semibold tracking-[0.2em]">
+        <p className="text-meta font-semibold tracking-[0.2em]">
           KYOTO, JAPAN
         </p>
 

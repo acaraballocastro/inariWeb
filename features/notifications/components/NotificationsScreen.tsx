@@ -65,7 +65,7 @@ export function NotificationsScreen() {
           <div className="px-5 pb-10 sm:px-8 lg:px-10">
             <div className="mx-auto max-w-[860px]">
               <header className="border-b border-[#deddd6] pb-6 pt-8 sm:pt-10">
-                <p className="text-[9px] font-semibold tracking-[0.2em] text-[#9b8353]">WORKSPACE / INBOX</p>
+                <p className="text-meta font-semibold tracking-[0.2em] text-[#9b8353]">WORKSPACE / INBOX</p>
                 <h1 className="mt-3 font-serif text-3xl tracking-[-0.04em] sm:text-[36px]">Notifications</h1>
               </header>
 
@@ -76,27 +76,27 @@ export function NotificationsScreen() {
 
               <section className="mt-5 bg-white p-5 sm:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ecebe5] pb-4">
-                  <label className="flex items-center gap-2 text-[10px]"><input type="checkbox" checked={unreadOnly} onChange={(event) => setUnreadOnly(event.target.checked)} />Unread only</label>
-                  <button type="button" onClick={readAll} className="h-8 border border-[#deddd6] px-3 text-[9px] hover:bg-[#f8f7f3]">Mark all as read</button>
+                  <label className="flex items-center gap-2 text-body"><input type="checkbox" checked={unreadOnly} onChange={(event) => setUnreadOnly(event.target.checked)} />Unread only</label>
+                  <button type="button" onClick={readAll} className="h-8 border border-[#deddd6] px-3 text-meta hover:bg-[#f8f7f3]">Mark all as read</button>
                 </div>
-                {error && <p role="alert" className="mt-4 text-[10px] text-[#9b6f37]">{error}</p>}
-                {items === null && !error && <p className="mt-5 text-[10px] text-[#85867c]">Loading…</p>}
-                {items?.length === 0 && <p className="mt-5 text-[10px] text-[#85867c]">{unreadOnly ? "Everything is read." : "No notifications yet."}</p>}
+                {error && <p role="alert" className="mt-4 text-body text-[#9b6f37]">{error}</p>}
+                {items === null && !error && <p className="mt-5 text-body text-[#85867c]">Loading…</p>}
+                {items?.length === 0 && <p className="mt-5 text-body text-[#85867c]">{unreadOnly ? "Everything is read." : "No notifications yet."}</p>}
                 <div className="divide-y divide-[#f0efe9]">
                   {items?.map((item) => (
                     <button key={item.id} type="button" onClick={() => open(item)} className={`block w-full px-2 py-4 text-left hover:bg-[#fbfaf7] ${item.is_read ? "" : "bg-[#fbf8f1]"}`}>
                       <span className="flex items-start gap-3">
                         <span aria-hidden="true" className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${item.is_read ? "bg-transparent" : "bg-[#9b6f37]"}`} />
                         <span className="min-w-0 flex-1">
-                          <span className="flex flex-wrap items-baseline justify-between gap-2"><span className="text-[11px] font-medium">{item.title}</span><span className="text-[8px] text-[#aaa99f]">{formatNotificationTime(item.created_at)}</span></span>
-                          {item.message && <span className="mt-1 block text-[10px] leading-relaxed text-[#77786f]">{item.message}</span>}
+                          <span className="flex flex-wrap items-baseline justify-between gap-2"><span className="text-lead font-medium">{item.title}</span><span className="text-label text-[#aaa99f]">{formatNotificationTime(item.created_at)}</span></span>
+                          {item.message && <span className="mt-1 block text-body leading-relaxed text-[#77786f]">{item.message}</span>}
                         </span>
                       </span>
                     </button>
                   ))}
                 </div>
                 {items && items.length < total && (
-                  <div className="mt-4 flex items-center justify-between gap-3 text-[9px] text-[#96968b]">
+                  <div className="mt-4 flex items-center justify-between gap-3 text-meta text-[#96968b]">
                     <span>{items.length} of {total}</span>
                     <button type="button" disabled={isLoadingMore} onClick={loadMore} className="h-8 border border-[#deddd6] px-3 text-[#292b26] hover:bg-[#f8f7f3] disabled:opacity-50">{isLoadingMore ? "Loading…" : "Load more"}</button>
                   </div>

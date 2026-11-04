@@ -28,7 +28,7 @@ export function MyAvailabilityScreen() {
         <DashboardSidebar activeItem="Availability" />
         <div className="min-w-0 flex-1">
           <DashboardHeader breadcrumb="Workspace / Availability" />
-          <p role={error ? "alert" : undefined} className={`px-5 pt-8 text-[10px] sm:px-8 lg:px-10 ${error ? "text-[#9b6f37]" : "text-[#85867c]"}`}>{error || "Loading..."}</p>
+          <p role={error ? "alert" : undefined} className={`px-5 pt-8 text-body sm:px-8 lg:px-10 ${error ? "text-[#9b6f37]" : "text-[#85867c]"}`}>{error || "Loading..."}</p>
         </div>
       </div>
     </main>

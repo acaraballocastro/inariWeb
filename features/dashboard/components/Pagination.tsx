@@ -5,7 +5,7 @@ export function Pagination({ offset, limit, total, onChange, noun }: { offset: n
   const end = Math.min(offset + limit, total);
 
   return (
-    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-[9px] text-[#96968b]">
+    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 text-meta text-[#96968b]">
       <span>{total === 0 ? `No ${noun}` : `${offset + 1}–${end} of ${total} ${noun}`}</span>
       {total > limit && (
         <span className="flex gap-2">

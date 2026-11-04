@@ -98,7 +98,7 @@ function AppDialog({ request, onFinish }: { request: Request; onFinish: (answer:
     onFinish(isPrompt ? answer : true);
   }
 
-  const fieldClass = "mt-2 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[11px] text-[#292b26] outline-none focus:border-[#b5a786]";
+  const fieldClass = "mt-2 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-lead text-[#292b26] outline-none focus:border-[#b5a786]";
 
   return (
     <dialog
@@ -113,12 +113,12 @@ function AppDialog({ request, onFinish }: { request: Request; onFinish: (answer:
       className="m-auto w-[calc(100%-32px)] max-w-[440px] border-0 bg-transparent p-0 text-[#292b26] backdrop:bg-[#292b26]/45"
     >
       <form onSubmit={submit} className="bg-white p-6 shadow-xl sm:p-7">
-        <p className={`text-[9px] font-semibold tracking-[0.2em] ${danger ? "text-[#8a3b2c]" : "text-[#9b8353]"}`}>{danger ? "PLEASE CONFIRM" : "CONFIRM"}</p>
+        <p className={`text-meta font-semibold tracking-[0.2em] ${danger ? "text-[#8a3b2c]" : "text-[#9b8353]"}`}>{danger ? "PLEASE CONFIRM" : "CONFIRM"}</p>
         <h2 id={titleId} className="mt-3 font-serif text-[22px] leading-tight tracking-[-0.02em]">{options.title}</h2>
-        {options.message && <p id={messageId} className="mt-3 whitespace-pre-line text-[11px] leading-relaxed text-[#77786f]">{options.message}</p>}
+        {options.message && <p id={messageId} className="mt-3 whitespace-pre-line text-lead leading-relaxed text-[#77786f]">{options.message}</p>}
 
         {promptOptions && (
-          <label className="mt-5 block text-[10px] text-[#65665d]">
+          <label className="mt-5 block text-body text-[#65665d]">
             {promptOptions.label}
             {promptOptions.multiline
               ? <textarea autoFocus value={text} onChange={(event) => setText(event.target.value)} placeholder={promptOptions.placeholder} className={`${fieldClass} min-h-20 py-2`} />
@@ -128,8 +128,8 @@ function AppDialog({ request, onFinish }: { request: Request; onFinish: (answer:
 
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           {/* With nothing to type, the safe choice has the focus first. */}
-          <button type="button" autoFocus={!isPrompt} onClick={() => onFinish(isPrompt ? null : false)} className="h-10 border border-[#deddd6] px-5 text-[10px] hover:bg-[#f8f7f3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b5a786]">{options.cancelLabel ?? "Cancel"}</button>
-          <button type="submit" disabled={!canConfirm} className={`h-10 px-5 text-[10px] text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${danger ? "bg-[#8a3b2c] hover:bg-[#73301f] focus-visible:outline-[#8a3b2c]" : "bg-[#292b26] hover:bg-[#41443b] focus-visible:outline-[#292b26]"}`}>{options.confirmLabel ?? "Confirm"}</button>
+          <button type="button" autoFocus={!isPrompt} onClick={() => onFinish(isPrompt ? null : false)} className="h-10 border border-[#deddd6] px-5 text-body hover:bg-[#f8f7f3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b5a786]">{options.cancelLabel ?? "Cancel"}</button>
+          <button type="submit" disabled={!canConfirm} className={`h-10 px-5 text-body text-white transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${danger ? "bg-[#8a3b2c] hover:bg-[#73301f] focus-visible:outline-[#8a3b2c]" : "bg-[#292b26] hover:bg-[#41443b] focus-visible:outline-[#292b26]"}`}>{options.confirmLabel ?? "Confirm"}</button>
         </div>
       </form>
     </dialog>

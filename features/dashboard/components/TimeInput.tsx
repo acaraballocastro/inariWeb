@@ -110,10 +110,10 @@ export function TimeInput({ value, onChange, disabled = false, className, placeh
               onMouseDown={(event) => event.preventDefault()}
               onMouseEnter={() => setActive(index)}
               onClick={() => commit(time)}
-              className={`flex cursor-pointer items-center justify-between px-3 py-1.5 text-[10px] tabular-nums text-[#292b26] ${index === active ? "bg-[#f1ede2]" : ""}`}
+              className={`flex cursor-pointer items-center justify-between px-3 py-1.5 text-body tabular-nums text-[#292b26] ${index === active ? "bg-[#f1ede2]" : ""}`}
             >
               {time}
-              {time === value && <span aria-hidden="true" className="text-[9px] text-[#9b8353]">✓</span>}
+              {time === value && <span aria-hidden="true" className="text-meta text-[#9b8353]">✓</span>}
             </li>
           ))}
         </ul>

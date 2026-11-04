@@ -150,9 +150,9 @@ export function CreateReservationModal({
   }
 
   const inputClass =
-    "mt-2 h-10 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[11px] outline-none transition-colors focus:border-[#b5a786]";
+    "mt-2 h-10 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-lead outline-none transition-colors focus:border-[#b5a786]";
 
-  const labelClass = "block text-[10px] text-[#65665d]";
+  const labelClass = "block text-body text-[#65665d]";
 
   return (
     <div
@@ -171,7 +171,7 @@ export function CreateReservationModal({
       >
         <header className="flex items-start justify-between border-b border-[#ecebe5] px-6 py-5 sm:px-8">
           <div>
-            <p className="text-[9px] font-semibold tracking-[0.2em] text-[#9b8353]">
+            <p className="text-meta font-semibold tracking-[0.2em] text-[#9b8353]">
               {step === 1
                 ? "STEP 1 OF 3 · RESERVATION DETAILS"
                 : step === 2
@@ -188,7 +188,7 @@ export function CreateReservationModal({
                   ? "Plan the tour days"
                   : "Plan the itinerary"}
             </h2>
-            <p className="mt-2 text-[10px] text-[#85867c]">
+            <p className="mt-2 text-body text-[#85867c]">
               {step === 1
                 ? "Enter the details for the new journey."
                 : step === 2
@@ -224,7 +224,7 @@ export function CreateReservationModal({
           {error && (
             <p
               role="alert"
-              className="mb-5 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-[10px] text-[#9b6f37]"
+              className="mb-5 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-body text-[#9b6f37]"
             >
               {error}
             </p>
@@ -250,7 +250,7 @@ export function CreateReservationModal({
                 onChange={(event) => setDescription(event.target.value)}
                 placeholder="Additional information about the journey..."
                 rows={3}
-                className="mt-2 w-full resize-y border border-[#e3e1da] bg-[#f8f7f3] px-3 py-3 text-[11px] outline-none focus:border-[#b5a786]"
+                className="mt-2 w-full resize-y border border-[#e3e1da] bg-[#f8f7f3] px-3 py-3 text-lead outline-none focus:border-[#b5a786]"
               />
             </label>
 
@@ -272,7 +272,7 @@ export function CreateReservationModal({
                 inputClass={inputClass}
               />
               {agencyError && (
-                <span className="mt-1 block text-[9px] text-[#9b6f37]">
+                <span className="mt-1 block text-meta text-[#9b6f37]">
                   {agencyError}
                 </span>
               )}
@@ -325,7 +325,7 @@ export function CreateReservationModal({
                 ariaLabel="End date"
                 clearable={false}
               />
-              <span className="mt-1 block text-[9px] text-[#96968b]">One tour day is created per day; set each day&apos;s times in its itinerary.</span>
+              <span className="mt-1 block text-meta text-[#96968b]">One tour day is created per day; set each day&apos;s times in its itinerary.</span>
             </label>
 
             <label className={labelClass}>
@@ -348,7 +348,7 @@ export function CreateReservationModal({
               />
             </label>
 
-            <label className="flex items-start gap-2 text-[10px] text-[#65665d] sm:col-span-2">
+            <label className="flex items-start gap-2 text-body text-[#65665d] sm:col-span-2">
               <input
                 type="checkbox"
                 checked={offerToZoneGuides}
@@ -357,12 +357,12 @@ export function CreateReservationModal({
               />
               <span>
                 Notify the guides of each zone about days without guide
-                <span className="mt-1 block text-[9px] text-[#96968b]">Turn it off when the guide is already agreed: nobody else is told about these days.</span>
+                <span className="mt-1 block text-meta text-[#96968b]">Turn it off when the guide is already agreed: nobody else is told about these days.</span>
               </span>
             </label>
           </div>
 
-          <p className="mt-5 text-[9px] leading-relaxed text-[#96968b]">
+          <p className="mt-5 text-meta leading-relaxed text-[#96968b]">
             Fields marked with * are required. The reservation will be
             created using the current InariOps API.
           </p>
@@ -372,7 +372,7 @@ export function CreateReservationModal({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="h-10 border border-[#deddd6] px-5 text-[10px] hover:bg-[#f8f7f3] disabled:opacity-50"
+              className="h-10 border border-[#deddd6] px-5 text-body hover:bg-[#f8f7f3] disabled:opacity-50"
             >
               Cancel
             </button>
@@ -380,7 +380,7 @@ export function CreateReservationModal({
             <button
               type="submit"
               disabled={isSubmitting || isLoadingAgencies}
-              className="h-10 bg-[#292b26] px-6 text-[10px] text-white transition-colors hover:bg-[#41443b] disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-10 bg-[#292b26] px-6 text-body text-white transition-colors hover:bg-[#41443b] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? "Creating..." : "Create and continue"}
             </button>

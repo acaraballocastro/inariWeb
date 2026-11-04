@@ -16,7 +16,7 @@ const agencyConfig: RecordsConfig<Agency> = {
   activeItem: "Agencies",
   noun: "agency",
   columns: [
-    { label: "Name", width: "minmax(180px,1.2fr)", render: (item) => <span className="text-[10px]">{item.name}</span> },
+    { label: "Name", width: "minmax(180px,1.2fr)", render: (item) => <span className="text-body">{item.name}</span> },
     { label: "Representative", width: "minmax(140px,1fr)", render: (item) => item.representative || "—" },
     { label: "Email", width: "minmax(180px,1.2fr)", render: (item) => <span className="text-[#85867c]">{item.email || "—"}</span> },
     { label: "Status", width: "90px", render: (item) => <ActiveBadge active={item.is_active} /> },
@@ -47,7 +47,7 @@ const customerConfig: RecordsConfig<ReservationCustomer> = {
   activeItem: "Customers",
   noun: "customer",
   columns: [
-    { label: "Name", width: "minmax(170px,1.2fr)", render: (item) => <span className="text-[10px]">{item.full_name}</span> },
+    { label: "Name", width: "minmax(170px,1.2fr)", render: (item) => <span className="text-body">{item.full_name}</span> },
     { label: "Email", width: "minmax(170px,1.2fr)", render: (item) => <span className="text-[#85867c]">{item.email || "—"}</span> },
     { label: "Phone", width: "minmax(110px,0.8fr)", render: (item) => item.phone || "—" },
     { label: "Document", width: "minmax(110px,0.8fr)", render: (item) => item.document_number || "—" },
@@ -77,7 +77,7 @@ const activityConfig: RecordsConfig<Activity> = {
   activeItem: "Activities",
   noun: "activity",
   columns: [
-    { label: "Name", width: "minmax(180px,1fr)", render: (item) => <span className="text-[10px]">{item.name}</span> },
+    { label: "Name", width: "minmax(180px,1fr)", render: (item) => <span className="text-body">{item.name}</span> },
     { label: "Description", width: "minmax(240px,2fr)", render: (item) => <span className="text-[#85867c]">{item.description || "—"}</span> },
     { label: "Status", width: "90px", render: (item) => <ActiveBadge active={item.is_active} /> },
   ],

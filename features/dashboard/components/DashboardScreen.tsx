@@ -54,20 +54,20 @@ export function DashboardScreen() {
           <div className="px-5 pb-8 sm:px-8 lg:px-10">
             <div className="mx-auto max-w-[1190px]">
               <header className="mb-5 border-b border-[#deddd6] pb-5 pt-7 sm:pt-9">
-                <p className="min-h-[1em] text-[9px] tracking-[0.08em] text-[#98978c]">
+                <p className="min-h-[1em] text-meta tracking-[0.08em] text-[#98978c]">
                   {now ? formatLongDate(now) : ""}
                 </p>
                 <h1 className="mt-3 min-h-[1.2em] font-serif text-3xl tracking-[-0.035em] sm:text-[36px]">
                   {now ? `${greeting(now)}${user ? `, ${user.name.split(/\s+/)[0]}` : ""}.` : ""}
                 </h1>
-                <p className="mt-2 text-[11px] text-[#85867c]">
+                <p className="mt-2 text-lead text-[#85867c]">
                   {session && !isAdmin(session) ? "Your tours and the ones waiting for your answer." : "Here\u2019s what needs your attention today."}
                 </p>
               </header>
 
               {session && !isAdmin(session) ? <GuideDashboard now={now} /> : <>
 
-              {error && <p className="mb-5 bg-[#f4e4df] px-4 py-3 text-[10px] text-[#8a3b2c]">{error}</p>}
+              {error && <p className="mb-5 bg-[#f4e4df] px-4 py-3 text-body text-[#8a3b2c]">{error}</p>}
               <MissingDataNotice missing={data?.missing ?? []} className="mb-5" />
 
               <OverviewBanner />
@@ -88,7 +88,7 @@ export function DashboardScreen() {
               </div>
               </>}
 
-              <footer className="pt-8 text-[9px] tracking-[0.03em] text-[#a09f94]">
+              <footer className="pt-8 text-meta tracking-[0.03em] text-[#a09f94]">
                 Live operational data · All times in Japan Standard Time (JST)
               </footer>
             </div>
@@ -109,10 +109,10 @@ function AttentionPanel({ attention }: { attention: DashboardData["attention"] |
 
   return (
     <section className="bg-[#e9e5d7] p-5 sm:p-6">
-      <p className="text-[9px] font-semibold tracking-[0.18em] text-[#9b8353]">
+      <p className="text-meta font-semibold tracking-[0.18em] text-[#9b8353]">
         NEEDS YOUR ATTENTION
       </p>
-      <ul className="mt-5 space-y-4 text-[11px]">
+      <ul className="mt-5 space-y-4 text-lead">
         {items.map(([label, value], index) => (
           <li key={label} className={`flex items-center justify-between ${index < items.length - 1 ? "border-b border-[#d7d1c1] pb-3" : ""}`}>
             <span>{label}</span>
