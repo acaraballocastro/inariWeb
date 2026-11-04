@@ -1,5 +1,7 @@
 "use client";
 
+import { Combobox } from "@/features/dashboard/components/Combobox";
+import { Select } from "@/features/dashboard/components/Select";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
@@ -110,7 +112,7 @@ export function AssignmentsScreen() {
                       </button>
                     ))}
                   </div>
-                  <label className="text-[9px]">Zone<select value={zoneFilter} onChange={(event) => setZoneFilter(event.target.value)} className="ml-2 h-8 border border-[#e3e1da] bg-[#f8f7f3] px-2 text-[9px]"><option value="">All zones</option>{zones.map((zone) => <option key={zone.id} value={zone.id}>{zone.name}</option>)}</select></label>
+                  <label className="flex items-center gap-2 text-[9px]">Zone<span className="w-44"><Select value={zoneFilter} onChange={setZoneFilter} options={[{ value: "", label: "All zones" }, ...zones.map((zone) => ({ value: zone.id, label: zone.name }))]} className="h-8 w-full border border-[#e3e1da] bg-[#f8f7f3] px-2 text-[9px] outline-none focus:border-[#b5a786]" ariaLabel="Zone" /></span></label>
                 </div>
 
                 {error && <p role="alert" className="mt-4 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-[10px] text-[#9b6f37]">{error}</p>}
@@ -142,7 +144,7 @@ export function AssignmentsScreen() {
               <aside className="h-fit bg-white p-5 sm:p-6 xl:sticky xl:top-5">
                 <h2 className="font-serif text-xl">Assign</h2>
                 <p className="mt-2 text-[10px] text-[#85867c]">{selectedDays.length ? `${selectedDays.length} day${selectedDays.length === 1 ? "" : "s"} selected` : "Select days on the left."}</p>
-                <label className="mt-4 block text-[9px]">Guide<select value={guideId} onChange={(event) => setGuideId(event.target.value)} disabled={isSaving} className="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px]"><option value="">Select a guide</option>{sortedGuides.map((item) => <option key={item.guide.id} value={item.guide.id}>{item.guide.name}{item.zones.length ? ` · ${item.zones.map((zone) => zone.name).join(", ")}` : ""}</option>)}</select></label>
+                <label className="mt-4 block text-[9px]">Guide<Combobox value={guideId} onChange={setGuideId} options={sortedGuides.map((item) => ({ id: item.guide.id, label: item.guide.name, detail: item.zones.map((zone) => zone.name).join(", ") || null }))} noun="guide" placeholder="Search a guide..." disabled={isSaving} inputClass="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]" /></label>
                 <button type="button" disabled={isSaving || !guideId || selectedDays.length === 0} onClick={handleAssign} className="mt-3 h-9 w-full bg-[#292b26] text-[9px] text-white hover:bg-[#41443b] disabled:opacity-50">{isSaving ? "Assigning..." : "Assign guide"}</button>
                 {selectedDays.length > 0 && <button type="button" onClick={() => setSelected(new Set())} className="mt-2 text-[9px] underline underline-offset-2">Clear selection</button>}
                 <p className="mt-4 text-[8px] leading-relaxed text-[#85867c]">Pending days become preassigned and the guide has 24 hours to answer. Paid days keep their status with the new guide.</p>

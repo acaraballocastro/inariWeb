@@ -1,7 +1,9 @@
 "use client";
 
+import { DateTimeInput } from "@/features/dashboard/components/DateTimeInput";
 import type { FormEvent } from "react";
-import type { Zone } from "@/features/catalogs/api";
+import { createZone, type Zone } from "@/features/catalogs/api";
+import { Combobox } from "@/features/dashboard/components/Combobox";
 import type { TourDay, TourDayFormInput } from "@/features/tours/api";
 import { formatDuration, isoToJstInput, jstInputToIso, parseDuration } from "@/lib/datetime";
 
@@ -61,13 +63,20 @@ export function toTourDayInput(draft: TourDayDraft): { input: TourDayFormInput }
 const inputClass = "mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]";
 const textareaClass = "mt-2 min-h-20 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 py-2 text-[10px] outline-none focus:border-[#b5a786]";
 
-export function TourDayForm({ draft, zones, onChange, onSubmit, onCancel, isSaving, submitLabel }: { draft: TourDayDraft; zones: Zone[]; onChange: (draft: TourDayDraft) => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void; onCancel: () => void; isSaving: boolean; submitLabel: string }) {
+/** `onZoneCreated` lets the screen add a zone created here to its own list. */
+export function TourDayForm({ draft, zones, onChange, onZoneCreated, onSubmit, onCancel, isSaving, submitLabel }: { draft: TourDayDraft; zones: Zone[]; onChange: (draft: TourDayDraft) => void; onZoneCreated?: (zone: Zone) => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void; onCancel: () => void; isSaving: boolean; submitLabel: string }) {
+  const zoneOptions = zones.filter((zone) => zone.is_active || zone.id === draft.zone_id).map((zone) => ({ id: zone.id, label: zone.name }));
+  async function addZone(name: string) {
+    const zone = await createZone({ name });
+    onZoneCreated?.(zone);
+    return { id: zone.id, label: zone.name };
+  }
   return (
     <form onSubmit={onSubmit} className="mt-5 grid gap-4 sm:grid-cols-2">
       <label className="text-[9px] sm:col-span-2">Title *<input required value={draft.title} onChange={(event) => onChange({ ...draft, title: event.target.value })} placeholder="e.g. Kyoto's eastern lanes" className={inputClass} /></label>
-      <label className="text-[9px]">Start date and time (JST) *<input required type="datetime-local" value={draft.start_datetime} onChange={(event) => onChange({ ...draft, start_datetime: event.target.value })} className={inputClass} /></label>
+      <label className="text-[9px]">Start date and time (JST) *<DateTimeInput value={draft.start_datetime} onChange={(start_datetime) => onChange({ ...draft, start_datetime })} disabled={isSaving} className={inputClass} ariaLabel="Start" /></label>
       <label className="text-[9px]">Duration<input value={draft.duration} onChange={(event) => onChange({ ...draft, duration: event.target.value })} placeholder="e.g. 6h" className={inputClass} /></label>
-      <label className="text-[9px]">Zone<select value={draft.zone_id} onChange={(event) => onChange({ ...draft, zone_id: event.target.value })} className={inputClass}><option value="">No zone assigned</option>{zones.map((zone) => <option key={zone.id} value={zone.id}>{zone.name}</option>)}</select></label>
+      <label className="text-[9px]">Zone<Combobox value={draft.zone_id} options={zoneOptions} onChange={(zoneId) => onChange({ ...draft, zone_id: zoneId })} onCreate={addZone} noun="zone" placeholder="Search or create a zone..." emptyLabel="No zone assigned" disabled={isSaving} inputClass={inputClass} /></label>
       <label className="text-[9px]">Guests<input type="number" min="1" step="1" value={draft.people_count} onChange={(event) => onChange({ ...draft, people_count: event.target.value })} className={inputClass} /></label>
       <label className="text-[9px]">Meeting point<input value={draft.meeting_point} onChange={(event) => onChange({ ...draft, meeting_point: event.target.value })} className={inputClass} /></label>
       <label className="text-[9px]">Remuneration<input type="number" min="0" step="any" value={draft.remuneration} onChange={(event) => onChange({ ...draft, remuneration: event.target.value })} className={inputClass} /></label>

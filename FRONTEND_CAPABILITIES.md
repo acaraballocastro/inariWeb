@@ -58,7 +58,23 @@ Paginación y búsqueda en el servidor para los listados grandes:
 - **Itinerario:** reordenar hace los dos cambios uno detrás de otro, mandando sólo `order_index`, y deshace el primero si falla el segundo.
 - **Tests y CI:** 27 tests de `lib/` con `node:test` (sin dependencias nuevas), scripts `typecheck` y `test`, workflow de GitHub Actions (lint, tipos, tests y build) y README propio.
 
-## 2.4 Qué cubre
+## 2.4 Selectores con búsqueda y creación (2026-11-04)
+
+Los catálogos se eligen escribiendo, como los clientes: `Combobox` (`features/dashboard/components/Combobox.tsx`) filtra mientras se escribe (sin distinguir mayúsculas ni acentos, primero lo que empieza por el texto; `lib/search.ts`, con tests), se maneja con el teclado (flechas, Enter, Escape) y, si nada se llama así, ofrece *+ Create zone “…”*, lo crea y lo deja elegido. Lo creado se añade a la lista de la pantalla.
+
+| Dónde | Qué | Crea |
+|---|---|---|
+| Formulario del día de tour (alta de reserva, detalle de reserva y detalle del día) | Zona | Zona |
+| Itinerario (alta de reserva y detalle del día) | Lugar (primero los de la zona del día) y actividad | Lugar en la zona del día, sin descripción; actividad |
+| Alta y edición de reservas | Agencia | Agencia sólo con nombre (el representante y el email se completan en *Agencies*) |
+| *Places* | Zona del lugar (alta y edición); el filtro por zona sólo busca | Zona |
+| Guías (alta, edición en la tabla y detalle) | Idiomas y zonas (selección múltiple con buscador) | Zonas; los idiomas sólo se buscan, porque crear uno exige su código |
+
+**Sin desplegables del navegador:** no queda ningún `<select>` nativo. Las listas cortas y fijas (tipo de parada, rol, estado de incidencia, voucher, firma, filtros de auditoría, zona en *Assignments*) usan `Select` (`features/dashboard/components/Select.tsx`), con el mismo aspecto que `Combobox`, grupos con título, marca en la opción elegida y teclado (flechas, Enter o Espacio, Escape, y una letra salta a la primera opción que empieza por ella). Las listas que crecen sin opción de crear (guía al asignar o cambiar, filtros de agencia y guía en *Reservations*, usuario en la auditoría) usan `Combobox` sin `onCreate`: se buscan escribiendo. **Sin controles del navegador:** las fechas usan `DateInput` (calendario propio: semanas de lunes a domingo, hoy marcado en JST, *Today* y *Clear*, límites `min`/`max`; teclado: flechas por día y semana, Re Pág/Av Pág por mes, Enter, Escape), las horas `TimeInput` (se escribe "930", "9:30", "17h30"… o se elige en una lista cada 15 minutos; `parseTimeText` en `lib/datetime.ts`) y fecha con hora `DateTimeInput` (los dos juntos). Devuelven las mismas cadenas que los campos nativos (`YYYY-MM-DD`, `HH:MM`, `YYYY-MM-DDTHH:MM`). Casillas, números (sin flechas) y el aspa de las búsquedas toman el estilo de la app desde `app/globals.css`, en la capa `base` para que las clases de utilidad sigan mandando. Las listas emergentes de `Select` y `DateInput` cancelan el clic para que, dentro de una `<label>`, no se reabran.
+
+**Diálogos propios:** no queda ningún `window.confirm` ni `window.prompt`. `useDialogs()` (`features/dashboard/components/DialogProvider.tsx`, montado en `app/layout.tsx`) da `confirm` y `prompt` con el estilo de la app sobre un `<dialog>` modal del navegador (foco atrapado, Escape y clic fuera cancelan, el foco vuelve a donde estaba). Cada uno lleva título, explicación y un botón con la acción concreta ("Cancel tour day", "Delete permanently"…); lo destructivo va en rojo y con el foco inicial en "Keep it"/"Cancel". Borrar una reserva definitivamente no habilita el botón hasta que se escribe su código exacto; la fuerza mayor pide el motivo (opcional) en el mismo diálogo.
+
+## 2.5 Qué cubre
 
 | Área | Admin | Guía |
 |---|---|---|
@@ -163,7 +179,7 @@ La operativa es en Japón: **todas las fechas y horas se introducen y se muestra
 
 - **Listado** (`/reservations`): tarjetas de totales (total, confirmadas, pendientes, vouchers pendientes), filtros por estado, rango de fechas, agencia, guía y texto (código o título), paginación de 50. Cada fila muestra estado, voucher y firma.
 - **Alta en 3 pasos** (modal):
-  1. Datos: título, descripción, agencia, pasajeros, fechas, nº de presupuesto y de expediente, `offer_to_zone_guides` y clientes (búsqueda de existentes o alta nueva con `CustomerPicker`).
+  1. Datos: título, descripción, agencia, pasajeros, días de inicio y fin (sin hora: los días se crean a las 09:00 JST y cada uno recibe su horario en su itinerario y en su día de tour), nº de presupuesto y de expediente, `offer_to_zone_guides` y clientes (búsqueda de existentes o alta nueva con `CustomerPicker`).
   2. Días de tour: el backend crea uno por fecha; aquí se completan (hora, duración, zona, punto de encuentro, pasajeros, remuneración, notas) y se pueden añadir más (`ReservationTourDaysStep`).
   3. Itinerario de cada día (`ReservationItineraryStep`); se puede saltar y completar después.
 - **Detalle** (`/reservations/[code]`):

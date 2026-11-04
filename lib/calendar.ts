@@ -30,3 +30,29 @@ export function shiftMonth(month: CalendarMonth, delta: number): CalendarMonth {
   const date = new Date(Date.UTC(month.year, month.month - 1 + delta, 1));
   return { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1 };
 }
+
+/** The day key `days` after (or before) another: "2026-11-30" + 1 → "2026-12-01". */
+export function addDays(dayKey: string, days: number) {
+  const date = new Date(`${dayKey}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+/** The same day of another month, clamped to its length: 31 Jan + 1 month → 28 (or 29) Feb. */
+export function addMonths(dayKey: string, months: number) {
+  const [year, month, day] = dayKey.split("-").map(Number);
+  const first = new Date(Date.UTC(year, month - 1 + months, 1));
+  const length = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+  first.setUTCDate(Math.min(day, length));
+  return first.toISOString().slice(0, 10);
+}
+
+/** The month a day key falls in. */
+export function monthOf(dayKey: string): CalendarMonth {
+  return { year: Number(dayKey.slice(0, 4)), month: Number(dayKey.slice(5, 7)) };
+}
+
+/** Whether a day key is within the optional, inclusive [min, max]. */
+export function isWithin(dayKey: string, min?: string, max?: string) {
+  return (!min || dayKey >= min) && (!max || dayKey <= max);
+}

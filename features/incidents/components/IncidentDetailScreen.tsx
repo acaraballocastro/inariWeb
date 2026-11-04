@@ -1,5 +1,6 @@
 "use client";
 
+import { Select } from "@/features/dashboard/components/Select";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
@@ -108,7 +109,7 @@ export function IncidentDetailScreen({ incidentId }: { incidentId: string }) {
                       <h2 className="font-serif text-xl">Change status</h2>
                       {options.length === 0 ? <p className="mt-4 text-[10px] text-[#85867c]">Closed incidents are final.</p> : (
                         <form onSubmit={handleChangeStatus} className="mt-4 space-y-3">
-                          <label className="block text-[9px]">New status<select value={nextStatus} onChange={(event) => setNextStatus(event.target.value as IncidentStatus)} className="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px]"><option value="">Select a status</option>{options.map((status) => <option key={status} value={status}>{status === "IN_REVIEW" && incident.status === "RESOLVED" ? "Reopen (in review)" : formatIncidentStatus(status)}</option>)}</select></label>
+                          <label className="block text-[9px]">New status<Select value={nextStatus} onChange={(status) => setNextStatus(status as IncidentStatus)} options={options.map((status) => ({ value: status, label: status === "IN_REVIEW" && incident.status === "RESOLVED" ? "Reopen (in review)" : formatIncidentStatus(status) }))} placeholder="Select a status" className="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]" ariaLabel="New status" /></label>
                           <label className="block text-[9px]">Reason<textarea value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Shown to the guide in the history..." className="mt-2 min-h-16 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 py-2 text-[10px]" /></label>
                           <button type="submit" disabled={isSaving || !nextStatus} className="h-9 w-full bg-[#292b26] text-[9px] text-white disabled:opacity-50">{isSaving ? "Saving..." : "Update status"}</button>
                         </form>

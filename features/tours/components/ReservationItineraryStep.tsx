@@ -56,7 +56,7 @@ export function ReservationItineraryStep({ reservation, onBack, onFinish }: { re
             <section className="mt-5">
               <h3 className="font-serif text-lg">{activeDay.title || "Untitled tour day"}</h3>
               <p className="mt-1 text-[9px] text-[#85867c]">{formatDate(activeDay.start_datetime)} · Starts {toClock(activeDay.start_datetime)}{activeDay.meeting_point ? ` · ${activeDay.meeting_point}` : ""}</p>
-              <ItineraryEditor key={activeDay.id} tourDay={activeDay} places={places} activities={activities} onCountChange={(count) => setStopCounts((current) => current[activeDay.id] === count ? current : { ...current, [activeDay.id]: count })} />
+              <ItineraryEditor key={activeDay.id} tourDay={activeDay} places={places} activities={activities} onPlaceCreated={(place) => setPlaces((current) => [...current, place])} onActivityCreated={(activity) => setActivities((current) => [...current, activity])} onCountChange={(count) => setStopCounts((current) => current[activeDay.id] === count ? current : { ...current, [activeDay.id]: count })} />
             </section>
           )}
         </>

@@ -85,6 +85,15 @@ export function createAgency(input: AgencyInput) {
   return request<Agency>("/agencies", { method: "POST", body: JSON.stringify(input) });
 }
 
+/** An agency with just its name, created from a picker; the rest is filled in later from Agencies. */
+export function createAgencyNamed(name: string) {
+  return createAgency({ name, representative: "", email: "" });
+}
+
+export function agencyOption(agency: Agency) {
+  return { id: agency.id, label: agency.name, detail: agency.representative || agency.email || null };
+}
+
 export function updateAgency(id: string, input: AgencyInput) {
   return request<void>(`/agencies/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) });
 }

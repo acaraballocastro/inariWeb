@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { monthCells, monthRange, shiftMonth } from "./calendar.ts";
+import { addDays, addMonths, isWithin, monthCells, monthOf, monthRange, shiftMonth } from "./calendar.ts";
 
 describe("monthRange", () => {
   it("bounds the month in JST, end exclusive", () => {
@@ -35,5 +35,25 @@ describe("shiftMonth", () => {
   it("moves across years both ways", () => {
     assert.deepEqual(shiftMonth({ year: 2026, month: 12 }, 1), { year: 2027, month: 1 });
     assert.deepEqual(shiftMonth({ year: 2026, month: 1 }, -1), { year: 2025, month: 12 });
+  });
+});
+
+describe("day arithmetic", () => {
+  it("adds days across months and years", () => {
+    assert.equal(addDays("2026-11-30", 1), "2026-12-01");
+    assert.equal(addDays("2027-01-01", -1), "2026-12-31");
+  });
+
+  it("adds months keeping the day when it exists", () => {
+    assert.equal(addMonths("2026-01-31", 1), "2026-02-28");
+    assert.equal(addMonths("2028-01-31", 1), "2028-02-29");
+    assert.equal(addMonths("2026-03-15", -3), "2025-12-15");
+  });
+
+  it("knows the month and the bounds", () => {
+    assert.deepEqual(monthOf("2026-11-04"), { year: 2026, month: 11 });
+    assert.ok(isWithin("2026-11-04", "2026-11-04", "2026-11-05"));
+    assert.ok(!isWithin("2026-11-03", "2026-11-04"));
+    assert.ok(isWithin("2026-11-03"));
   });
 });

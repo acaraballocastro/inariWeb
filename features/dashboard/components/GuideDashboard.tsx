@@ -1,5 +1,6 @@
 "use client";
 
+import { useDialogs } from "@/features/dashboard/components/DialogProvider";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
@@ -31,6 +32,7 @@ async function loadGuideData(now: Date): Promise<GuideData> {
 }
 
 export function GuideDashboard({ now }: { now: Date | null }) {
+  const { confirm } = useDialogs();
   const [data, setData] = useState<GuideData | null>(null);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export function GuideDashboard({ now }: { now: Date | null }) {
   }, [now]);
 
   async function respond(day: TourDay, accept: boolean) {
-    if (!accept && !window.confirm("Decline this tour? It will be offered to other guides.")) return;
+    if (!accept && !await confirm({ title: "Decline this tour?", message: "It will be offered to other guides.", confirmLabel: "Decline tour", cancelLabel: "Keep it", tone: "danger" })) return;
     setBusyId(day.id); setError("");
     try {
       await (accept ? confirmTourDay(day.id) : rejectTourDay(day.id));

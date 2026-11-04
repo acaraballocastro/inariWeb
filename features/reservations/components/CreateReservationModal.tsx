@@ -1,20 +1,27 @@
 "use client";
 
+import { DateInput } from "@/features/dashboard/components/DateInput";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 
 import {
   createReservation,
+  agencyOption,
+  createAgencyNamed,
   listAgencies,
   type Agency,
   type Reservation,
   type ReservationCustomerInput,
   type ReservationFormInput,
 } from "@/features/reservations/api";
+import { Combobox } from "@/features/dashboard/components/Combobox";
 import { CustomerPicker } from "@/features/reservations/components/CustomerPicker";
 import { ReservationItineraryStep } from "@/features/tours/components/ReservationItineraryStep";
 import { ReservationTourDaysStep } from "@/features/tours/components/ReservationTourDaysStep";
 import { jstInputToIso } from "@/lib/datetime";
+
+/** Time of day (JST) the tour days of a new reservation start at, until each is given its own. */
+const defaultTourDayStart = "09:00";
 
 /** Creation in three steps: the reservation, its tour days and their itinerary. */
 export function CreateReservationModal({
@@ -92,8 +99,9 @@ export function CreateReservationModal({
       return;
     }
 
-    if (new Date(startDate).getTime() >= new Date(endDate).getTime()) {
-      setError("The end date must be later than the start date.");
+    // A one-day reservation starts and ends on the same day.
+    if (endDate < startDate) {
+      setError("The end date cannot be before the start date.");
       return;
     }
 
@@ -110,8 +118,11 @@ export function CreateReservationModal({
       agency_id: agencyId,
       customers: selectedCustomers,
       total_people_count: totalPeople,
-      start_date: jstInputToIso(startDate),
-      end_date: jstInputToIso(endDate),
+      // A reservation is a range of days. The API creates one tour day per
+      // day at this time of day; each day's times are set afterwards, in its
+      // itinerary and tour day.
+      start_date: jstInputToIso(`${startDate}T${defaultTourDayStart}`),
+      end_date: jstInputToIso(`${endDate}T${defaultTourDayStart}`),
       ...(quoteNumber.trim()
         ? { quote_number: quoteNumber.trim() }
         : {}),
@@ -245,23 +256,21 @@ export function CreateReservationModal({
 
             <label className={labelClass}>
               Agency
-              <select
+              <Combobox
                 value={agencyId}
-                onChange={(event) => setAgencyId(event.target.value)}
-                disabled={isLoadingAgencies}
-                className={inputClass}
-              >
-                <option value="">
-                  {isLoadingAgencies
-                    ? "Loading agencies..."
-                    : "No agency assigned"}
-                </option>
-                {agencies.map((agency) => (
-                  <option key={agency.id} value={agency.id}>
-                    {agency.name}
-                  </option>
-                ))}
-              </select>
+                options={agencies.map(agencyOption)}
+                onChange={setAgencyId}
+                onCreate={async (name) => {
+                  const agency = await createAgencyNamed(name);
+                  setAgencies((current) => [...current, agency]);
+                  return agencyOption(agency);
+                }}
+                noun="agency"
+                placeholder={isLoadingAgencies ? "Loading agencies..." : "Search or create an agency..."}
+                emptyLabel="No agency assigned"
+                disabled={isLoadingAgencies || isSubmitting}
+                inputClass={inputClass}
+              />
               {agencyError && (
                 <span className="mt-1 block text-[9px] text-[#9b6f37]">
                   {agencyError}
@@ -293,26 +302,30 @@ export function CreateReservationModal({
             </div>
 
             <label className={labelClass}>
-              Start date and time (JST) *
-              <input
-                required
-                type="datetime-local"
+              Start date *
+              <DateInput
                 value={startDate}
-                onChange={(event) => setStartDate(event.target.value)}
+                max={endDate || undefined}
+                onChange={setStartDate}
+                disabled={isSubmitting}
                 className={inputClass}
+                ariaLabel="Start date"
+                clearable={false}
               />
             </label>
 
             <label className={labelClass}>
-              End date and time (JST) *
-              <input
-                required
-                type="datetime-local"
+              End date *
+              <DateInput
                 min={startDate || undefined}
                 value={endDate}
-                onChange={(event) => setEndDate(event.target.value)}
+                onChange={setEndDate}
+                disabled={isSubmitting}
                 className={inputClass}
+                ariaLabel="End date"
+                clearable={false}
               />
+              <span className="mt-1 block text-[9px] text-[#96968b]">One tour day is created per day; set each day&apos;s times in its itinerary.</span>
             </label>
 
             <label className={labelClass}>

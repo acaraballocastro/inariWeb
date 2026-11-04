@@ -1,7 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useDialogs } from "@/features/dashboard/components/DialogProvider";
+import { TimeInput } from "@/features/dashboard/components/TimeInput";
+import { Select } from "@/features/dashboard/components/Select";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { createActivity } from "@/features/catalogs/api";
+import { Combobox } from "@/features/dashboard/components/Combobox";
+import { createPlace } from "@/features/places/api";
 import { createItineraryItem, deleteItineraryItem, listItinerary, updateItineraryItem, type ItineraryActivity, type ItineraryItem, type ItineraryItemInput, type ItineraryPlace, type TourDay } from "@/features/tours/api";
 import { formatJstClock } from "@/lib/datetime";
 
@@ -11,7 +17,35 @@ type StopDraft = { start_time: string; end_time: string; type: string; place_id:
 
 const inputClass = "mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]";
 
-export function ItineraryEditor({ tourDay, places, activities, onCountChange, readOnly = false }: { tourDay: TourDay; places: ItineraryPlace[]; activities: ItineraryActivity[]; onCountChange?: (count: number) => void; readOnly?: boolean }) {
+/** `onPlaceCreated` / `onActivityCreated` let the screen add what is created here to its own lists. */
+export function ItineraryEditor({ tourDay, places: givenPlaces, activities: givenActivities, onCountChange, onPlaceCreated, onActivityCreated, readOnly = false }: { tourDay: TourDay; places: ItineraryPlace[]; activities: ItineraryActivity[]; onCountChange?: (count: number) => void; onPlaceCreated?: (place: ItineraryPlace) => void; onActivityCreated?: (activity: ItineraryActivity) => void; readOnly?: boolean }) {
+  const { confirm } = useDialogs();
+  // What is created here shows at once, whether or not the screen adds it to its lists.
+  const [createdPlaces, setCreatedPlaces] = useState<ItineraryPlace[]>([]);
+  const [createdActivities, setCreatedActivities] = useState<ItineraryActivity[]>([]);
+  const places = useMemo(() => withCreated(givenPlaces, createdPlaces), [givenPlaces, createdPlaces]);
+  const activities = useMemo(() => withCreated(givenActivities, createdActivities), [givenActivities, createdActivities]);
+  // The places of the day's zone first.
+  const placeOptions = useMemo(() => [...places].sort((a, b) => Number(b.zone_id === tourDay.zone_id) - Number(a.zone_id === tourDay.zone_id)).map((place) => ({ id: place.id, label: place.name, detail: place.zone_name })), [places, tourDay.zone_id]);
+  const activityOptions = useMemo(() => activities.map((activity) => ({ id: activity.id, label: activity.name })), [activities]);
+
+  // A new place goes in the day's zone.
+  async function addPlace(name: string) {
+    const created = await createPlace({ name, description: null, zone_id: tourDay.zone_id, is_active: true });
+    const place: ItineraryPlace = { id: created.id, name: created.name, zone_id: created.zone_id, zone_name: null };
+    setCreatedPlaces((current) => [...current, place]);
+    onPlaceCreated?.(place);
+    return { id: place.id, label: place.name };
+  }
+
+  async function addActivity(name: string) {
+    const created = await createActivity({ name, description: null });
+    const activity: ItineraryActivity = { id: created.id, name: created.name };
+    setCreatedActivities((current) => [...current, activity]);
+    onActivityCreated?.(activity);
+    return { id: activity.id, label: activity.name };
+  }
+
   const [items, setItems] = useState<ItineraryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -69,8 +103,8 @@ export function ItineraryEditor({ tourDay, places, activities, onCountChange, re
     if (saved) setEditingId(null);
   }
 
-  function handleDelete(item: ItineraryItem) {
-    if (!window.confirm("Remove this stop from the itinerary?")) return;
+  async function handleDelete(item: ItineraryItem) {
+    if (!await confirm({ title: "Remove this stop?", message: "It is taken out of the day's itinerary.", confirmLabel: "Remove stop", tone: "danger" })) return;
     runAction(() => deleteItineraryItem(tourDay.id, item.id), "Could not remove the stop.");
   }
 
@@ -99,11 +133,11 @@ export function ItineraryEditor({ tourDay, places, activities, onCountChange, re
 
   const stopForm = (submitLabel: string) => (
     <form onSubmit={handleSubmit} className="grid gap-4 py-4 sm:grid-cols-2">
-      <label className="text-[9px]">Start time *<input required type="time" value={draft.start_time} onChange={(event) => setDraft({ ...draft, start_time: event.target.value })} className={inputClass} /></label>
-      <label className="text-[9px]">End time<input type="time" value={draft.end_time} onChange={(event) => setDraft({ ...draft, end_time: event.target.value })} className={inputClass} /></label>
-      <label className="text-[9px]">Type<select value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value })} className={inputClass}>{stopTypes.map((type) => <option key={type} value={type}>{formatType(type)}</option>)}</select></label>
-      {draft.type === "PLACE" && <label className="text-[9px]">Place *<select value={draft.place_id} onChange={(event) => setDraft({ ...draft, place_id: event.target.value })} className={inputClass}><option value="">{places.length ? "Select a place" : "No places available"}</option>{places.map((place) => <option key={place.id} value={place.id}>{place.zone_name ? `${place.name} · ${place.zone_name}` : place.name}</option>)}</select></label>}
-      {draft.type === "ACTIVITY" && <label className="text-[9px]">Activity *<select value={draft.activity_id} onChange={(event) => setDraft({ ...draft, activity_id: event.target.value })} className={inputClass}><option value="">{activities.length ? "Select an activity" : "No activities available"}</option>{activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.name}</option>)}</select></label>}
+      <label className="text-[9px]">Start time *<TimeInput value={draft.start_time} onChange={(start_time) => setDraft({ ...draft, start_time })} disabled={isSaving} className={inputClass} ariaLabel="Start time" /></label>
+      <label className="text-[9px]">End time<TimeInput value={draft.end_time} onChange={(end_time) => setDraft({ ...draft, end_time })} disabled={isSaving} className={inputClass} ariaLabel="End time" /></label>
+      <label className="text-[9px]">Type<Select value={draft.type} onChange={(type) => setDraft({ ...draft, type })} options={stopTypes.map((type) => ({ value: type, label: formatType(type) }))} disabled={isSaving} className={inputClass} ariaLabel="Type" /></label>
+      {draft.type === "PLACE" && <label className="text-[9px]">Place *<Combobox value={draft.place_id} options={placeOptions} onChange={(placeId) => setDraft({ ...draft, place_id: placeId })} onCreate={addPlace} noun="place" placeholder="Search or create a place..." disabled={isSaving} inputClass={inputClass} /></label>}
+      {draft.type === "ACTIVITY" && <label className="text-[9px]">Activity *<Combobox value={draft.activity_id} options={activityOptions} onChange={(activityId) => setDraft({ ...draft, activity_id: activityId })} onCreate={addActivity} noun="activity" placeholder="Search or create an activity..." disabled={isSaving} inputClass={inputClass} /></label>}
       <label className="text-[9px] sm:col-span-2">Notes<textarea value={draft.notes} onChange={(event) => setDraft({ ...draft, notes: event.target.value })} placeholder="What happens at this stop..." className="mt-2 min-h-16 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 py-2 text-[10px] outline-none focus:border-[#b5a786]" /></label>
       <div className="flex gap-2 sm:col-span-2"><button type="submit" disabled={isSaving} className="h-9 bg-[#292b26] px-4 text-[9px] text-white hover:bg-[#41443b] disabled:opacity-60">{isSaving ? "Saving..." : submitLabel}</button><button type="button" onClick={() => setEditingId(null)} disabled={isSaving} className="h-9 border border-[#deddd6] px-4 text-[9px] hover:bg-[#f8f7f3] disabled:opacity-50">Cancel</button></div>
     </form>
@@ -147,3 +181,8 @@ function toTimeInput(value: string) {
 
 function formatClock(value: string | null) { return value ? toTimeInput(value) : "—"; }
 function formatType(value: string) { return value.charAt(0) + value.slice(1).toLowerCase(); }
+
+function withCreated<T extends { id: string }>(given: T[], created: T[]) {
+  const known = new Set(given.map((item) => item.id));
+  return [...given, ...created.filter((item) => !known.has(item.id))];
+}

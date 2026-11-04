@@ -1,11 +1,14 @@
 "use client";
 
+import { useDialogs } from "@/features/dashboard/components/DialogProvider";
+import { Select } from "@/features/dashboard/components/Select";
 import { useEffect, useMemo, useState } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
 import { closeUserSessions, createUser, deactivateUser, deleteUserPermanently, listUsers, resendInvitation, updateUser, type User, type UserRole } from "@/features/users/api";
 
 export function UsersScreen() {
+  const { confirm } = useDialogs();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -62,7 +65,7 @@ export function UsersScreen() {
   }
 
   async function handleResendInvitation(user: User) {
-    if (!window.confirm(`Send ${user.name} a new invitation? The temporary password sent before will stop working.`)) return;
+    if (!await confirm({ title: `Send ${user.name} a new invitation?`, message: "The temporary password sent before stops working.", confirmLabel: "Send invitation" })) return;
     setFormError("");
     setNotice("");
     try {
@@ -76,7 +79,7 @@ export function UsersScreen() {
   }
 
   async function handleCloseSessions(user: User) {
-    if (!window.confirm(`Sign ${user.name} out on every device? They can sign in again with their password.`)) return;
+    if (!await confirm({ title: `Sign ${user.name} out on every device?`, message: "They can sign in again with their password.", confirmLabel: "Sign out everywhere" })) return;
     setFormError("");
     setNotice("");
     try {
@@ -88,7 +91,7 @@ export function UsersScreen() {
   }
 
   async function handleDeletePermanently(user: User) {
-    if (!window.confirm(`Delete ${user.name} permanently? Their personal data is erased and cannot be recovered; the history keeps "Deleted ${user.role === "GUIDE" ? "guide" : "user"}" in their place.`)) return;
+    if (!await confirm({ title: `Delete ${user.name} permanently?`, message: `Their personal data is erased and cannot be recovered; the history keeps "Deleted ${user.role === "GUIDE" ? "guide" : "user"}" in their place.`, confirmLabel: "Delete permanently", tone: "danger" })) return;
     setFormError("");
     setNotice("");
     try {
@@ -102,7 +105,7 @@ export function UsersScreen() {
 
   async function handleDeactivateUser(user: User) {
     const days = user.role === "GUIDE" ? " Their tour days not yet paid will go back to pending assignment." : "";
-    if (!window.confirm(`Deactivate ${user.name}?${days}`)) return;
+    if (!await confirm({ title: `Deactivate ${user.name}?`, message: `They can no longer sign in.${days}`, confirmLabel: "Deactivate", tone: "danger" })) return;
     try {
       await deactivateUser(user.id);
       setUsers((currentUsers) => currentUsers.map((currentUser) => currentUser.id === user.id ? { ...currentUser, is_active: false } : currentUser));
@@ -134,7 +137,7 @@ export function UsersScreen() {
                   <div><h2 className="font-serif text-xl">Workspace access</h2><p className="mt-2 text-[9px] text-[#96968b]">Roles and recent activity across your team</p></div>
                   <button type="button" onClick={() => setShowCreateForm((current) => !current)} className="h-9 bg-[#292b26] px-4 text-[9px] font-medium text-white hover:bg-[#3a3d34]">+ Add user</button>
                 </div>
-                {notice && <p role="status" className="mt-5 border border-[#e3e1da] bg-[#f8f7f3] p-3 text-[10px] text-[#55574f]">{notice}</p>}{showCreateForm && <form onSubmit={handleCreateUser} className="mt-5 grid gap-3 border-b border-[#ecebe5] pb-5 sm:grid-cols-2 lg:grid-cols-5"><input aria-label="Name" value={newUser.name} onChange={(event) => setNewUser({ ...newUser, name: event.target.value })} placeholder="Name" className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none" /><input aria-label="Email" type="email" value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} placeholder="Email" className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none" /><input aria-label="Phone" value={newUser.phone} onChange={(event) => setNewUser({ ...newUser, phone: event.target.value })} placeholder="Phone" className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none" /><select aria-label="Role" value={newUser.role} onChange={(event) => setNewUser({ ...newUser, role: event.target.value as UserRole })} className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px]"><option value="GUIDE">Guide</option><option value="ADMIN">Admin</option></select><button type="submit" disabled={isCreating} className="h-9 bg-[#e9e5d7] px-3 text-[9px] disabled:opacity-60">{isCreating ? "Creating..." : "Create"}</button>{formError && <p role="alert" className="text-[10px] text-[#9b6f37] sm:col-span-2 lg:col-span-5">{formError}</p>}</form>}
+                {notice && <p role="status" className="mt-5 border border-[#e3e1da] bg-[#f8f7f3] p-3 text-[10px] text-[#55574f]">{notice}</p>}{showCreateForm && <form onSubmit={handleCreateUser} className="mt-5 grid gap-3 border-b border-[#ecebe5] pb-5 sm:grid-cols-2 lg:grid-cols-5"><input aria-label="Name" value={newUser.name} onChange={(event) => setNewUser({ ...newUser, name: event.target.value })} placeholder="Name" className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none" /><input aria-label="Email" type="email" value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} placeholder="Email" className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none" /><input aria-label="Phone" value={newUser.phone} onChange={(event) => setNewUser({ ...newUser, phone: event.target.value })} placeholder="Phone" className="h-9 border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none" /><Select ariaLabel="Role" value={newUser.role} onChange={(role) => setNewUser({ ...newUser, role: role as UserRole })} options={[{ value: "GUIDE", label: "Guide" }, { value: "ADMIN", label: "Admin" }]} className="h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]" /><button type="submit" disabled={isCreating} className="h-9 bg-[#e9e5d7] px-3 text-[9px] disabled:opacity-60">{isCreating ? "Creating..." : "Create"}</button>{formError && <p role="alert" className="text-[10px] text-[#9b6f37] sm:col-span-2 lg:col-span-5">{formError}</p>}</form>}
                 <div className="mt-5 flex gap-3"><label className="flex-1 text-[9px]"><span className="mb-2 block">Search users</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Name, email or role..." className="h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none placeholder:text-[#aaa99f] focus:border-[#b5a786]" /></label><button type="button" onClick={() => setQuery("")} className="mt-[19px] h-9 border border-[#deddd6] px-3 text-[9px] hover:bg-[#f8f7f3]">Reset</button></div>
                 {isLoading && <p className="mt-6 text-[10px] text-[#85867c]">Loading users...</p>}
                 {error && <p role="alert" className="mt-6 text-[10px] text-[#9b6f37]">{error}</p>}
@@ -158,5 +161,5 @@ function UserTable({ users: items, editingUserId, onEdit, onSave, onDeactivate, 
 function EditableUserRow({ user, onCancel, onSave }: { user: User; onCancel: () => void; onSave: (user: User) => void }) {
   const [draft, setDraft] = useState(user);
   const inputClass = "h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-2.5 text-[9px] text-[#292b26] outline-none transition-colors focus:border-[#b5a786]";
-  return <div className="grid grid-cols-[minmax(220px,1.5fr)_minmax(190px,1.2fr)_minmax(125px,0.9fr)_110px_80px_150px] items-center gap-3 bg-white py-3 text-[9px]"><input aria-label="Edit name" placeholder="Name" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className={inputClass} /><input aria-label="Edit email" type="email" placeholder="Email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} className={inputClass} /><select aria-label="Edit role" value={draft.role} onChange={(event) => setDraft({ ...draft, role: event.target.value as UserRole })} className={`${inputClass} appearance-none`}><option value="GUIDE">Guide</option><option value="ADMIN">Admin</option></select><span /><span /><span className="flex items-center gap-1.5 text-[8px]"><button type="button" onClick={() => onSave(draft)} className="h-9 bg-[#292b26] px-2.5 font-medium text-white hover:bg-[#3a3d34]">Save</button><button type="button" onClick={onCancel} className="h-9 border border-[#deddd6] bg-white px-2.5 text-[#77786f] hover:bg-[#f8f7f3]">Cancel</button></span></div>;
+  return <div className="grid grid-cols-[minmax(220px,1.5fr)_minmax(190px,1.2fr)_minmax(125px,0.9fr)_110px_80px_150px] items-center gap-3 bg-white py-3 text-[9px]"><input aria-label="Edit name" placeholder="Name" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className={inputClass} /><input aria-label="Edit email" type="email" placeholder="Email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} className={inputClass} /><Select ariaLabel="Edit role" value={draft.role} onChange={(role) => setDraft({ ...draft, role: role as UserRole })} options={[{ value: "GUIDE", label: "Guide" }, { value: "ADMIN", label: "Admin" }]} className={inputClass} /><span /><span /><span className="flex items-center gap-1.5 text-[8px]"><button type="button" onClick={() => onSave(draft)} className="h-9 bg-[#292b26] px-2.5 font-medium text-white hover:bg-[#3a3d34]">Save</button><button type="button" onClick={onCancel} className="h-9 border border-[#deddd6] bg-white px-2.5 text-[#77786f] hover:bg-[#f8f7f3]">Cancel</button></span></div>;
 }

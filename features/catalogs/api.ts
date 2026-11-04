@@ -66,7 +66,7 @@ export function listAllActivities() {
 }
 
 export function createActivity(input: ActivityInput) {
-  return request<void>("/activities", { method: "POST", body: JSON.stringify(input) });
+  return request<Activity>("/activities", { method: "POST", body: JSON.stringify(input) });
 }
 
 export function updateActivity(id: string, input: ActivityInput) {

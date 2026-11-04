@@ -185,12 +185,12 @@ export function deleteItineraryItem(tourDayId: string, itemId: string) {
   return request<void>(`/tour-days/${encodeURIComponent(tourDayId)}/itinerary/${encodeURIComponent(itemId)}`, { method: "DELETE" });
 }
 
-export type ItineraryPlace = { id: string; name: string; zone_name: string | null };
+export type ItineraryPlace = { id: string; name: string; zone_id: string | null; zone_name: string | null };
 export type ItineraryActivity = { id: string; name: string };
 
 /** Active places, as the itinerary offers them. */
 export function listItineraryPlaces() {
-  return listPlacesWithZone().then((items) => items.filter((item) => item.place.is_active).map((item): ItineraryPlace => ({ id: item.place.id, name: item.place.name, zone_name: item.zone?.name ?? null })));
+  return listPlacesWithZone().then((items) => items.filter((item) => item.place.is_active).map((item): ItineraryPlace => ({ id: item.place.id, name: item.place.name, zone_id: item.place.zone_id, zone_name: item.zone?.name ?? null })));
 }
 
 /** Active activities, as the itinerary offers them. */

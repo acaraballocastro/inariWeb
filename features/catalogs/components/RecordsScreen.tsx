@@ -1,5 +1,6 @@
 "use client";
 
+import { useDialogs } from "@/features/dashboard/components/DialogProvider";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
@@ -41,6 +42,7 @@ const pageSize = 50;
 
 /** List, search, create, edit and delete for a simple admin catalogue. */
 export function RecordsScreen<T extends { id: string }>({ config }: { config: RecordsConfig<T> }) {
+  const { confirm } = useDialogs();
   const [items, setItems] = useState<T[] | null>(null);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
@@ -100,7 +102,7 @@ export function RecordsScreen<T extends { id: string }>({ config }: { config: Re
   }
 
   async function handleDelete(item: T) {
-    if (!window.confirm(`Delete ${config.label(item)}?`)) return;
+    if (!await confirm({ title: `Delete ${config.label(item)}?`, message: "Records in use cannot be deleted; deactivate them instead.", confirmLabel: "Delete", tone: "danger" })) return;
     setError("");
     try {
       await config.remove(item);

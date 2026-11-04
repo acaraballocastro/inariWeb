@@ -77,7 +77,7 @@ export function ReservationTourDaysStep({ reservation, onFinish }: { reservation
 
       <div className="mt-5 divide-y divide-[#ecebe5] border-y border-[#ecebe5]">
         {tourDays.map((day) => editingId === day.id ? (
-          <div key={day.id} className="pb-5"><TourDayForm draft={draft} zones={zones} onChange={setDraft} onSubmit={handleSubmit} onCancel={() => setEditingId(null)} isSaving={isSaving} submitLabel="Save tour day" /></div>
+          <div key={day.id} className="pb-5"><TourDayForm draft={draft} zones={zones} onChange={setDraft} onZoneCreated={(zone) => setZones((current) => [...current, zone])} onSubmit={handleSubmit} onCancel={() => setEditingId(null)} isSaving={isSaving} submitLabel="Save tour day" /></div>
         ) : (
           <article key={day.id} className="grid gap-3 py-4 sm:grid-cols-[100px_minmax(0,1fr)_auto] sm:items-start">
             <p className="text-[10px] text-[#55574f]">{formatDateTime(day.start_datetime)}</p>
@@ -85,7 +85,7 @@ export function ReservationTourDaysStep({ reservation, onFinish }: { reservation
             <button type="button" disabled={isSaving || editingId !== null} onClick={() => startEditing(day)} className="h-8 border border-[#deddd6] px-3 text-[9px] hover:bg-[#f8f7f3] disabled:opacity-50">Edit</button>
           </article>
         ))}
-        {editingId === "new" && <div className="pb-5"><TourDayForm draft={draft} zones={zones} onChange={setDraft} onSubmit={handleSubmit} onCancel={() => setEditingId(null)} isSaving={isSaving} submitLabel="Create tour day" /></div>}
+        {editingId === "new" && <div className="pb-5"><TourDayForm draft={draft} zones={zones} onChange={setDraft} onZoneCreated={(zone) => setZones((current) => [...current, zone])} onSubmit={handleSubmit} onCancel={() => setEditingId(null)} isSaving={isSaving} submitLabel="Create tour day" /></div>}
       </div>
 
       {editingId === null && !isLoading && <button type="button" onClick={startCreating} className="mt-4 h-9 border border-[#deddd6] px-3 text-[9px] hover:bg-[#f8f7f3]">+ Add tour day</button>}

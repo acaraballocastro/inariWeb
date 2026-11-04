@@ -1,5 +1,6 @@
 "use client";
 
+import { useDialogs } from "@/features/dashboard/components/DialogProvider";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
@@ -10,6 +11,7 @@ type CatalogItem = Language | Zone;
 const inputClass = "h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-2.5 text-[9px] outline-none focus:border-[#b5a786]";
 
 export function CatalogScreen({ kind }: { kind: CatalogKind }) {
+  const { confirm } = useDialogs();
   const isLanguage = kind === "languages";
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,7 +49,7 @@ export function CatalogScreen({ kind }: { kind: CatalogKind }) {
   }
 
   async function handleDelete(item: CatalogItem) {
-    if (!window.confirm(`Delete ${item.name}?`)) return;
+    if (!await confirm({ title: `Delete ${item.name}?`, message: "Records in use cannot be deleted; deactivate them instead.", confirmLabel: "Delete", tone: "danger" })) return;
     setActionError("");
     try {
       if (isLanguage) await deleteLanguage((item as Language).code);

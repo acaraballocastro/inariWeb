@@ -1,5 +1,7 @@
 "use client";
 
+import { useDialogs } from "@/features/dashboard/components/DialogProvider";
+import { Combobox } from "@/features/dashboard/components/Combobox";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
@@ -53,6 +55,7 @@ async function findReservation(tourDay: TourDay): Promise<Reservation | null> {
 export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
   const session = useSession();
   const admin = isAdmin(session);
+  const { confirm, prompt } = useDialogs();
   const [context, setContext] = useState<TourDayContext | null>(null);
   const [historyVersion, setHistoryVersion] = useState(0);
   const [error, setError] = useState("");
@@ -96,25 +99,28 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
     if (await runAction(() => updateTourDay(context.tourDay, result.input), "Could not update the tour day.")) setIsEditing(false);
   }
 
-  function handleCancelTourDay() {
-    if (!context || !window.confirm("Cancel this tour day? The guide and operations team will see it as cancelled.")) return;
+  async function handleCancelTourDay() {
+    if (!context || !await confirm({ title: "Cancel this tour day?", message: "The guide and the operations team will see it as cancelled. It cannot be reopened.", confirmLabel: "Cancel tour day", cancelLabel: "Keep it", tone: "danger" })) return;
     runAction(() => cancelTourDay(context.tourDay.id), "Could not cancel the tour day.");
   }
 
-  function handleForceMajeure() {
+  async function handleForceMajeure() {
     if (!context) return;
-    const reason = window.prompt("Cancel this day by force majeure. Reason (shown in the history):");
+    const reason = await prompt({ title: "Cancel by force majeure?", message: "The day is cancelled for reasons beyond anyone's control (weather, strikes, closures…). It cannot be reopened.", label: "Reason (shown in the history)", placeholder: "e.g. Typhoon warning in Kyoto", optional: true, multiline: true, confirmLabel: "Cancel by force majeure", cancelLabel: "Keep it", tone: "danger" });
     if (reason === null) return;
-    runAction(() => forceMajeureTourDay(context.tourDay.id, reason.trim()), "Could not cancel the tour day by force majeure.");
+    runAction(() => forceMajeureTourDay(context.tourDay.id, reason), "Could not cancel the tour day by force majeure.");
   }
 
-  function handleComplete() {
-    if (!context || !window.confirm("Mark this tour day as completed?")) return;
+  async function handleComplete() {
+    if (!context || !await confirm({ title: "Mark this tour day as completed?", message: "Use it when the tour took place; the day is closed.", confirmLabel: "Mark completed" })) return;
     runAction(() => completeTourDay(context.tourDay.id), "Could not complete the tour day.");
   }
 
-  function handleReject() {
-    if (!context || !window.confirm(admin ? "Reject this preassignment on behalf of the guide? The day goes back to pending assignment." : "Decline this tour? It will be offered to other guides.")) return;
+  async function handleReject() {
+    const question = admin
+      ? { title: "Reject for the guide?", message: "The preassignment is rejected on behalf of the guide and the day goes back to pending assignment.", confirmLabel: "Reject preassignment" }
+      : { title: "Decline this tour?", message: "It will be offered to other guides.", confirmLabel: "Decline tour" };
+    if (!context || !await confirm({ ...question, cancelLabel: "Keep it", tone: "danger" })) return;
     runAction(() => rejectTourDay(context.tourDay.id), "Could not reject the tour day.");
   }
 
@@ -161,8 +167,8 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
               {context && tourDay && (
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]">
                   <div className="space-y-5">
-                    <TourOverview context={context} canEdit={admin && !isFinal} isEditing={isEditing} draft={draft} isSaving={isSaving} onEdit={() => setIsEditing(true)} onChange={setDraft} onSave={handleSave} onCancel={() => { setIsEditing(false); setDraft(toTourDayDraft(tourDay)); }} />
-                    <ItineraryPanel tourDay={tourDay} places={context.places} activities={context.activities} readOnly={!admin || isCancelled} />
+                    <TourOverview context={context} onZoneCreated={(zone) => setContext((current) => current && { ...current, zones: [...current.zones, zone] })} canEdit={admin && !isFinal} isEditing={isEditing} draft={draft} isSaving={isSaving} onEdit={() => setIsEditing(true)} onChange={setDraft} onSave={handleSave} onCancel={() => { setIsEditing(false); setDraft(toTourDayDraft(tourDay)); }} />
+                    <ItineraryPanel tourDay={tourDay} places={context.places} activities={context.activities} onPlaceCreated={(place) => setContext((current) => current && { ...current, places: [...current.places, place] })} onActivityCreated={(activity) => setContext((current) => current && { ...current, activities: [...current.activities, activity] })} readOnly={!admin || isCancelled} />
                     <TourDayIncidents tourDayId={tourDay.id} canReport={!isCancelled} />
                   </div>
                   <div className="space-y-5">
@@ -180,7 +186,7 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
   );
 }
 
-function TourOverview({ context, canEdit, isEditing, draft, isSaving, onEdit, onChange, onSave, onCancel }: { context: TourDayContext; canEdit: boolean; isEditing: boolean; draft: TourDayDraft; isSaving: boolean; onEdit: () => void; onChange: (draft: TourDayDraft) => void; onSave: (event: FormEvent<HTMLFormElement>) => void; onCancel: () => void }) {
+function TourOverview({ context, onZoneCreated, canEdit, isEditing, draft, isSaving, onEdit, onChange, onSave, onCancel }: { context: TourDayContext; onZoneCreated: (zone: Zone) => void; canEdit: boolean; isEditing: boolean; draft: TourDayDraft; isSaving: boolean; onEdit: () => void; onChange: (draft: TourDayDraft) => void; onSave: (event: FormEvent<HTMLFormElement>) => void; onCancel: () => void }) {
   const { tourDay, reservation, zones } = context;
   const zone = zones.find((item) => item.id === tourDay.zone_id);
   return (
@@ -189,7 +195,7 @@ function TourOverview({ context, canEdit, isEditing, draft, isSaving, onEdit, on
         <div><h2 className="font-serif text-xl">Tour overview</h2><p className="mt-2 text-[10px] text-[#85867c]">The operational details for this experience.</p></div>
         {canEdit && !isEditing && <button type="button" onClick={onEdit} className="h-9 border border-[#deddd6] px-3 text-[9px] hover:bg-[#f8f7f3]">Edit</button>}
       </div>
-      {isEditing ? <TourDayForm draft={draft} zones={zones} onChange={onChange} onSubmit={onSave} onCancel={onCancel} isSaving={isSaving} submitLabel="Save changes" /> : (
+      {isEditing ? <TourDayForm draft={draft} zones={zones} onChange={onChange} onZoneCreated={onZoneCreated} onSubmit={onSave} onCancel={onCancel} isSaving={isSaving} submitLabel="Save changes" /> : (
         <div className="grid gap-x-8 gap-y-5 pt-5 sm:grid-cols-2 lg:grid-cols-3">
           <Info label="Date" value={formatWeekdayDate(tourDay.start_datetime)} />
           <Info label="Time" value={`${formatTime(tourDay.start_datetime)}${tourDay.duration ? ` · ${formatDuration(tourDay.duration)}` : ""}`} />
@@ -226,7 +232,7 @@ function AssignmentPanel({ tourDay, guides, disabled, onAssign, onUnassign }: { 
           <div className="mt-4 flex items-center justify-between text-[9px]"><span className="text-[#85867c]">Assignment status</span><span className="bg-[#e9e5d7] px-3 py-1 text-[#77786f]">{formatStatus(tourDay.status)}</span></div>
           {canChangeGuide(tourDay.status) && (
             <>
-              <label className="mt-5 block text-[9px]">Change guide<select value={selectedGuideId} onChange={(event) => setSelectedGuideId(event.target.value)} disabled={disabled} className="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]"><option value="">Select another guide</option>{guides.filter((item) => item.guide.id !== tourDay.guide_id).map((item) => <option key={item.guide.id} value={item.guide.id}>{item.guide.name}</option>)}</select></label>
+              <label className="mt-5 block text-[9px]">Change guide<Combobox value={selectedGuideId} onChange={setSelectedGuideId} options={guides.filter((item) => item.guide.id !== tourDay.guide_id).map(guideOption)} noun="guide" placeholder="Search another guide..." disabled={disabled} inputClass="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]" /></label>
               {isPaid(tourDay.status) && <p className="mt-2 text-[8px] text-[#85867c]">The day is already paid: it keeps its status with the new guide.</p>}
               <button type="button" disabled={disabled || !selectedGuideId} onClick={() => { onAssign(selectedGuideId); setSelectedGuideId(""); }} className="mt-3 h-9 w-full bg-[#292b26] text-[9px] text-white hover:bg-[#41443b] disabled:opacity-50">Change guide</button>
             </>
@@ -236,7 +242,7 @@ function AssignmentPanel({ tourDay, guides, disabled, onAssign, onUnassign }: { 
       ) : (
         <>
           <p className="mt-4 text-[10px] text-[#85867c]">{isPaid(tourDay.status) ? "No guide: the day is paid and needs one (it keeps its status)." : "No guide assigned yet."}</p>
-          <label className="mt-4 block text-[9px]">Guide<select value={selectedGuideId} onChange={(event) => setSelectedGuideId(event.target.value)} disabled={disabled} className="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]"><option value="">Select a guide</option>{guides.map((item) => <option key={item.guide.id} value={item.guide.id}>{item.guide.name}</option>)}</select></label>
+          <label className="mt-4 block text-[9px]">Guide<Combobox value={selectedGuideId} onChange={setSelectedGuideId} options={guides.map(guideOption)} noun="guide" placeholder="Search a guide..." disabled={disabled} inputClass="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-[10px] outline-none focus:border-[#b5a786]" /></label>
           <button type="button" disabled={disabled || !selectedGuideId} onClick={() => onAssign(selectedGuideId)} className="mt-3 h-9 w-full bg-[#292b26] text-[9px] text-white hover:bg-[#41443b] disabled:opacity-50">Assign guide</button>
         </>
       )}
@@ -259,12 +265,12 @@ function GuideAssignmentNote({ tourDay }: { tourDay: TourDay }) {
   );
 }
 
-function ItineraryPanel({ tourDay, places, activities, readOnly }: { tourDay: TourDay; places: ItineraryPlace[]; activities: ItineraryActivity[]; readOnly: boolean }) {
+function ItineraryPanel({ tourDay, places, activities, onPlaceCreated, onActivityCreated, readOnly }: { tourDay: TourDay; places: ItineraryPlace[]; activities: ItineraryActivity[]; onPlaceCreated: (place: ItineraryPlace) => void; onActivityCreated: (activity: ItineraryActivity) => void; readOnly: boolean }) {
   const [stopCount, setStopCount] = useState(0);
   return (
     <section className="bg-white p-5 sm:p-6">
       <div className="flex items-start justify-between gap-4"><div><h2 className="font-serif text-xl">Day itinerary</h2><p className="mt-2 text-[10px] text-[#85867c]">A considered route, arranged from morning to afternoon.</p></div><span className="text-[9px] text-[#9b8353]">{stopCount} STOPS</span></div>
-      <ItineraryEditor tourDay={tourDay} places={places} activities={activities} onCountChange={setStopCount} readOnly={readOnly} />
+      <ItineraryEditor tourDay={tourDay} places={places} activities={activities} onCountChange={setStopCount} onPlaceCreated={onPlaceCreated} onActivityCreated={onActivityCreated} readOnly={readOnly} />
     </section>
   );
 }
@@ -304,3 +310,7 @@ function initials(name: string) {
 function formatLongDate(value: string) { return formatJst(value, { day: "numeric", month: "long", year: "numeric" }); }
 function formatWeekdayDate(value: string) { return formatJst(value, { weekday: "long", day: "numeric", month: "long" }); }
 function formatTime(value: string) { return formatJstClock(value); }
+
+function guideOption(item: GuideDetail) {
+  return { id: item.guide.id, label: item.guide.name, detail: item.zones.map((zone) => zone.name).join(", ") || null };
+}

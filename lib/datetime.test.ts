@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { formatDuration, formatJstClock, isoToJstInput, jstInputToIso, parseDuration, startOfJstDay, toDayKey } from "./datetime.ts";
+import { formatDayKey, formatDuration, formatJstClock, isoToJstInput, jstInputToIso, parseDuration, parseTimeText, startOfJstDay, timesOfDay, toDayKey } from "./datetime.ts";
 
 describe("JST conversions", () => {
   it("reads a datetime-local value as Japan time", () => {
@@ -54,5 +54,28 @@ describe("durations", () => {
     assert.equal(formatDuration(6), "6h");
     assert.equal(formatDuration(0), "");
     assert.equal(formatDuration(null), "");
+  });
+});
+
+describe("typed times", () => {
+  it("reads the usual ways of typing a time", () => {
+    const cases: Record<string, string> = { "9": "09:00", "930": "09:30", "0930": "09:30", "9:30": "09:30", "9.3": "09:30", "17h30": "17:30", " 23:59 ": "23:59", "0": "00:00", "17:": "17:00" };
+    for (const [text, want] of Object.entries(cases)) assert.equal(parseTimeText(text), want, text);
+  });
+
+  it("refuses what is not a time", () => {
+    for (const text of ["", "24:00", "9:60", "abc", "12345", "1:2:3"]) assert.equal(parseTimeText(text), null, text);
+  });
+
+  it("lists the times of the day", () => {
+    const times = timesOfDay(15);
+    assert.equal(times.length, 96);
+    assert.equal(times[0], "00:00");
+    assert.equal(times[37], "09:15");
+    assert.equal(times.at(-1), "23:45");
+  });
+
+  it("formats a calendar day without shifting it", () => {
+    assert.equal(formatDayKey("2026-11-04"), "Wed, 4 Nov 2026");
   });
 });

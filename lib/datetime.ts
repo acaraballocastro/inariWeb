@@ -58,3 +58,42 @@ export function parseDuration(text: string): number | null {
   const hours = match ? Number(match[1]) : Number.NaN;
   return hours > 0 ? hours : Number.NaN;
 }
+
+/**
+ * Reads a typed time as "HH:MM": "9", "930", "0930", "9:30", "9.30" or "17h30".
+ * Returns null when it is not a valid time.
+ */
+export function parseTimeText(text: string): string | null {
+  const value = text.trim().toLowerCase();
+  let hours: number;
+  let minutes: number;
+  const separated = value.match(/^(\d{1,2})\s*[:.h]\s*(\d{1,2})?$/);
+  if (separated) {
+    hours = Number(separated[1]);
+    minutes = separated[2] ? Number(separated[2]) : 0;
+    if (separated[2]?.length === 1) minutes *= 10;
+  } else if (/^\d{1,4}$/.test(value)) {
+    hours = Number(value.length <= 2 ? value : value.slice(0, -2));
+    minutes = value.length <= 2 ? 0 : Number(value.slice(-2));
+  } else {
+    return null;
+  }
+  if (hours > 23 || minutes > 59) return null;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+/** "HH:MM" every `step` minutes through the day. */
+export function timesOfDay(step = 15) {
+  const times: string[] = [];
+  for (let minute = 0; minute < 24 * 60; minute += step) {
+    times.push(`${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`);
+  }
+  return times;
+}
+
+/** A calendar day ("YYYY-MM-DD") as text, e.g. "Wed, 4 Nov 2026"; no timezone shift. */
+export function formatDayKey(dayKey: string, options: Intl.DateTimeFormatOptions = { weekday: "short", day: "numeric", month: "short", year: "numeric" }) {
+  const date = new Date(`${dayKey}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return dayKey;
+  return new Intl.DateTimeFormat("en-GB", { ...options, timeZone: "UTC" }).format(date);
+}

@@ -1,6 +1,8 @@
 
 "use client";
 
+import { DateInput } from "@/features/dashboard/components/DateInput";
+import { Combobox } from "@/features/dashboard/components/Combobox";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -258,64 +260,50 @@ export function ReservationsScreen() {
 
                   <label className="text-[9px]">
                     From
-                    <input
-                      type="date"
+                    <DateInput
                       value={filters.from}
                       max={filters.to || undefined}
-                      onChange={(event) =>
-                        updateFilters({ from: event.target.value })
-                      }
+                      onChange={(from) => updateFilters({ from })}
+                      placeholder="Any day"
                       className={filterInputClass}
+                      ariaLabel="From"
                     />
                   </label>
 
                   <label className="text-[9px]">
                     To
-                    <input
-                      type="date"
+                    <DateInput
                       value={filters.to}
                       min={filters.from || undefined}
-                      onChange={(event) =>
-                        updateFilters({ to: event.target.value })
-                      }
+                      onChange={(to) => updateFilters({ to })}
+                      placeholder="Any day"
                       className={filterInputClass}
+                      ariaLabel="To"
                     />
                   </label>
 
                   <label className="text-[9px]">
                     Agency
-                    <select
+                    <Combobox
                       value={filters.agencyId}
-                      onChange={(event) =>
-                        updateFilters({ agencyId: event.target.value })
-                      }
-                      className={filterInputClass}
-                    >
-                      <option value="">All agencies</option>
-                      {agencies.map((agency) => (
-                        <option key={agency.id} value={agency.id}>
-                          {agency.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(agencyId) => updateFilters({ agencyId })}
+                      options={agencies.map((agency) => ({ id: agency.id, label: agency.name }))}
+                      noun="agency"
+                      emptyLabel="All agencies"
+                      inputClass={filterInputClass}
+                    />
                   </label>
 
                   <label className="text-[9px]">
                     Guide
-                    <select
+                    <Combobox
                       value={filters.guideId}
-                      onChange={(event) =>
-                        updateFilters({ guideId: event.target.value })
-                      }
-                      className={filterInputClass}
-                    >
-                      <option value="">All guides</option>
-                      {guides.map((item) => (
-                        <option key={item.guide.id} value={item.guide.id}>
-                          {item.guide.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(guideId) => updateFilters({ guideId })}
+                      options={guides.map((item) => ({ id: item.guide.id, label: item.guide.name }))}
+                      noun="guide"
+                      emptyLabel="All guides"
+                      inputClass={filterInputClass}
+                    />
                   </label>
                 </div>
 

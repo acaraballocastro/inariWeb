@@ -1,19 +1,23 @@
 "use client";
 
+import { DateInput } from "@/features/dashboard/components/DateInput";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { auditEntities, auditEntityHref, auditOutcomes, formatEntity, formatOutcome, listAuditLogPage, outcomeClass, securityActions, type AuditFilter, type AuditOutcome, type AuditRecord } from "@/features/audit/api";
+import { Combobox } from "@/features/dashboard/components/Combobox";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
 import { MissingDataNotice, useMissingData } from "@/features/dashboard/components/MissingDataNotice";
 import { Pagination } from "@/features/dashboard/components/Pagination";
+import { Select } from "@/features/dashboard/components/Select";
 import { listUsers, type User } from "@/features/users/api";
 import { formatJst, startOfJstDay } from "@/lib/datetime";
 import { formatStatus } from "@/lib/status";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 
 const pageSize = 50;
+const changeActions = ["CREATED", "UPDATED", "DELETED", "CANCELLED", "DELETED_PERMANENTLY", "STATUS_CHANGED", "PAYMENT_CONFIRMED", "GUIDE_ASSIGNED", "GUIDE_UNASSIGNED"];
 const dayMs = 24 * 60 * 60 * 1000;
 
 type Filters = { entity: string; entityId: string; userId: string; action: string; outcome: AuditOutcome | ""; from: string; to: string };
@@ -76,13 +80,13 @@ export function AuditLogScreen() {
 
             <section className="mt-5 bg-white p-5 sm:p-6">
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <label className="text-[9px]">What<select value={filters.entity} onChange={(event) => update({ entity: event.target.value })} className={inputClass}><option value="">Everything</option>{auditEntities.map((entity) => <option key={entity} value={entity}>{formatEntity(entity)}</option>)}</select></label>
+                <label className="text-[9px]">What<Select ariaLabel="What" value={filters.entity} onChange={(entity) => update({ entity })} options={[{ value: "", label: "Everything" }, ...auditEntities.map((entity) => ({ value: entity, label: formatEntity(entity) }))]} className={inputClass} /></label>
                 <label className="text-[9px]">ID or code<input value={filters.entityId} onChange={(event) => update({ entityId: event.target.value })} placeholder="R00042, a UUID..." className={`${inputClass} placeholder:text-[#aaa99f]`} /></label>
-                <label className="text-[9px]">Who<select value={filters.userId} onChange={(event) => update({ userId: event.target.value })} className={inputClass}><option value="">Anyone</option>{users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}</select></label>
-                <label className="text-[9px]">Action<select value={filters.action} onChange={(event) => update({ action: event.target.value })} className={inputClass}><option value="">Any action</option><optgroup label="Sign-ins & security">{securityActions.map((action) => <option key={action} value={action}>{formatStatus(action)}</option>)}</optgroup><optgroup label="Changes">{["CREATED", "UPDATED", "DELETED", "CANCELLED", "DELETED_PERMANENTLY", "STATUS_CHANGED", "PAYMENT_CONFIRMED", "GUIDE_ASSIGNED", "GUIDE_UNASSIGNED"].map((action) => <option key={action} value={action}>{formatStatus(action)}</option>)}</optgroup></select></label>
-                <label className="text-[9px]">Outcome<select value={filters.outcome} onChange={(event) => update({ outcome: event.target.value as AuditOutcome | "" })} className={inputClass}><option value="">Any outcome</option>{auditOutcomes.map((outcome) => <option key={outcome} value={outcome}>{formatOutcome(outcome)}</option>)}</select></label>
-                <label className="text-[9px]">From<input type="date" value={filters.from} max={filters.to || undefined} onChange={(event) => update({ from: event.target.value })} className={inputClass} /></label>
-                <label className="text-[9px]">To<input type="date" value={filters.to} min={filters.from || undefined} onChange={(event) => update({ to: event.target.value })} className={inputClass} /></label>
+                <label className="text-[9px]">Who<Combobox ariaLabel="Who" value={filters.userId} onChange={(userId) => update({ userId })} options={users.map((user) => ({ id: user.id, label: user.name, detail: user.email }))} noun="user" emptyLabel="Anyone" inputClass={inputClass} /></label>
+                <label className="text-[9px]">Action<Select ariaLabel="Action" value={filters.action} onChange={(action) => update({ action })} options={[{ label: "", options: [{ value: "", label: "Any action" }] }, { label: "Sign-ins & security", options: securityActions.map((action) => ({ value: action, label: formatStatus(action) })) }, { label: "Changes", options: changeActions.map((action) => ({ value: action, label: formatStatus(action) })) }]} className={inputClass} /></label>
+                <label className="text-[9px]">Outcome<Select ariaLabel="Outcome" value={filters.outcome} onChange={(outcome) => update({ outcome: outcome as AuditOutcome | "" })} options={[{ value: "", label: "Any outcome" }, ...auditOutcomes.map((outcome) => ({ value: outcome, label: formatOutcome(outcome) }))]} className={inputClass} /></label>
+                <label className="text-[9px]">From<DateInput value={filters.from} max={filters.to || undefined} onChange={(from) => update({ from })} placeholder="Any day" className={inputClass} ariaLabel="From" /></label>
+                <label className="text-[9px]">To<DateInput value={filters.to} min={filters.from || undefined} onChange={(to) => update({ to })} placeholder="Any day" className={inputClass} ariaLabel="To" /></label>
               </div>
               <button type="button" onClick={() => update(emptyFilters)} className="mt-3 text-[9px] text-[#77786f] underline underline-offset-4 hover:text-[#292b26]">Clear filters</button>
 

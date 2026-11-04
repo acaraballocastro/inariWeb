@@ -1,5 +1,6 @@
 "use client";
 
+import { useDialogs } from "@/features/dashboard/components/DialogProvider";
 import Link from "next/link";
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -40,6 +41,7 @@ export function navigationFor(session: Session | null): { navigation: NavItem[];
 }
 
 export function useSignOut() {
+  const { confirm } = useDialogs();
   const router = useRouter();
 
   async function signOut() {
@@ -48,7 +50,7 @@ export function useSignOut() {
   }
 
   async function signOutEverywhere() {
-    if (!window.confirm("Sign out on every device where you are signed in, this one included?")) return;
+    if (!await confirm({ title: "Sign out on all devices?", message: "Every device where you are signed in is signed out, this one included.", confirmLabel: "Sign out everywhere" })) return;
     await logoutEverywhere();
     router.replace("/");
   }
