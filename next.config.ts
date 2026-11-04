@@ -1,7 +1,11 @@
+
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // The service worker must always be fetched fresh, and only run our scripts.
+  output: "standalone",
+
+  // Mantener el resto de tu configuración actual.
+  
   async headers() {
     return [
       {
@@ -14,8 +18,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+
   cacheComponents: true,
   partialPrefetching: true,
+
   images: {
     remotePatterns: [
       {
