@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/*
+ * The app's small text sizes, so they are adjusted in one place: text-micro,
+ * text-label (eyebrows, badges), text-meta (secondary text, labels), text-body
+ * (most text and inputs), text-lead (intros) and text-ui / text-ui-lg.
+ */
+@theme {
+  --text-micro: 0.5rem;          /* 8px */
+  --text-label: 0.625rem;        /* 10px */
+  --text-meta: 0.6875rem;        /* 11px */
+  --text-body: 0.75rem;          /* 12px */
+  --text-lead: 0.8125rem;        /* 13px */
+  --text-ui: 0.875rem;           /* 14px */
+  --text-ui-lg: 0.9375rem;       /* 15px */
+}
+
 :root {
   color-scheme: light;
   background: #eeeeec;
@@ -39,4 +54,80 @@ h6,
 ::selection {
   background: #d8d0b9;
   color: #252821;
+}
+
+/*
+ * Form controls in the app's style instead of the browser's. In the base layer,
+ * so utility classes (sr-only, margins…) still win.
+ */
+@layer base {
+  input[type="checkbox"] {
+    appearance: none;
+    display: inline-grid;
+    place-content: center;
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    border: 1px solid #cfcabb;
+    background: #fff;
+    cursor: pointer;
+    vertical-align: -2px;
+    transition: background-color 120ms, border-color 120ms;
+  }
+
+  input[type="checkbox"]::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+    transform: scale(0);
+    transition: transform 120ms;
+  }
+
+  input[type="checkbox"]:checked {
+    border-color: #9b8353;
+    background: #9b8353;
+  }
+
+  input[type="checkbox"]:checked::before {
+    transform: scale(1);
+  }
+
+  input[type="checkbox"]:hover:not(:disabled) {
+    border-color: #9b8353;
+  }
+
+  input[type="checkbox"]:focus-visible {
+    outline: 1px solid #b5a786;
+    outline-offset: 2px;
+  }
+
+  input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* Numbers without the browser's spin buttons: they are typed. */
+  input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* The search fields' clear button, in the app's colours. */
+  input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 10px;
+    background: #96968b;
+    clip-path: polygon(20% 0, 50% 30%, 80% 0, 100% 20%, 70% 50%, 100% 80%, 80% 100%, 50% 70%, 20% 100%, 0 80%, 30% 50%, 0 20%);
+    cursor: pointer;
+  }
 }

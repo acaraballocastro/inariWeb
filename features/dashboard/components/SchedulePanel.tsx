@@ -1,26 +1,26 @@
-const schedule = [
-  ["09:30", "Kyoto walking tour", "08 guests"],
-  ["10:00", "Old Tokyo discovery", "12 guests"],
-  ["14:00", "Tea ceremony experience", "06 guests"],
-];
+import Link from "next/link";
 
-export function SchedulePanel() {
+import { formatClock, formatShortDate, type DashboardTour } from "../api";
+
+export function SchedulePanel({ tours, today }: { tours: DashboardTour[] | null; today: Date | null }) {
   return (
     <section className="bg-white p-5 sm:p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-serif text-xl">Today&apos;s schedule</h2>
-          <p className="mt-2 text-[9px] text-[#96968b]">18 OCTOBER · JAPAN TIME</p>
+          <p className="mt-2 text-meta text-[#96968b]">{today ? `${formatShortDate(today).toUpperCase()} · ` : ""}JAPAN TIME</p>
         </div>
-        <button type="button" className="bg-[#ebe7da] px-3 py-2 text-[9px] text-[#5d5e55]">Agenda</button>
+        <Link href="/calendar" className="bg-[#ebe7da] px-3 py-2 text-meta text-[#5d5e55]">Agenda</Link>
       </div>
       <div className="mt-5 divide-y divide-[#ecebe5]">
-        {schedule.map(([time, title, guests]) => (
-          <div key={title} className="grid grid-cols-[58px_1fr_auto] items-center gap-3 py-3 text-[10px]">
-            <span className="text-[#9b8353]">{time}</span>
-            <span>{title}</span>
-            <span className="text-[9px] text-[#999a90]">{guests}</span>
-          </div>
+        {tours === null && <p className="py-3 text-body text-[#999a90]">Loading…</p>}
+        {tours?.length === 0 && <p className="py-3 text-body text-[#999a90]">No tours scheduled for today.</p>}
+        {tours?.map((tour) => (
+          <Link key={tour.id} href={`/tours/${tour.id}`} className="grid grid-cols-[58px_1fr_auto] items-center gap-3 py-3 text-body hover:bg-[#faf9f6]">
+            <span className="text-[#9b8353]">{formatClock(tour.startDatetime)}</span>
+            <span>{tour.title}{tour.zone ? <span className="text-[#999a90]"> · {tour.zone}</span> : null}</span>
+            <span className="text-meta text-[#999a90]">{String(tour.peopleCount).padStart(2, "0")} guests</span>
+          </Link>
         ))}
       </div>
     </section>

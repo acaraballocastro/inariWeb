@@ -1,34 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# INARI Tours · Operations (frontend)
 
-## Getting Started
+Frontend de InariOps: reservas, días de tour, asignación de guías, incidencias y notificaciones de la operativa en Japón. Next.js 16 (App Router) + React 19 + Tailwind 4, contra el backend Go `inariops-backend`.
 
-First, run the development server:
+Qué hace, qué falta y problemas conocidos: [FRONTEND_CAPABILITIES.md](FRONTEND_CAPABILITIES.md).
+
+## Arrancar
+
+Requiere Node 24 o posterior (los tests usan el soporte nativo de TypeScript de Node) y el backend en marcha.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+echo 'NEXT_PUBLIC_API_URL=http://localhost:9142/api/v1' > .env.local
+npm run dev        # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+En el backend, `CORS_ORIGIN` y `WEB_URL` deben apuntar a la dirección del frontend.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Comprobaciones
 
-## Learn More
+```bash
+npm run lint       # ESLint
+npm run typecheck  # tsc --noEmit
+npm test           # tests de lib/ con node:test
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+La CI (`.github/workflows/ci.yml`) ejecuta las cuatro en cada pull request y en `main`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Estructura
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `app/`: sólo las rutas; cada `page.tsx` renderiza una pantalla.
+- `features/<área>/`: `api.ts` (tipos y llamadas al backend) y `components/` (pantallas).
+- `lib/`: cliente HTTP y sesión (`api/`), fechas en JST (`datetime.ts`), estados (`status.ts`), calendario (`calendar.ts`). El código de `lib/` que tiene tests importa con extensión `.ts` para que Node lo ejecute sin compilar.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Todas las fechas se introducen y se muestran en hora de Japón (JST), sea cual sea la zona del navegador.
