@@ -30,7 +30,8 @@ export function DashboardHeader({ breadcrumb = "Workspace / Dashboard" }: { brea
       </div>
       <div className="flex items-center gap-4 text-meta text-[#77786f]">
         {clock && <span className="hidden sm:inline">Tokyo · {clock} JST</span>}
-        <NotificationBell />
+        {/* On phones the tab bar has the notifications. */}
+        <span className="hidden lg:block"><NotificationBell /></span>
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#e9e5d7] font-medium text-[#5d5e55]">{initials || "·"}</span>
         {user && <span className="hidden sm:inline">{user.name.split(/\s+/)[0]}</span>}
       </div>

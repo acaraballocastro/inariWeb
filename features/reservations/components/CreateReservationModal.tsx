@@ -156,7 +156,7 @@ export function CreateReservationModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#292b26]/45 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#292b26]/45 sm:p-4"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !isSubmitting) {
           handleClose();
@@ -167,7 +167,7 @@ export function CreateReservationModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-reservation-title"
-        className={`my-auto max-h-[90dvh] w-full overflow-y-auto bg-white shadow-xl ${step === 3 ? "max-w-3xl" : "max-w-2xl"}`}
+        className={`h-dvh w-full overflow-y-auto bg-white pb-[env(safe-area-inset-bottom)] shadow-xl sm:my-auto sm:h-auto sm:max-h-[90dvh] ${step === 3 ? "sm:max-w-3xl" : "sm:max-w-2xl"}`}
       >
         <header className="flex items-start justify-between border-b border-[#ecebe5] px-6 py-5 sm:px-8">
           <div>

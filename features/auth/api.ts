@@ -72,3 +72,12 @@ export async function resetPassword(token: string, newPassword: string) {
     body: JSON.stringify({ token, new_password: newPassword }),
   });
 }
+
+/**
+ * Changes the user's own name and phone (an empty phone clears it). Email,
+ * role and, for guides, zones, languages and daily limit are administrative:
+ * the API refuses them here (400 INVALID_INPUT).
+ */
+export function updateMe(input: { name?: string; phone?: string }) {
+  return request<User>("/auth/me", { method: "PATCH", body: JSON.stringify(input) });
+}

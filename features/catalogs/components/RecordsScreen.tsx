@@ -151,7 +151,19 @@ export function RecordsScreen<T extends { id: string }>({ config }: { config: Re
               {!items && !error && <p className="mt-6 text-body text-[#85867c]">Loading...</p>}
               {items && filtered.length === 0 && <p className="mt-6 text-body text-[#85867c]">No results found.</p>}
               {filtered.length > 0 && (
-                <div className="mt-6 overflow-x-auto"><div className="min-w-[700px]">
+                <>
+                {/* Phones: one card per record, each column as a labelled line. */}
+                <div className="mt-5 space-y-2 md:hidden">
+                  {filtered.map((item) => (
+                    <div key={item.id} className="border border-[#ecebe5] p-4 text-meta">
+                      {config.columns.map((column, index) => index === 0
+                        ? <p key={column.label} className="text-lead font-medium">{column.render(item)}</p>
+                        : <p key={column.label} className="mt-1 break-words text-[#77786f]"><span className="text-[#a19a87]">{column.label}: </span>{column.render(item)}</p>)}
+                      <div className="mt-3 flex gap-2"><button type="button" onClick={() => openForm(item)} className="h-9 border border-[#deddd6] px-3">Edit</button><button type="button" onClick={() => handleDelete(item)} className="h-9 border border-[#deddd6] px-3 text-[#9b6f37]">Delete</button></div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 hidden overflow-x-auto md:block"><div className="min-w-[700px]">
                   <div style={grid} className="grid gap-3 border-b border-[#ecebe5] pb-3 text-label font-semibold uppercase tracking-[0.16em] text-[#a19a87]">{config.columns.map((column) => <span key={column.label}>{column.label}</span>)}<span>Actions</span></div>
                   <div className="divide-y divide-[#f0efe9]">
                     {filtered.map((item) => (
@@ -162,6 +174,7 @@ export function RecordsScreen<T extends { id: string }>({ config }: { config: Re
                     ))}
                   </div>
                 </div></div>
+                </>
               )}
               {items && remote && !remoteQuery && <Pagination offset={offset} limit={pageSize} total={total} onChange={setOffset} noun={config.title.toLowerCase()} />}
               {items && !(remote && !remoteQuery) && <p className="mt-5 text-meta text-[#96968b]">{filtered.length} shown{remote && filtered.length >= remote.searchLimit ? ` · only the first ${remote.searchLimit} matches, refine the search` : ""}</p>}

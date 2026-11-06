@@ -8,11 +8,11 @@ export type PushState =
   | "off"
   | "on";
 
-function isIos() {
+export function isIos() {
   return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
-function isInstalled() {
+export function isInstalled() {
   return window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
 }
 
@@ -20,7 +20,7 @@ function hasPushApi() {
   return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 }
 
-async function registration() {
+export async function registration() {
   return navigator.serviceWorker.register("/sw.js", { scope: "/", updateViaCache: "none" });
 }
 

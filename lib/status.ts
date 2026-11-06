@@ -26,6 +26,9 @@ export const pendingStatuses = ["PENDING_ASSIGNMENT", "GUIDE_PREASSIGNED", "PAYM
 /** Days whose reservation is paid: they keep their status when the guide changes. */
 export const paidStatuses = ["VOUCHER_PENDING", "SIGNATURE_PENDING", "CONFIRMED"];
 
+/** A day can be checked in once its guide accepted it, until it is finished or cancelled. */
+export const checkInStatuses = ["GUIDE_CONFIRMED", "PAYMENT_PENDING", "VOUCHER_PENDING", "SIGNATURE_PENDING", "CONFIRMED"];
+
 export function isCancelled(status: string) {
   return cancelledStatuses.includes(status);
 }

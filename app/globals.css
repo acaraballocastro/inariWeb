@@ -22,8 +22,35 @@
   font-family: "Segoe UI", Arial, Helvetica, sans-serif;
 }
 
+/* A step larger on phones: 10–12px text is hard to read in the hand. */
+@media (max-width: 639px) {
+  :root {
+    --text-label: 0.6875rem;     /* 11px */
+    --text-meta: 0.75rem;        /* 12px */
+    --text-body: 0.8125rem;      /* 13px */
+    --text-lead: 0.875rem;       /* 14px */
+  }
+}
+
+/* iOS zooms into fields under 16px when they get the focus. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Room for the mobile tab bar (MobileTabBar), above the home indicator. */
+@media (max-width: 1023px) {
+  body:has(.mobile-tab-bar) {
+    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+}
+
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,

@@ -507,7 +507,12 @@ function ReservationTable({
     "grid-cols-[minmax(220px,1.7fr)_minmax(130px,1fr)_minmax(140px,1fr)_minmax(78px,0.65fr)_minmax(48px,0.4fr)_minmax(105px,0.85fr)_minmax(140px,1fr)]";
 
   return (
-    <div className="mt-6 overflow-x-auto">
+    <>
+    {/* Phones: one card per reservation. */}
+    <div className="mt-5 space-y-2 md:hidden">
+      {reservations.map((reservation) => <ReservationCard key={reservation.id} reservation={reservation} />)}
+    </div>
+    <div className="mt-6 hidden overflow-x-auto md:block">
       <div className="min-w-[1020px]">
         <div
           className={`grid ${columns} gap-3 border-b border-[#ecebe5] pb-3 text-label font-semibold tracking-[0.16em] text-[#a19a87]`}
@@ -532,6 +537,22 @@ function ReservationTable({
         </div>
       </div>
     </div>
+    </>
+  );
+}
+
+function ReservationCard({ reservation }: { reservation: Reservation }) {
+  return (
+    <Link href={`/reservations/${encodeURIComponent(reservation.code)}`} className="block border border-[#ecebe5] p-4 active:bg-[#fbfaf7]">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-label text-[#9b9c92]">{reservation.code}</p>
+        <span className="shrink-0 bg-[#e9e5d7] px-2 py-1 text-label text-[#77786f]">{formatStatus(reservation.status)}</span>
+      </div>
+      <p className="mt-1 text-lead font-medium">{reservation.title}</p>
+      <p className="mt-1 text-meta text-[#65665d]">{[reservation.customer, reservation.agency].filter((value) => value && value !== "—").join(" · ")}</p>
+      <p className="mt-2 text-meta text-[#85867c]">{reservation.dates.replace(/\n/g, " ")} · {reservation.guests} guests</p>
+      <p className="mt-1 text-label text-[#85867c]">Voucher · {formatStatus(reservation.voucher)} · Signature · {formatStatus(reservation.signature)}</p>
+    </Link>
   );
 }
 

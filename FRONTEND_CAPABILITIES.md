@@ -126,7 +126,18 @@ La operativa es en Japón: **todas las fechas y horas se introducen y se muestra
 - El header incluye la campana de notificaciones y el interruptor de push.
 - Cerrar sesión y "cerrar sesión en todos los dispositivos" (también da de baja el push del dispositivo).
 - Pie del menú (`AccountLinks`): cambiar contraseña, cerrar sesión y cerrar sesión en todos los dispositivos.
-- Las secciones sin pantalla todavía (itinerarios, plantillas, vouchers, firmas) no aparecen en el menú hasta que existan (7.2).
+- Las secciones sin pantalla todavía (vista global de itinerarios, vouchers, firmas) no aparecen en el menú hasta que existan (7.2). Las plantillas de itinerario están en *Content* (6.10).
+
+## 3.4.1 App móvil (PWA, 2026-11-04)
+
+La app móvil es esta misma web, instalable (decisión: no duplicar código). Por debajo de `lg`:
+
+- **Tab bar inferior** (`MobileTabBar`, en `DashboardSidebar`): guía *Home · My tours · Available · Alerts · Profile*; admin *Home · Bookings · Assign · Incidents · Alerts*. El resto sigue en el menú ☰. Respeta el *safe area* del iPhone; el `body` deja hueco con `:has(.mobile-tab-bar)`.
+- **Tamaños:** en móvil la escala de texto sube un punto (`globals.css`) y los campos van a 16 px en pantallas táctiles (iOS no hace zoom al enfocarlos).
+- **Tablas → tarjetas** bajo `md`: reservas, guías (con llamar), registros (clientes, agencias…); usuarios, lugares, zonas e idiomas apilan las celdas de la misma fila (la edición en línea sigue igual). El calendario abre en agenda. El alta de reserva ocupa toda la pantalla.
+- **Notificaciones:** un solo contador de no leídas (`useUnreadCount`) para la campana (escritorio), la pestaña *Alerts* y el número del icono de la app (`setAppBadge`); se refresca cada minuto, al volver a la app y cuando `sw.js` avisa de un push.
+- **PWA:** `AppRuntime` registra `sw.js` en todas las páginas; sin conexión se ve `offline.html` (sólo se cachea esa página: los datos siempre vienen de la API). `InstallBanner` invita a instalar en el móvil (diálogo nativo en Android, pasos en iPhone, donde es la única forma de recibir push). Manifest con `id`, `scope`, orientación vertical y accesos directos. `viewport-fit=cover` y `theme-color`.
+- **Hora actual:** `lib/useNow.ts` (null en el prerender; Cache Components no permite leer la hora al construir la página).
 
 ## 3.5 Renderizado
 
@@ -173,7 +184,8 @@ La operativa es en Japón: **todas las fechas y horas se introducen y se muestra
 ## 6.1 Dashboard (`/dashboard`)
 
 - **Admin** (`loadDashboard`): todo acotado. Lee los días de esta semana, los 6 próximos (`limit=6`), cuenta sin descargarlos los días sin guía (`unassigned=true`, endpoint añadido al backend el 2026-11-04) y los que esperan respuesta del guía, las reservas abiertas y las 20 de inicio más reciente para la actividad. Tarjetas (tours de la semana, de hoy y zonas de hoy, sin asignar, esperando aceptación), panel de atención (sin guía, esperando aceptación, firmas sin enviar, firmas pendientes), agenda de hoy, próximos tours y actividad reciente de reservas.
-- **Guía** (`GuideDashboard`): preasignaciones esperando respuesta (aceptar / rechazar; sin respuesta en 24 h cuenta como aceptada), sus próximos tours y "Open tour days" (`GET /tour-days/available-for-guide/{id}`): días sin guía compatibles con su disponibilidad. **Sólo informativo**: el guía no puede pedirlos desde la app (sección 7.2).
+- **Admin:** tarjeta "In progress" (días con check-in sin terminar, `in_progress=true`).
+- **Guía** (`GuideDashboard`): botón "Check in" en sus tours de hoy y etiqueta "In progress"; preasignaciones esperando respuesta (aceptar / rechazar; sin respuesta en 24 h cuenta como aceptada), sus próximos tours y "Open tour days" (`GET /tour-days/available-for-guide/{id}`): días sin guía de sus zonas o sin zona (el backend filtra). Botón **Take** (`PATCH /tour-days/{id}/take`, D1 del análisis de la especificación): pide confirmación, el día pasa a preasignado y aparece en "Awaiting your answer" para confirmarlo (o cuenta como aceptado a las 24 h). Si otro guía lo cogió antes (`409 INVALID_TOUR_DAY_STATUS`) o ya no se le ofrece (`403 TOUR_DAY_NOT_OFFERED`) lo dice y recarga la lista; los avisos de solape le salen en el mensaje.
 
 ## 6.2 Reservas
 
@@ -181,7 +193,7 @@ La operativa es en Japón: **todas las fechas y horas se introducen y se muestra
 - **Alta en 3 pasos** (modal):
   1. Datos: título, descripción, agencia, pasajeros, días de inicio y fin (sin hora: los días se crean a las 09:00 JST y cada uno recibe su horario en su itinerario y en su día de tour), nº de presupuesto y de expediente, `offer_to_zone_guides` y clientes (búsqueda de existentes o alta nueva con `CustomerPicker`).
   2. Días de tour: el backend crea uno por fecha; aquí se completan (hora, duración, zona, punto de encuentro, pasajeros, remuneración, notas) y se pueden añadir más (`ReservationTourDaysStep`).
-  3. Itinerario de cada día (`ReservationItineraryStep`); se puede saltar y completar después.
+  3. Itinerario de cada día (`ReservationItineraryStep`), parada a parada o aplicando una plantilla a ese día o a todos (`ItineraryTemplateBar`); se puede saltar y completar después.
 - **Detalle** (`/reservations/[code]`):
   - Edición de todos los datos y de los clientes (`PATCH /reservations/{code}`; el backend ajusta los días si cambian las fechas).
   - Botón del **siguiente paso manual** según el estado de los días: confirmar pago → marcar voucher enviado → marcar contrato firmado.
@@ -191,9 +203,13 @@ La operativa es en Japón: **todas las fechas y horas se introducen y se muestra
 
 ## 6.3 Días de tour (`/tours/[id]`)
 
-- **Admin:** edición de los datos del día (no editable en estados finales), confirmar o rechazar en nombre del guía, marcar completado, fuerza mayor (con motivo), cancelar, asignar / cambiar / desasignar guía (reglas por estado: cambiar en preasignados y pagados, desasignar sólo antes de pagar), itinerario editable, recursos (punto de encuentro, remuneración en JPY…), incidencias e historial.
-- **Guía:** aceptar o rechazar su preasignación, itinerario de sólo lectura, reportar incidencias. Si el día ya no es suyo (`403`), lo dice.
+- **Admin:** edición de los datos del día (no editable en estados finales), confirmar o rechazar en nombre del guía, marcar completado, fuerza mayor (con motivo), cancelar, asignar / cambiar / desasignar guía (reglas por estado: cambiar en preasignados y pagados, desasignar sólo antes de pagar; tras asignar muestra los `warnings` de la respuesta: fuera de zona y solapes, D3), itinerario editable con "Apply template" y "Save as template", recursos (punto de encuentro, remuneración en JPY…), incidencias e historial.
+- **Guía:** aceptar o rechazar su preasignación, itinerario de sólo lectura, reportar incidencias, y **clientes del día** (`BriefingPanel`, `GET /tour-days/{id}/briefing`: reserva y clientes con botón de llamar). Si el día ya no es suyo ni se le ofrece (`403`), lo dice.
+- **Día ofrecido al guía** (aún sin guía): lo puede abrir para ver datos e itinerario y cogerlo ("Take this tour"); sin historial, incidencias ni clientes hasta que es suyo.
+- **Check-in** (`POST /tour-days/{id}/check-in`): botón "Check in" el día del tour (JST) si el guía ya lo aceptó; el backend decide la ventana (desde 2 h antes) y su mensaje dice cuándo abre si es pronto. Después, etiqueta "In progress since HH:MM". El admin puede hacerlo por el guía ("Check in for guide") y deshacerlo ("Undo check-in"); con check-in el panel de asignación ya no deja cambiar ni quitar al guía. Historial: "X checked in" y "Check-in of X undone".
 - **Itinerario** (`ItineraryEditor`): paradas con place o actividad, hora de inicio/fin, notas, reordenar (subir/bajar intercambiando `order_index`) y borrar.
+- **Plantillas en el día** (`ItineraryTemplateBar`, sólo admin y días no cancelados): aplicar una plantilla (`POST /itinerary-templates/{id}/apply`, sustituyendo las paradas con confirmación o añadiéndolas detrás) y guardar el itinerario del día como plantilla (`from_tour_day_id`, con la zona del día).
+- **Historial:** la acción `TAKEN` se muestra como "Taken by <guía>"; los avisos de compatibilidad salen en el `reason`.
 
 ## 6.4 Calendario (`/calendar`)
 
@@ -201,7 +217,7 @@ Vista mensual (semanas de lunes a domingo) y agenda, en JST, con colores por est
 
 ## 6.5 Asignaciones (`/assignments`)
 
-Días asignables desde hoy (pendientes, preasignados y pagados sin guía), selección múltiple y asignación de un guía a todos a la vez (`PATCH /tour-days/assign-guide`). Ordena primero los guías de las zonas de los días elegidos. El backend valida todos los días antes de cambiar ninguno.
+Días asignables desde hoy (pendientes, preasignados y pagados sin guía), selección múltiple y asignación de un guía a todos a la vez (`PATCH /tour-days/assign-guide`). Ordena primero los guías de las zonas de los días elegidos. El backend valida todos los días antes de cambiar ninguno. Tras asignar muestra los `warnings` por día (fuera de las zonas del guía, solape de horario): la asignación se hace igual.
 
 ## 6.6 Incidencias
 
@@ -213,6 +229,7 @@ Días asignables desde hoy (pendientes, preasignados y pagados sin guía), selec
 
 - **Campana** en el header: contador de no leídas y las 8 últimas; marcar leída al abrir y "marcar todas".
 - **Bandeja** (`/notifications`): todas o sólo no leídas, "cargar más".
+- **Icono por tipo** (`NotificationIcon`, en la campana y la bandeja): un guía cogió un día (`GUIDE_TOOK_DAY`), confirmado, día perdido o cancelado, incidencia, plazo de preasignación y, por defecto, día de tour.
 - **Push** (`PushToggle` + `features/notifications/push.ts`): registra `sw.js`, pide permiso con un toque, suscribe con la clave VAPID de `GET /push/config` y la guarda en `POST /push/subscriptions`; la resincroniza si el navegador la renueva y la borra al desactivar o cerrar sesión. En iPhone explica que hay que instalar la web en la pantalla de inicio.
 
 ## 6.8 Auditoría (`/audit`)
@@ -224,6 +241,19 @@ Sólo ADMIN. Lista de `GET /admin/audit-logs` (sección 6.9 del backend): cada c
 Pantalla de `GET /admin/system`: estado de la BD, uptime, workers (última ejecución, fallos), peticiones por ruta y últimos errores con su request ID.
 
 ---
+
+## 6.10 Plantillas de itinerario (`/itinerary-templates`)
+
+Sólo admin (D5 del análisis de la especificación). Listado con búsqueda y filtro por zona (nº de paradas, zona, última modificación), alta, edición y borrado. El formulario edita nombre, descripción, zona y las paradas en local (hora de inicio/fin opcionales, tipo, place o actividad, notas, subir/bajar, quitar); guardar manda la lista entera (`PATCH` con `items` la sustituye). Aplicar copia las paradas a los días, así que cambiar o borrar una plantilla no toca los días ya configurados. Se aplican desde el día de tour y desde el paso 3 del alta (6.2, 6.3).
+
+## 6.11 Pantallas del guía
+
+- **My tours** (`/my-tours`): próximos (paginados, desde hoy) y pasados (rango de fechas, por defecto los últimos 90 días, el más reciente primero), agrupados por día, con check-in en los de hoy (`TourDayCard`).
+- **Available** (`/available`): todos los días que se le ofrecen, agrupados por fecha y filtrables por zona, con "Take" (`useTakeTourDay`, compartido con el dashboard y el detalle). El dashboard muestra los 5 primeros y enlaza aquí.
+
+## 6.12 Perfil (`/profile`)
+
+Para cualquier usuario (menú del guía y "My profile" al pie del menú). Edita nombre y teléfono (`PATCH /auth/me`); muestra sin editar email, rol y, al guía, zonas, idiomas y tours por día, con enlaces a disponibilidad y cambio de contraseña.
 
 # 7. Pendiente
 
@@ -246,9 +276,7 @@ Pantalla de `GET /admin/system`: estado de la BD, uptime, workers (última ejecu
 | Documentos / adjuntos | No hay subida ni descarga de archivos | Sí: upload y storage (`files`, `incident_files`) |
 | Incidencias | No se pueden editar título ni descripción ni adjuntar archivos | Sí |
 | Fuerza mayor de una reserva entera | Sólo por día | Sí |
-| Itinerarios (vista global) y plantillas de tour | Sin pantalla (quitadas del menú) | Plantillas: sí, no existen en el backend |
-| Días abiertos para el guía | El guía los ve pero no puede pedirlos ("Tell operations") | Sí: falta endpoint para solicitarlos |
-| Perfil propio | El usuario no puede ver ni editar su nombre, email o teléfono | No para leer (`/auth/me`); editar depende de permisos |
+| Itinerarios (vista global) | Sin pantalla | No |
 | Hoteles del día | El formulario del día no tiene hotel del guía ni del cliente | Sí: los campos existen, pero el backend no tiene endpoints de `hotels` (sección 7.4 del backend) |
 | Voucher por día | `PATCH /tour-days/{id}` acepta `voucher_status`, pero se muestra sólo como lectura | No: decidir con el voucher en PDF si va por día o por reserva |
 | Filtros | El calendario no filtra por guía ni zona; el listado de incidencias sólo por estado | No: el backend ya admite `guide_id`/`zone_id` en `/tour-days` y `guide_id`/`reservation_id`/`tour_day_id` en `/incidents` |

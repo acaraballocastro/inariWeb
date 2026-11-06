@@ -39,6 +39,8 @@ export type DashboardData = {
     todayZones: number;
     unassigned: number;
     awaitingAcceptance: number;
+    /** Checked in and not finished yet. */
+    inProgress: number;
   };
   attention: {
     unassigned: number;
@@ -66,11 +68,12 @@ export async function loadDashboard(now = new Date()): Promise<DashboardData> {
   // only provide labels, so the dashboard still renders without them and says so.
   const missing: string[] = [];
   const fromToday = todayStart.toISOString();
-  const [weekTourDays, upcoming, unassigned, awaitingAcceptance, openReservations, latestReservations, guides, zones] = await Promise.all([
+  const [weekTourDays, upcoming, unassigned, awaitingAcceptance, inProgress, openReservations, latestReservations, guides, zones] = await Promise.all([
     listTourDays({ from: fromToday, to: weekEnd.toISOString() }),
     listTourDaysPage({ from: now.toISOString(), status: activeStatuses }, { limit: upcomingCount, offset: 0 }).then((page) => page.items),
     countTourDays({ from: fromToday, status: openStatuses, unassigned: true }),
     countTourDays({ from: fromToday, status: ["GUIDE_PREASSIGNED"] }),
+    countTourDays({ inProgress: true }),
     listReservations({ status: openStatuses }),
     listReservationsPage({}, { limit: recentReservationsCount, offset: 0 }).then((page) => page.items),
     withFallback(listGuides().then((items) => items ?? []), [], "guides", missing),
@@ -101,6 +104,7 @@ export async function loadDashboard(now = new Date()): Promise<DashboardData> {
       todayZones: new Set(todayDays.map((day) => day.zone_id).filter(Boolean)).size,
       unassigned,
       awaitingAcceptance,
+      inProgress,
     },
     attention: {
       unassigned,
