@@ -57,7 +57,7 @@ export function GuideDashboard({ now }: { now: Date | null }) {
     return () => { active = false; };
   }, [now]);
 
-  // Preassignments are accepted automatically after the answer window (settings): guides only decline.
+  // Preassignments go ahead after the window (settings) unless the guide declines them.
   async function decline(day: TourDay) {
     if (!await confirm({ title: "Decline this tour?", message: "It will be offered to other guides.", confirmLabel: "Decline tour", cancelLabel: "Keep it", tone: "danger" })) return;
     setBusyId(day.id); setError(""); setNotice("");
@@ -119,7 +119,7 @@ export function GuideDashboard({ now }: { now: Date | null }) {
 
       <section className="mt-5 bg-[#e9e5d7] p-5 sm:p-6">
         <p className="text-meta font-semibold tracking-[0.18em] text-[#9b8353]">PREASSIGNED</p>
-        <p className="mt-2 text-body text-[#5d5e55]">Without an answer within {hours} hours a preassignment counts as accepted.</p>
+        <p className="mt-2 text-body text-[#5d5e55]">If you cannot take a preassigned tour, decline it within {hours} hours; after that it goes ahead.</p>
         {pending === null && <p className="mt-4 text-body text-[#85867c]">Loading…</p>}
         {pending?.length === 0 && <p className="mt-4 text-body text-[#85867c]">Nothing pending.</p>}
         <div className="mt-4 space-y-3">

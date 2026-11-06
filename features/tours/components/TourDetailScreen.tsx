@@ -316,7 +316,7 @@ function GuideAssignmentNote({ tourDay }: { tourDay: TourDay }) {
   const note = isInProgress(tourDay)
     ? `You checked in at ${formatJstClock(tourDay.checked_in_at ?? "")}. Report anything unusual as an incident.`
     : tourDay.status === "GUIDE_PREASSIGNED"
-    ? `This tour is waiting for your confirmation. Accept or decline it; without an answer within ${hours} hours it counts as accepted.`
+    ? `This tour is preassigned to you. If you cannot take it, decline it within ${hours} hours; after that it goes ahead.`
     : finalStatuses.includes(tourDay.status)
       ? "This tour is closed."
       : "You are the guide for this tour. Check in when it starts (from 2 hours before, on the day) and report anything unusual as an incident.";
@@ -334,7 +334,7 @@ function OfferedNote() {
   return (
     <section className="bg-[#e9e5d7] p-5 sm:p-6">
       <p className="text-label font-semibold tracking-[0.2em] text-[#9b8353]">AVAILABLE TOUR</p>
-      <p className="mt-3 text-body leading-relaxed text-[#5d5e55]">This day has no guide yet and is offered to you. Take it to make it yours: it is preassigned to you and you confirm it (without an answer it counts as accepted in {hours} hours). The customers&apos; details appear once it is yours.</p>
+      <p className="mt-3 text-body leading-relaxed text-[#5d5e55]">This day has no guide yet and is offered to you. Take it to make it yours: it is preassigned to you, and goes ahead unless you decline it within {hours} hours. The customers&apos; details appear once it is yours.</p>
     </section>
   );
 }

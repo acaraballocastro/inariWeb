@@ -12,7 +12,7 @@ export type TakeOutcome = { taken: boolean; message: string; /** The list is out
 
 /**
  * A guide takes an offered day (D1): asks first, then the day is preassigned
- * to them and waits for their confirmation (or counts as accepted after the answer window).
+ * to them, and goes ahead unless they decline it within the window.
  */
 export function useTakeTourDay() {
   const { confirm } = useDialogs();
@@ -20,7 +20,7 @@ export function useTakeTourDay() {
   return useCallback(async (day: TourDay, zone: string | null): Promise<TakeOutcome> => {
     const name = day.title || day.code || "this tour";
     const facts = [formatJst(day.start_datetime, { weekday: "short", day: "numeric", month: "short" }), formatJstClock(day.start_datetime), formatDuration(day.duration), zone, day.people_count ? `${day.people_count} guests` : null].filter(Boolean).join(" · ");
-    if (!await confirm({ title: `Take ${name}?`, message: `${facts}.\nIt is preassigned to you: confirm it afterwards, or it counts as accepted after ${hours} hours.`, confirmLabel: "Take tour", cancelLabel: "Not now" })) return null;
+    if (!await confirm({ title: `Take ${name}?`, message: `${facts}.\nIt is preassigned to you: if you cannot take it, decline it within ${hours} hours; after that it goes ahead.`, confirmLabel: "Take tour", cancelLabel: "Not now" })) return null;
     try {
       const { warnings } = await takeTourDay(day.id);
       const notes = warnings.map(formatAssignmentWarning).join(" · ");

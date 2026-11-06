@@ -9,10 +9,10 @@ import { formatJst } from "@/lib/datetime";
 
 const inputClass = "mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-body outline-none focus:border-[#b5a786]";
 
-type Draft = { push_enabled: boolean; email_enabled: boolean; preassignment_window_hours: string; unzoned_grace_minutes: string };
+type Draft = { push_enabled: boolean; email_enabled: boolean; preassignment_window_hours: string; unzoned_grace_minutes: string; day_before_reminder_hour: string };
 
 function toDraft(settings: Settings): Draft {
-  return { push_enabled: settings.push_enabled, email_enabled: settings.email_enabled, preassignment_window_hours: String(settings.preassignment_window_hours), unzoned_grace_minutes: String(settings.unzoned_grace_minutes) };
+  return { push_enabled: settings.push_enabled, email_enabled: settings.email_enabled, preassignment_window_hours: String(settings.preassignment_window_hours), unzoned_grace_minutes: String(settings.unzoned_grace_minutes), day_before_reminder_hour: String(settings.day_before_reminder_hour) };
 }
 
 /** ADMIN settings (spec 2, 3.17): notification channels in use and general operating values. */
@@ -38,11 +38,13 @@ export function SettingsScreen() {
     if (!draft) return;
     const hours = Number(draft.preassignment_window_hours);
     const minutes = Number(draft.unzoned_grace_minutes);
-    if (!Number.isInteger(hours) || hours < 1 || hours > 168) { setError("The answer window must be between 1 and 168 hours."); return; }
+    if (!Number.isInteger(hours) || hours < 1 || hours > 168) { setError("The time to decline must be between 1 and 168 hours."); return; }
     if (!Number.isInteger(minutes) || minutes < 0 || minutes > 1440) { setError("The wait for days without zone must be between 0 and 1440 minutes."); return; }
+    const reminderHour = Number(draft.day_before_reminder_hour);
+    if (!Number.isInteger(reminderHour) || reminderHour < 0 || reminderHour > 23) { setError("The reminder hour must be between 0 and 23."); return; }
     setIsSaving(true); setError(""); setNotice("");
     try {
-      const saved = await updateSettings({ push_enabled: draft.push_enabled, email_enabled: draft.email_enabled, preassignment_window_hours: hours, unzoned_grace_minutes: minutes });
+      const saved = await updateSettings({ push_enabled: draft.push_enabled, email_enabled: draft.email_enabled, preassignment_window_hours: hours, unzoned_grace_minutes: minutes, day_before_reminder_hour: reminderHour });
       forgetPreassignmentHours();
       setSettings(saved); setDraft(toDraft(saved));
       setNotice("Settings saved.");
@@ -84,8 +86,9 @@ export function SettingsScreen() {
                 <section className="mt-5 bg-white p-5 sm:p-6">
                   <h2 className="font-serif text-xl">Assignments</h2>
                   <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                    <label className="text-meta">Answer window (hours)<input type="number" min="1" max="168" step="1" value={draft.preassignment_window_hours} onChange={(event) => setDraft({ ...draft, preassignment_window_hours: event.target.value })} disabled={isSaving} className={inputClass} /><Hint>Time a guide has to accept or decline a preassigned tour before it counts as accepted.</Hint></label>
+                    <label className="text-meta">Time to decline (hours)<input type="number" min="1" max="168" step="1" value={draft.preassignment_window_hours} onChange={(event) => setDraft({ ...draft, preassignment_window_hours: event.target.value })} disabled={isSaving} className={inputClass} /><Hint>Time a guide has to decline a preassigned tour; after that it goes ahead to payment.</Hint></label>
                     <label className="text-meta">Wait for days without zone (minutes)<input type="number" min="0" max="1440" step="1" value={draft.unzoned_grace_minutes} onChange={(event) => setDraft({ ...draft, unzoned_grace_minutes: event.target.value })} disabled={isSaving} className={inputClass} /><Hint>A new day without zone is offered to every guide after this wait, giving you time to set its zone.</Hint></label>
+                    <label className="text-meta">Day-before reminder (hour, JST)<input type="number" min="0" max="23" step="1" value={draft.day_before_reminder_hour} onChange={(event) => setDraft({ ...draft, day_before_reminder_hour: event.target.value })} disabled={isSaving} className={inputClass} /><Hint>From this hour, guides get a reminder of their tours of the next day, with the start time and meeting point.</Hint></label>
                   </div>
                 </section>
 

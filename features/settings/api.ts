@@ -5,15 +5,17 @@ import { useEffect, useState } from "react";
 export type Settings = {
   push_enabled: boolean;
   email_enabled: boolean;
-  /** Hours a guide has to answer a preassignment before it counts as accepted (1–168). */
+  /** Hours a guide has to decline a preassignment before it goes ahead to payment (1–168). */
   preassignment_window_hours: number;
   /** Minutes a new day without zone waits before every guide hears about it (0–1440). */
   unzoned_grace_minutes: number;
+  /** Hour (Japan time, 0–23) from which guides are reminded of tomorrow's tours. */
+  day_before_reminder_hour: number;
   updated_at: string;
   updated_by: string | null;
 };
 
-export type SettingsUpdate = Partial<Pick<Settings, "push_enabled" | "email_enabled" | "preassignment_window_hours" | "unzoned_grace_minutes">>;
+export type SettingsUpdate = Partial<Pick<Settings, "push_enabled" | "email_enabled" | "preassignment_window_hours" | "unzoned_grace_minutes" | "day_before_reminder_hour">>;
 
 export function getSettings() {
   return request<Settings>("/settings");
