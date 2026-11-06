@@ -3,11 +3,11 @@
 // shows an offline page instead of the browser's error. The data always
 // comes from the API: nothing else is cached.
 
-const offlineCache = "inari-offline-v3";
+const offlineCache = "inari-offline-v4";
 const offlinePage = "/offline.html";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(offlineCache).then((cache) => cache.addAll([offlinePage, "/icons/icon-192.png", "/icons/logo-horizontal.png"])));
+  event.waitUntil(caches.open(offlineCache).then((cache) => cache.addAll([offlinePage, "/icons/fox-icon-192.png", "/icons/logo-horizontal.png"])));
   self.skipWaiting();
 });
 
@@ -36,8 +36,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(Promise.all([
     self.registration.showNotification(data.title || "INARI", {
       body: data.body || "",
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
+      icon: "/icons/fox-icon-192.png",
+      badge: "/icons/fox-icon-192.png",
       tag: data.id, // the same notification is never shown twice
       data: { url: data.url || "/notifications" },
     }),

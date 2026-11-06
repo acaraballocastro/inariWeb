@@ -37,7 +37,7 @@ export function InstallBanner({ className = "" }: { className?: string }) {
 
   return (
     <section className={`flex items-start gap-3 bg-[#292b26] p-4 text-white ${className}`}>
-      <Image src="/icons/icon-192.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-lg" />
+      <Image src="/icons/fox-icon-192.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-lg" />
       <div className="min-w-0 flex-1">
         <p className="text-body font-medium">Install INARI on your phone</p>
         <p className="mt-1 text-meta leading-relaxed text-white/75">
