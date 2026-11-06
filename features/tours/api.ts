@@ -9,6 +9,11 @@ export type TourDay = {
   reservation_id: string;
   code: string | null;
   title: string | null;
+  description: string | null;
+  /** Languages the guide must speak; assigning one who does not warns (MISSING_LANGUAGE). */
+  required_language_ids: string[] | null;
+  /** The reservation's customers on this day; empty: all of them. */
+  customer_ids: string[] | null;
   start_datetime: string;
   /** Whole hours. */
   duration: number | null;
@@ -43,6 +48,13 @@ export type ItineraryItem = {
 
 export type TourDayFormInput = {
   title: string | null;
+  description: string | null;
+  required_language_ids: string[];
+  /** Empty: all the reservation's customers. */
+  customer_ids: string[];
+  /** "" clears it. */
+  guide_hotel_id: string;
+  customer_hotel_id: string;
   start_datetime: string;
   /** Whole hours. */
   duration: number | null;
@@ -138,6 +150,11 @@ export function forceMajeureTourDay(id: string, reason: string) {
  * guide accepted it: CHECK_IN_NOT_OPEN, ALREADY_CHECKED_IN or
  * INVALID_TOUR_DAY_STATUS otherwise. Afterwards the guide cannot change.
  */
+/** The day's guide keeps their own notes on it ("" clears them). */
+export function updateGuideNotes(id: string, notes: string) {
+  return request<TourDay>(`/tour-days/${encodeURIComponent(id)}/guide-notes`, { method: "PATCH", body: JSON.stringify({ guide_liability_notes: notes }) });
+}
+
 export function checkInTourDay(id: string) {
   return request<TourDay>(`/tour-days/${encodeURIComponent(id)}/check-in`, { method: "POST" });
 }
@@ -162,9 +179,14 @@ export function offersCheckIn(day: Pick<TourDay, "checked_in_at" | "status" | "s
 }
 
 /** What the guide of a day needs to run it: its reservation and customers (no private data). */
+export type BriefingHotel = { name: string; address: string | null; phone: string | null; map_url: string | null };
+
 export type TourDayBriefing = {
   reservation: { code: string | null; title: string | null; description: string | null; total_people_count: number | null; start_date: string; end_date: string };
+  /** The customers of the day: the ones chosen for it, or all the reservation's. */
   customers: { full_name: string; phone: string | null; age: number | null }[];
+  guide_hotel: BriefingHotel | null;
+  customer_hotel: BriefingHotel | null;
 };
 
 /** For the day's guide and the ADMINs; a guide reading a day only offered to them gets 403. */
@@ -198,7 +220,8 @@ export function getTourDayHistory(id: string) {
 
 /**
  * A compatibility problem that does not stop an assignment: the day is outside
- * the guide's zones (OUTSIDE_ZONE) or overlaps another of their days
+ * the guide's zones (OUTSIDE_ZONE), requires languages the guide does not
+ * speak (MISSING_LANGUAGE) or overlaps another of their days
  * (SCHEDULE_OVERLAP, only days with a duration). It is also kept in the reason
  * of the assignment history.
  */

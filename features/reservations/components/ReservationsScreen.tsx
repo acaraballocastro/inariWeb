@@ -76,7 +76,8 @@ type Stats = {
   voucherPending: number;
 };
 
-export function ReservationsScreen() {
+/** `customerId` (from ?customer_id=) shows that customer's reservations: their history. */
+export function ReservationsScreen({ customerId, customerName }: { customerId?: string; customerName?: string } = {}) {
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [offset, setOffset] = useState(0);
@@ -104,9 +105,10 @@ export function ReservationsScreen() {
       to: filters.to || undefined,
       agencyId: filters.agencyId || undefined,
       guideId: filters.guideId || undefined,
+      customerId,
       q: debouncedQuery || undefined,
     }),
-    [filters, debouncedQuery],
+    [filters, debouncedQuery, customerId],
   );
   const requestKey = JSON.stringify({ filter, offset, version });
   const isLoading = result?.key !== requestKey;
@@ -243,6 +245,7 @@ export function ReservationsScreen() {
                   </p>
                 </div>
 
+                {customerId && <p className="mt-4 flex flex-wrap items-center gap-3 bg-[#e9e5d7] px-3 py-2 text-meta text-[#5d5e55]">Reservations of {customerName || "one customer"}<Link href="/reservations" className="underline underline-offset-2">Show all</Link></p>}
                 <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.6fr)_repeat(4,minmax(0,1fr))]">
                   <label className="text-meta">
                     Search reservation
@@ -253,7 +256,7 @@ export function ReservationsScreen() {
                         setQuery(event.target.value);
                         setOffset(0);
                       }}
-                      placeholder="Search code or title..."
+                      placeholder="Search code, title or customer..."
                       className={`${filterInputClass} placeholder:text-[#aaa99f]`}
                     />
                   </label>

@@ -25,7 +25,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    // The class is added before React hydrates, hence suppressHydrationWarning.
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Chrome on iOS gets its own fixes in globals.css (html.crios), before the first paint. */}
+        <script dangerouslySetInnerHTML={{ __html: `if(/CriOS/.test(navigator.userAgent))document.documentElement.classList.add("crios")` }} />
+      </head>
       <body>
         <AppRuntime />
         <DialogProvider>{children}</DialogProvider>

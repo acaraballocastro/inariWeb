@@ -11,7 +11,9 @@ import { useDebouncedValue } from "@/lib/useDebouncedValue";
 
 const inputClass = "mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-2.5 text-body outline-none focus:border-[#b5a786]";
 
-export type RecordField = { key: string; label: string; type?: "text" | "email" | "number" | "textarea"; required?: boolean; placeholder?: string };
+export type RecordOption = { value: string; label: string };
+/** `select` fields load their choices once with `loadOptions`; an empty value means none. */
+export type RecordField = { key: string; label: string; type?: "text" | "email" | "number" | "textarea" | "url" | "select"; required?: boolean; placeholder?: string; loadOptions?: () => Promise<RecordOption[]> };
 export type RecordDraft = Record<string, string | boolean>;
 export type RecordColumn<T> = { label: string; render: (item: T) => ReactNode; width: string };
 
@@ -52,6 +54,15 @@ export function RecordsScreen<T extends { id: string }>({ config }: { config: Re
   const [editing, setEditing] = useState<T | "new" | null>(null);
   const [draft, setDraft] = useState<RecordDraft>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [options, setOptions] = useState<Record<string, RecordOption[]>>({});
+
+  useEffect(() => {
+    let active = true;
+    for (const field of config.fields) {
+      field.loadOptions?.().then((items) => { if (active) setOptions((current) => ({ ...current, [field.key]: items })); }).catch(() => {});
+    }
+    return () => { active = false; };
+  }, [config.fields]);
 
   const { list, remote } = config;
   const remoteQuery = useDebouncedValue(remote ? query.trim() : "");
@@ -135,7 +146,9 @@ export function RecordsScreen<T extends { id: string }>({ config }: { config: Re
                   {config.fields.map((field) => (
                     <label key={field.key} className={`text-meta text-[#77786f] ${field.type === "textarea" ? "sm:col-span-2 lg:col-span-3" : ""}`}>
                       {field.label}{field.required ? " *" : ""}
-                      {field.type === "textarea"
+                      {field.type === "select"
+                        ? <select value={String(draft[field.key] ?? "")} onChange={(event) => setDraft({ ...draft, [field.key]: event.target.value })} className={inputClass}><option value="">{field.placeholder ?? "None"}</option>{(options[field.key] ?? []).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
+                        : field.type === "textarea"
                         ? <textarea value={String(draft[field.key] ?? "")} onChange={(event) => setDraft({ ...draft, [field.key]: event.target.value })} placeholder={field.placeholder} className={`${inputClass} h-auto min-h-16 py-2`} />
                         : <input type={field.type ?? "text"} min={field.type === "number" ? 0 : undefined} value={String(draft[field.key] ?? "")} onChange={(event) => setDraft({ ...draft, [field.key]: event.target.value })} placeholder={field.placeholder} className={inputClass} />}
                     </label>

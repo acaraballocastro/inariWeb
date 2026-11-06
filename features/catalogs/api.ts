@@ -76,3 +76,37 @@ export function updateActivity(id: string, input: ActivityInput) {
 export function deleteActivity(id: string) {
   return request<void>(`/activities/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
+
+/** Hotels catalog (spec 3.13); every role reads it, ADMINs manage it. */
+export type Hotel = {
+  id: string;
+  name: string;
+  address: string | null;
+  zone_id: string | null;
+  phone: string | null;
+  email: string | null;
+  map_url: string | null;
+  notes: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Optional fields: an empty string clears them. */
+export type HotelInput = { name: string; address: string; zone_id: string; phone: string; email: string; map_url: string; notes: string; is_active?: boolean };
+
+export function listHotels() {
+  return request<Hotel[] | null>("/hotels").then((items) => items ?? []);
+}
+
+export function createHotel(input: HotelInput) {
+  return request<Hotel>("/hotels", { method: "POST", body: JSON.stringify(input) });
+}
+
+export function updateHotel(id: string, input: HotelInput) {
+  return request<Hotel>(`/hotels/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) });
+}
+
+export function deleteHotel(id: string) {
+  return request<void>(`/hotels/${encodeURIComponent(id)}`, { method: "DELETE" });
+}

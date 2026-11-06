@@ -21,12 +21,13 @@ const icons = {
   incident: icon(<><path d="M12 3.5 2.5 20h19L12 3.5Z" /><path d="M12 10v4.5M12 17.2v.1" /></>),
 };
 
-// Five destinations at most, the ones used in the field; the rest is in the
-// menu of the header (☰).
+// The destinations used in the field (six for guides, with incidents); the
+// rest is in the menu of the header (☰).
 const guideTabs: Tab[] = [
   { label: "Home", href: "/dashboard", icon: icons.home, matches: ["Dashboard"] },
   { label: "My tours", href: "/my-tours", icon: icons.tours, matches: ["My tours"] },
   { label: "Available", href: "/available", icon: icons.available, matches: ["Available tours"] },
+  { label: "Incidents", href: "/incidents", icon: icons.incident, matches: ["Incidents"] },
   { label: "Alerts", href: "/notifications", icon: icons.bell, matches: ["Notifications"] },
   { label: "Profile", href: "/profile", icon: icons.profile, matches: ["Profile", "Availability"] },
 ];
@@ -48,7 +49,7 @@ export function MobileTabBar({ activeItem }: { activeItem: string }) {
 
   return (
     <nav aria-label="Main" className="mobile-tab-bar fixed inset-x-0 bottom-0 z-40 border-t border-[#deddd6] bg-[#f5f4f0]/95 pwa-safe-bottom backdrop-blur lg:hidden">
-      <ul className="mx-auto grid h-[60px] max-w-[560px] grid-cols-5">
+      <ul className={`mx-auto grid h-[60px] max-w-[560px] ${tabs.length > 5 ? "grid-cols-6" : "grid-cols-5"}`}>
         {tabs.map((tab) => {
           const active = tab.matches.includes(activeItem);
           return (

@@ -77,6 +77,11 @@ export function createIncident(tourDayId: string, input: { title: string; descri
   return request<Incident>(`/tour-days/${encodeURIComponent(tourDayId)}/incidents`, { method: "POST", body: JSON.stringify(input) });
 }
 
+/** The guide who reported it, or an admin, fixes its text; 409 once closed. */
+export function updateIncident(id: string, input: { title: string; description: string }) {
+  return request<Incident>(`/incidents/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) });
+}
+
 export function changeIncidentStatus(id: string, status: IncidentStatus, reason: string) {
   return request<void>(`/incidents/${encodeURIComponent(id)}/status`, { method: "PATCH", body: JSON.stringify({ status, reason }) });
 }

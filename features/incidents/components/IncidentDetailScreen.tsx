@@ -7,7 +7,7 @@ import type { FormEvent } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
 import { MissingDataNotice, useMissingData } from "@/features/dashboard/components/MissingDataNotice";
-import { changeIncidentStatus, formatIncidentStatus, getIncident, incidentStatusClass, nextIncidentStatuses, type IncidentDetail, type IncidentStatus } from "@/features/incidents/api";
+import { changeIncidentStatus, updateIncident, formatIncidentStatus, getIncident, incidentStatusClass, nextIncidentStatuses, type IncidentDetail, type IncidentStatus } from "@/features/incidents/api";
 import { listUsers, type User } from "@/features/users/api";
 import { isAdmin } from "@/lib/api/client";
 import { useSession } from "@/lib/api/useSession";
@@ -23,6 +23,7 @@ export function IncidentDetailScreen({ incidentId }: { incidentId: string }) {
   const [nextStatus, setNextStatus] = useState<IncidentStatus | "">("");
   const [reason, setReason] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [editDraft, setEditDraft] = useState<{ title: string; description: string } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -61,6 +62,24 @@ export function IncidentDetailScreen({ incidentId }: { incidentId: string }) {
     }
   }
 
+  async function handleEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!incident || !editDraft) return;
+    if (!editDraft.title.trim()) { setError("Enter a title."); return; }
+    setIsSaving(true); setError("");
+    try {
+      await updateIncident(incident.id, { title: editDraft.title.trim(), description: editDraft.description.trim() });
+      setIncident(await getIncident(incident.id));
+      setEditDraft(null);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not save the incident.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  const fieldClass = "mt-2 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-body outline-none focus:border-[#b5a786]";
+
   return (
     <main className="min-h-dvh bg-[#f1f0ec] text-[#292b26]">
       <div className="mx-auto flex min-h-dvh w-full max-w-[1600px]">
@@ -85,8 +104,17 @@ export function IncidentDetailScreen({ incidentId }: { incidentId: string }) {
               <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(250px,0.8fr)]">
                 <div className="space-y-5">
                   <section className="bg-white p-5 sm:p-6">
-                    <h2 className="font-serif text-xl">Description</h2>
-                    <p className="mt-4 whitespace-pre-line text-lead leading-relaxed text-[#55574f]">{incident.description || "No description provided."}</p>
+                    <div className="flex items-start justify-between gap-4">
+                      <h2 className="font-serif text-xl">Description</h2>
+                      {!editDraft && incident.status !== "CLOSED" && <button type="button" onClick={() => setEditDraft({ title: incident.title ?? "", description: incident.description ?? "" })} className="h-8 border border-[#deddd6] px-3 text-meta hover:bg-[#f8f7f3]">Edit</button>}
+                    </div>
+                    {editDraft ? (
+                      <form onSubmit={handleEdit} className="mt-4 space-y-3">
+                        <label className="block text-meta">Title *<input required value={editDraft.title} onChange={(event) => setEditDraft({ ...editDraft, title: event.target.value })} className={`${fieldClass} h-9`} /></label>
+                        <label className="block text-meta">Description<textarea value={editDraft.description} onChange={(event) => setEditDraft({ ...editDraft, description: event.target.value })} className={`${fieldClass} min-h-24 py-2`} /></label>
+                        <div className="flex gap-2"><button type="submit" disabled={isSaving} className="h-9 bg-[#292b26] px-4 text-meta text-white hover:bg-[#41443b] disabled:opacity-60">{isSaving ? "Saving..." : "Save"}</button><button type="button" disabled={isSaving} onClick={() => setEditDraft(null)} className="h-9 border border-[#deddd6] px-4 text-meta hover:bg-[#f8f7f3] disabled:opacity-50">Cancel</button></div>
+                      </form>
+                    ) : <p className="mt-4 whitespace-pre-line text-lead leading-relaxed text-[#55574f]">{incident.description || "No description provided."}</p>}
                   </section>
                   <section className="bg-white p-5 sm:p-6">
                     <h2 className="font-serif text-xl">Status history</h2>

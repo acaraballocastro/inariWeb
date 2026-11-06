@@ -68,6 +68,11 @@ export function updateGuide(id: string, input: UpdateGuideInput) {
   return request<GuideDetail>(`/guides/${id}`, { method: "PATCH", body: JSON.stringify(input) });
 }
 
+/** A guide changes their own languages and zones (the rest of the profile is the admin's). */
+export function updateGuideSkills(id: string, input: { languages: GuideLanguage[]; zones: GuideZone[] }) {
+  return request<GuideDetail>(`/guides/${id}`, { method: "PATCH", body: JSON.stringify(input) });
+}
+
 export function listGuideAvailabilities(guideId: string) {
   return request<GuideAvailability[] | null>(`/guides/${guideId}/availabilities`).then((items) => items ?? []);
 }

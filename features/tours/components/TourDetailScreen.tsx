@@ -1,6 +1,7 @@
 "use client";
 
 import { useDialogs } from "@/features/dashboard/components/DialogProvider";
+import { usePreassignmentHours } from "@/features/settings/api";
 import { Combobox } from "@/features/dashboard/components/Combobox";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -12,20 +13,20 @@ import { listZones, type Zone } from "@/features/catalogs/api";
 import { listGuides, type GuideDetail } from "@/features/guides/api";
 import { TourDayIncidents } from "@/features/incidents/components/TourDayIncidents";
 import { getReservationDetail, listReservations, type Reservation } from "@/features/reservations/api";
-import { assignGuide, cancelTourDay, checkInTourDay, completeTourDay, confirmTourDay, forceMajeureTourDay, formatAssignmentWarning, getTourDay, getTourDayHistory, isInProgress, listItineraryActivities, listItineraryPlaces, offersCheckIn, rejectTourDay, unassignGuide, undoCheckIn, updateTourDay, type ItineraryActivity, type ItineraryPlace, type TourDay } from "@/features/tours/api";
+import { assignGuide, cancelTourDay, checkInTourDay, completeTourDay, confirmTourDay, forceMajeureTourDay, formatAssignmentWarning, getTourDay, getTourDayHistory, isInProgress, listItineraryActivities, listItineraryPlaces, offersCheckIn, rejectTourDay, unassignGuide, undoCheckIn, updateTourDay, type ItineraryActivity, type ItineraryPlace, type TourDay, updateGuideNotes } from "@/features/tours/api";
 import { AssignmentWarnings } from "@/features/tours/components/AssignmentWarnings";
 import { BriefingPanel } from "@/features/tours/components/BriefingPanel";
 import { useTakeTourDay } from "@/features/tours/useTakeTourDay";
 import { HistoryTimeline } from "@/features/tours/components/HistoryTimeline";
 import { ItineraryEditor } from "@/features/tours/components/ItineraryEditor";
 import { ItineraryTemplateBar } from "@/features/tours/components/ItineraryTemplateBar";
-import { TourDayForm, emptyTourDayDraft, toTourDayDraft, toTourDayInput, type TourDayDraft } from "@/features/tours/components/TourDayForm";
+import { TourDayForm, useLanguages, emptyTourDayDraft, toTourDayDraft, toTourDayInput, type TourDayDraft } from "@/features/tours/components/TourDayForm";
 import { ApiError, getSession, isAdmin } from "@/lib/api/client";
 import { useSession } from "@/lib/api/useSession";
 import { formatDuration, formatJst, formatJstClock, toDayKey } from "@/lib/datetime";
 import { withFallback } from "@/lib/missing";
 import { useNow } from "@/lib/useNow";
-import { finalStatuses, formatStatus, paidStatuses } from "@/lib/status";
+import { finalStatuses, formatStatus, paidStatuses, formatGuideStatus } from "@/lib/status";
 
 type TourDayContext = { tourDay: TourDay; reservation: Reservation | null; zones: Zone[]; guides: GuideDetail[]; places: ItineraryPlace[]; activities: ItineraryActivity[]; missing: string[] };
 
@@ -201,13 +202,13 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
                       <p className="mt-2 text-lead text-[#85867c]">{offered ? "Available: take it to make it yours." : context.reservation?.title ? `Part of ${context.reservation.title}.` : "Operational day linked to a reservation."}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-meta">
-                      <span className="bg-[#e9e5d7] px-3 py-2 text-[#77786f]">{formatStatus(tourDay.status)}</span>
+                      <span className="bg-[#e9e5d7] px-3 py-2 text-[#77786f]">{admin ? formatStatus(tourDay.status) : formatGuideStatus(tourDay.status)}</span>
                       <span className="border border-[#deddd6] px-3 py-2 text-[#85867c]">{tourDay.code || tourDay.id.slice(0, 8)}</span>
                       {tourDay.checked_in_at && <span className={`px-3 py-2 ${isInProgress(tourDay) ? "bg-[#eef0e9] text-[#68705d]" : "border border-[#deddd6] text-[#85867c]"}`}>{isInProgress(tourDay) ? "In progress" : "Checked in"} since {formatJstClock(tourDay.checked_in_at)}</span>}
                       {offered && tourDay.status === "PENDING_ASSIGNMENT" && <button type="button" disabled={isSaving} onClick={handleTake} className="h-10 bg-[#292b26] px-5 text-white hover:bg-[#41443b] disabled:opacity-60 sm:h-8 sm:px-3">Take this tour</button>}
                       {now && offersCheckIn(tourDay, now) && <button type="button" disabled={isSaving} onClick={handleCheckIn} className="h-8 bg-[#292b26] px-3 text-white hover:bg-[#41443b] disabled:opacity-60">{admin ? "Check in for guide" : "Check in"}</button>}
                       {admin && tourDay.checked_in_at && !isFinal && <button type="button" disabled={isSaving} onClick={handleUndoCheckIn} className="h-8 border border-[#deddd6] px-3 hover:bg-[#f8f7f3] disabled:opacity-60">Undo check-in</button>}
-                      {tourDay.status === "GUIDE_PREASSIGNED" && <button type="button" disabled={isSaving} onClick={() => runAction(() => confirmTourDay(tourDay.id), "Could not confirm the tour day.")} className="h-8 bg-[#292b26] px-3 text-white hover:bg-[#41443b] disabled:opacity-60">{admin ? "Confirm guide" : "Accept tour"}</button>}
+                      {admin && tourDay.status === "GUIDE_PREASSIGNED" && <button type="button" disabled={isSaving} onClick={() => runAction(() => confirmTourDay(tourDay.id), "Could not confirm the tour day.")} className="h-8 bg-[#292b26] px-3 text-white hover:bg-[#41443b] disabled:opacity-60">Confirm guide</button>}
                       {tourDay.status === "GUIDE_PREASSIGNED" && <button type="button" disabled={isSaving} onClick={handleReject} className="h-8 border border-[#deddd6] px-3 hover:bg-[#f8f7f3] disabled:opacity-60">{admin ? "Reject for guide" : "Decline"}</button>}
                       {admin && tourDay.status === "CONFIRMED" && <button type="button" disabled={isSaving} onClick={handleComplete} className="h-8 border border-[#deddd6] px-3 hover:bg-[#f8f7f3] disabled:opacity-60">Mark completed</button>}
                       {admin && !isFinal && <button type="button" disabled={isSaving} onClick={handleForceMajeure} className="h-8 border border-[#deddd6] px-3 text-[#9b6f37] hover:bg-[#fbf6ef] disabled:opacity-60">Force majeure</button>}
@@ -227,8 +228,8 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
                   <div className="space-y-5">
                     {admin ? <AssignmentPanel tourDay={tourDay} guides={context.guides} disabled={isSaving || isFinal} warnings={warnings} onDismissWarnings={() => setWarnings([])} onAssign={handleAssign} onUnassign={(guideId) => { setWarnings([]); runAction(() => unassignGuide([tourDay.id], guideId), "Could not unassign the guide."); }} /> : offered ? <OfferedNote /> : <GuideAssignmentNote tourDay={tourDay} />}
                     {!admin && !offered && <BriefingPanel tourDayId={tourDay.id} />}
-                    <TourResources tourDay={tourDay} />
-                    {!offered && <HistoryTimeline load={loadHistory} version={historyVersion} />}
+                    <TourResources tourDay={tourDay} canEditNotes={!offered && !isFinal} onNotesSaved={(saved) => setContext((current) => current && { ...current, tourDay: { ...current.tourDay, guide_liability_notes: saved.guide_liability_notes } })} />
+                    {admin && <HistoryTimeline load={loadHistory} version={historyVersion} />}
                   </div>
                 </div>
               )}
@@ -243,13 +244,15 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
 function TourOverview({ context, onZoneCreated, canEdit, isEditing, draft, isSaving, onEdit, onChange, onSave, onCancel }: { context: TourDayContext; onZoneCreated: (zone: Zone) => void; canEdit: boolean; isEditing: boolean; draft: TourDayDraft; isSaving: boolean; onEdit: () => void; onChange: (draft: TourDayDraft) => void; onSave: (event: FormEvent<HTMLFormElement>) => void; onCancel: () => void }) {
   const { tourDay, reservation, zones } = context;
   const zone = zones.find((item) => item.id === tourDay.zone_id);
+  const languages = useLanguages();
+  const requiredLanguages = (tourDay.required_language_ids ?? []).map((id) => languages.find((language) => language.id === id)?.name ?? id);
   return (
     <section className="bg-white p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#ecebe5] pb-5">
         <div><h2 className="font-serif text-xl">Tour overview</h2><p className="mt-2 text-body text-[#85867c]">The operational details for this experience.</p></div>
         {canEdit && !isEditing && <button type="button" onClick={onEdit} className="h-9 border border-[#deddd6] px-3 text-meta hover:bg-[#f8f7f3]">Edit</button>}
       </div>
-      {isEditing ? <TourDayForm draft={draft} zones={zones} onChange={onChange} onZoneCreated={onZoneCreated} onSubmit={onSave} onCancel={onCancel} isSaving={isSaving} submitLabel="Save changes" /> : (
+      {isEditing ? <TourDayForm draft={draft} zones={zones} reservationCode={reservation?.code} onChange={onChange} onZoneCreated={onZoneCreated} onSubmit={onSave} onCancel={onCancel} isSaving={isSaving} submitLabel="Save changes" /> : (
         <div className="grid gap-x-8 gap-y-5 pt-5 sm:grid-cols-2 lg:grid-cols-3">
           <Info label="Date" value={formatWeekdayDate(tourDay.start_datetime)} />
           <Info label="Time" value={`${formatTime(tourDay.start_datetime)}${tourDay.duration ? ` · ${formatDuration(tourDay.duration)}` : ""}`} />
@@ -257,6 +260,8 @@ function TourOverview({ context, onZoneCreated, canEdit, isEditing, draft, isSav
           <Info label="Zone" value={zone?.name ?? "Unassigned"} />
           <Info label={reservation ? "Reservation" : "Code"} value={reservation ? <Link href={`/reservations/${encodeURIComponent(reservation.code ?? reservation.id)}`} className="hover:underline">{reservation.code ?? reservation.id}</Link> : tourDay.code ?? "—"} />
           <Info label="Meeting point" value={tourDay.meeting_point || "Not provided"} />
+          <Info label="Required languages" value={requiredLanguages.length ? requiredLanguages.join(", ") : "None"} />
+          {tourDay.description && <div className="sm:col-span-2 lg:col-span-3"><Info label="Description" value={<span className="whitespace-pre-line">{tourDay.description}</span>} /></div>}
         </div>
       )}
     </section>
@@ -307,27 +312,29 @@ function AssignmentPanel({ tourDay, guides, disabled, warnings, onDismissWarning
 }
 
 function GuideAssignmentNote({ tourDay }: { tourDay: TourDay }) {
+  const hours = usePreassignmentHours();
   const note = isInProgress(tourDay)
     ? `You checked in at ${formatJstClock(tourDay.checked_in_at ?? "")}. Report anything unusual as an incident.`
     : tourDay.status === "GUIDE_PREASSIGNED"
-    ? "This tour is waiting for your confirmation. Accept or decline it; without an answer within 24 hours it counts as accepted."
+    ? `This tour is waiting for your confirmation. Accept or decline it; without an answer within ${hours} hours it counts as accepted.`
     : finalStatuses.includes(tourDay.status)
       ? "This tour is closed."
       : "You are the guide for this tour. Check in when it starts (from 2 hours before, on the day) and report anything unusual as an incident.";
   return (
     <section className="bg-[#e9e5d7] p-5 sm:p-6">
       <p className="text-label font-semibold tracking-[0.2em] text-[#9b8353]">YOUR ASSIGNMENT</p>
-      <p className="mt-3 font-serif text-xl">{isInProgress(tourDay) ? "In progress" : formatStatus(tourDay.status)}</p>
+      <p className="mt-3 font-serif text-xl">{isInProgress(tourDay) ? "In progress" : formatGuideStatus(tourDay.status)}</p>
       <p className="mt-3 text-body leading-relaxed text-[#5d5e55]">{note}</p>
     </section>
   );
 }
 
 function OfferedNote() {
+  const hours = usePreassignmentHours();
   return (
     <section className="bg-[#e9e5d7] p-5 sm:p-6">
       <p className="text-label font-semibold tracking-[0.2em] text-[#9b8353]">AVAILABLE TOUR</p>
-      <p className="mt-3 text-body leading-relaxed text-[#5d5e55]">This day has no guide yet and is offered to you. Take it to make it yours: it is preassigned to you and you confirm it (without an answer it counts as accepted in 24 hours). The customers&apos; details appear once it is yours.</p>
+      <p className="mt-3 text-body leading-relaxed text-[#5d5e55]">This day has no guide yet and is offered to you. Take it to make it yours: it is preassigned to you and you confirm it (without an answer it counts as accepted in {hours} hours). The customers&apos; details appear once it is yours.</p>
     </section>
   );
 }
@@ -345,14 +352,40 @@ function ItineraryPanel({ tourDay, places, activities, onPlaceCreated, onActivit
   );
 }
 
-function TourResources({ tourDay }: { tourDay: TourDay }) {
+function TourResources({ tourDay, canEditNotes, onNotesSaved }: { tourDay: TourDay; canEditNotes: boolean; onNotesSaved: (tourDay: TourDay) => void }) {
+  const [notes, setNotes] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+  async function save() {
+    if (notes === null) return;
+    setIsSaving(true); setError("");
+    try {
+      onNotesSaved(await updateGuideNotes(tourDay.id, notes));
+      setNotes(null);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not save the notes.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
   return (
     <section className="bg-white p-5 sm:p-6">
       <h2 className="font-serif text-xl">Tour resources</h2>
       <div className="mt-5 space-y-4">
         <Resource label="Voucher" value={formatStatus(tourDay.voucher_status)} />
         <Resource label="Remuneration" value={tourDay.remuneration == null ? "Not provided" : new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" }).format(tourDay.remuneration)} />
-        <Resource label="Guide notes" value={tourDay.guide_liability_notes || "No notes"} />
+        {notes === null ? (
+          <div>
+            <Resource label="Guide notes" value={<span className="whitespace-pre-line">{tourDay.guide_liability_notes || "No notes"}</span>} />
+            {canEditNotes && <button type="button" onClick={() => setNotes(tourDay.guide_liability_notes ?? "")} className="mt-2 text-meta underline underline-offset-2">{tourDay.guide_liability_notes ? "Edit notes" : "Add notes"}</button>}
+          </div>
+        ) : (
+          <div>
+            <label className="block text-label font-semibold uppercase tracking-[0.18em] text-[#9b8353]">Guide notes<textarea value={notes} onChange={(event) => setNotes(event.target.value)} autoFocus disabled={isSaving} className="mt-2 min-h-24 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 py-2 text-body font-normal normal-case tracking-normal outline-none focus:border-[#b5a786]" /></label>
+            {error && <p role="alert" className="mt-2 text-meta text-[#9b6f37]">{error}</p>}
+            <div className="mt-2 flex gap-2"><button type="button" onClick={save} disabled={isSaving} className="h-8 bg-[#292b26] px-3 text-meta text-white hover:bg-[#41443b] disabled:opacity-60">{isSaving ? "Saving..." : "Save notes"}</button><button type="button" onClick={() => setNotes(null)} disabled={isSaving} className="h-8 border border-[#deddd6] px-3 text-meta hover:bg-[#f8f7f3]">Cancel</button></div>
+          </div>
+        )}
         <Resource label="Customer notes" value={tourDay.customer_liability_notes || "No notes"} />
       </div>
     </section>
@@ -363,7 +396,7 @@ function Info({ label, value }: { label: string; value: ReactNode }) {
   return <div><p className="text-label font-semibold uppercase tracking-[0.18em] text-[#9b8353]">{label}</p><p className="mt-2 break-words text-body text-[#55574f]">{value}</p></div>;
 }
 
-function Resource({ label, value }: { label: string; value: string }) {
+function Resource({ label, value }: { label: string; value: ReactNode }) {
   return <div className="border-b border-[#ecebe5] pb-3 last:border-0 last:pb-0"><p className="text-label font-semibold uppercase tracking-[0.18em] text-[#9b8353]">{label}</p><p className="mt-2 whitespace-pre-line text-body text-[#85867c]">{value}</p></div>;
 }
 

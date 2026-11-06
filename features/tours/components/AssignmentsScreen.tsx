@@ -1,6 +1,7 @@
 "use client";
 
 import { Combobox } from "@/features/dashboard/components/Combobox";
+import { usePreassignmentHours } from "@/features/settings/api";
 import { Select } from "@/features/dashboard/components/Select";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -22,6 +23,7 @@ const assignableStatuses = ["PENDING_ASSIGNMENT", "GUIDE_PREASSIGNED", "VOUCHER_
 type View = "unassigned" | "awaiting";
 
 export function AssignmentsScreen() {
+  const hours = usePreassignmentHours();
   const [days, setDays] = useState<TourDay[] | null>(null);
   const [guides, setGuides] = useState<GuideDetail[]>([]);
   const [zones, setZones] = useState<Zone[]>([]);
@@ -153,7 +155,7 @@ export function AssignmentsScreen() {
                 <label className="mt-4 block text-meta">Guide<Combobox value={guideId} onChange={setGuideId} options={sortedGuides.map((item) => ({ id: item.guide.id, label: item.guide.name, detail: item.zones.map((zone) => zone.name).join(", ") || null }))} noun="guide" placeholder="Search a guide..." disabled={isSaving} inputClass="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-body outline-none focus:border-[#b5a786]" /></label>
                 <button type="button" disabled={isSaving || !guideId || selectedDays.length === 0} onClick={handleAssign} className="mt-3 h-9 w-full bg-[#292b26] text-meta text-white hover:bg-[#41443b] disabled:opacity-50">{isSaving ? "Assigning..." : "Assign guide"}</button>
                 {selectedDays.length > 0 && <button type="button" onClick={() => setSelected(new Set())} className="mt-2 text-meta underline underline-offset-2">Clear selection</button>}
-                <p className="mt-4 text-label leading-relaxed text-[#85867c]">Pending days become preassigned and the guide has 24 hours to answer. Paid days keep their status with the new guide. A day outside the guide&apos;s zones or overlapping another of their days is still assigned, with a warning kept in its history.</p>
+                <p className="mt-4 text-label leading-relaxed text-[#85867c]">Pending days become preassigned and the guide has {hours} hours to answer. Paid days keep their status with the new guide. A day outside the guide&apos;s zones or overlapping another of their days is still assigned, with a warning kept in its history.</p>
               </aside>
             </div>
           </div></div>

@@ -22,8 +22,8 @@ const adminNavigation: NavItem[] = [
 ];
 
 const adminSections: NavSection[] = [
-  { title: "Content", items: [{ label: "Activities", href: "/activities" }, { label: "Places", href: "/places" }, { label: "Itinerary templates", href: "/itinerary-templates" }, { label: "Languages", href: "/languages" }, { label: "Zones", href: "/zones" }] },
-  { title: "Management", items: [{ label: "Guides", href: "/guides" }, { label: "Users", href: "/users" }, { label: "Agencies", href: "/agencies" }, { label: "Customers", href: "/customers" }, { label: "Audit log", href: "/audit" }, { label: "System", href: "/system" }] },
+  { title: "Content", items: [{ label: "Activities", href: "/activities" }, { label: "Places", href: "/places" }, { label: "Itinerary templates", href: "/itinerary-templates" }, { label: "Hotels", href: "/hotels" }, { label: "Languages", href: "/languages" }, { label: "Zones", href: "/zones" }] },
+  { title: "Management", items: [{ label: "Guides", href: "/guides" }, { label: "Users", href: "/users" }, { label: "Agencies", href: "/agencies" }, { label: "Customers", href: "/customers" }, { label: "Audit log", href: "/audit" }, { label: "Settings", href: "/settings" }, { label: "System", href: "/system" }] },
 ];
 
 const guideNavigation: NavItem[] = [

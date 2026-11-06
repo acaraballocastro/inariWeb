@@ -62,7 +62,7 @@ export function DashboardScreen() {
                   {now ? `${greeting(now)}${user ? `, ${user.name.split(/\s+/)[0]}` : ""}.` : ""}
                 </h1>
                 <p className="mt-2 text-lead text-[#85867c]">
-                  {session && !isAdmin(session) ? "Your tours and the ones waiting for your answer." : "Here\u2019s what needs your attention today."}
+                  {session && !isAdmin(session) ? "Your tours, today and upcoming." : "Here\u2019s what needs your attention today."}
                 </p>
               </header>
 

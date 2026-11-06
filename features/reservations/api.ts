@@ -32,7 +32,7 @@ export type Agency = {
 export type ReservationListItem = Reservation & { customers: ReservationCustomer[] | null };
 
 /** `from`/`to` are inclusive dates (YYYY-MM-DD) and match the reservations overlapping the range; `q` matches part of the code or title. */
-export type ReservationFilter = { status?: string[]; from?: string; to?: string; agencyId?: string; guideId?: string; q?: string };
+export type ReservationFilter = { status?: string[]; from?: string; to?: string; agencyId?: string; guideId?: string; customerId?: string; q?: string };
 
 function reservationsPath(filter: ReservationFilter) {
   const params = new URLSearchParams();
@@ -41,6 +41,7 @@ function reservationsPath(filter: ReservationFilter) {
   if (filter.to) params.set("to", filter.to);
   if (filter.agencyId) params.set("agency_id", filter.agencyId);
   if (filter.guideId) params.set("guide_id", filter.guideId);
+  if (filter.customerId) params.set("customer_id", filter.customerId);
   if (filter.q) params.set("q", filter.q);
   return params.size ? `/reservations?${params}` : "/reservations";
 }

@@ -31,7 +31,7 @@ export function BriefingPanel({ tourDayId }: { tourDayId: string }) {
             <p className="mt-2 text-body">{briefing.reservation.title || "Untitled reservation"}{briefing.reservation.total_people_count ? ` · ${briefing.reservation.total_people_count} travellers` : ""}</p>
             {briefing.reservation.description && <p className="mt-2 whitespace-pre-line text-body leading-relaxed text-[#85867c]">{briefing.reservation.description}</p>}
           </div>
-          {briefing.customers.length === 0 && <p className="mt-4 text-body text-[#85867c]">No customers on the reservation.</p>}
+          {briefing.customers.length === 0 && <p className="mt-4 text-body text-[#85867c]">No customers on this day.</p>}
           <ul className="divide-y divide-[#f0efe9]">
             {briefing.customers.map((customer, index) => (
               <li key={`${customer.full_name}-${index}`} className="flex items-center justify-between gap-3 py-3">
@@ -43,6 +43,17 @@ export function BriefingPanel({ tourDayId }: { tourDayId: string }) {
               </li>
             ))}
           </ul>
+          {[["Customers' hotel", briefing.customer_hotel], ["Your hotel", briefing.guide_hotel]].map(([label, hotel]) => hotel && typeof hotel === "object" && (
+            <div key={String(label)} className="mt-4 border-t border-[#ecebe5] pt-4">
+              <p className="text-label font-semibold uppercase tracking-[0.18em] text-[#9b8353]">{String(label)}</p>
+              <p className="mt-2 text-body">{hotel.name}</p>
+              {hotel.address && <p className="mt-1 text-label text-[#85867c]">{hotel.address}</p>}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {hotel.phone && <a href={`tel:${hotel.phone.replace(/[^\d+]/g, "")}`} className="flex h-10 items-center border border-[#deddd6] px-3 text-meta hover:bg-[#f8f7f3]">Call {hotel.phone}</a>}
+                {hotel.map_url && <a href={hotel.map_url} target="_blank" rel="noreferrer" className="flex h-10 items-center border border-[#deddd6] px-3 text-meta hover:bg-[#f8f7f3]">Open map</a>}
+              </div>
+            </div>
+          ))}
         </>
       )}
     </section>

@@ -37,6 +37,17 @@ export function isFinal(status: string) {
   return finalStatuses.includes(status);
 }
 
+/**
+ * A day's status as a guide sees it: the payment, voucher and signature steps
+ * are the office's, so a day the guide accepted reads "Assigned" until it is
+ * fully confirmed.
+ */
+export function formatGuideStatus(status: string) {
+  if (status === "GUIDE_PREASSIGNED") return "Preassigned";
+  if (["GUIDE_CONFIRMED", "PAYMENT_PENDING", "VOUCHER_PENDING", "SIGNATURE_PENDING"].includes(status)) return "Assigned";
+  return formatStatus(status);
+}
+
 /** "PAYMENT_PENDING" → "Payment Pending". */
 export function formatStatus(value: string) {
   return value

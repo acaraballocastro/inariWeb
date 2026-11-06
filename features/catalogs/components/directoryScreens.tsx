@@ -1,7 +1,8 @@
 "use client";
 
-import { createActivity, deleteActivity, listAllActivities, updateActivity, type Activity } from "@/features/catalogs/api";
+import { createActivity, createHotel, deleteActivity, deleteHotel, listAllActivities, listHotels, listZones, updateActivity, updateHotel, type Activity, type Hotel } from "@/features/catalogs/api";
 import { createAgency, createCustomer, deleteAgency, deleteCustomer, listAgencies, listCustomersPage, searchCustomers, updateAgency, updateCustomer, type Agency, type CustomerInput, type ReservationCustomer } from "@/features/reservations/api";
+import Link from "next/link";
 import { ActiveBadge, RecordsScreen, type RecordDraft, type RecordsConfig } from "./RecordsScreen";
 
 const text = (draft: RecordDraft, key: string) => String(draft[key] ?? "").trim();
@@ -52,6 +53,7 @@ const customerConfig: RecordsConfig<ReservationCustomer> = {
     { label: "Phone", width: "minmax(110px,0.8fr)", render: (item) => item.phone || "—" },
     { label: "Document", width: "minmax(110px,0.8fr)", render: (item) => item.document_number || "—" },
     { label: "Age", width: "50px", render: (item) => item.age ?? "—" },
+    { label: "History", width: "90px", render: (item) => <Link href={`/reservations?customer_id=${encodeURIComponent(item.id)}&customer=${encodeURIComponent(item.full_name)}`} className="underline underline-offset-2">Reservations</Link> },
   ],
   fields: [
     { key: "full_name", label: "Full name", required: true },
@@ -105,4 +107,48 @@ export function CustomersScreen() {
 
 export function ActivitiesScreen() {
   return <RecordsScreen config={activityConfig} />;
+}
+
+type HotelRow = Hotel & { zone_name: string | null };
+
+function toHotelInput(draft: RecordDraft) {
+  return { name: text(draft, "name"), address: text(draft, "address"), zone_id: text(draft, "zone_id"), phone: text(draft, "phone"), email: text(draft, "email"), map_url: text(draft, "map_url"), notes: text(draft, "notes") };
+}
+
+const zoneOptions = () => listZones().then((zones) => (zones ?? []).filter((zone) => zone.is_active).map((zone) => ({ value: zone.id, label: zone.name })));
+
+const hotelConfig: RecordsConfig<HotelRow> = {
+  title: "Hotels",
+  eyebrow: "CONTENT / CATALOG",
+  description: "Where guides and customers stay. A tour day can point to the guide's hotel and the customers' hotel; guides see them in the day's briefing.",
+  activeItem: "Hotels",
+  noun: "hotel",
+  columns: [
+    { label: "Name", width: "minmax(180px,1.2fr)", render: (item) => <span className="text-body">{item.name}</span> },
+    { label: "Zone", width: "minmax(110px,0.7fr)", render: (item) => item.zone_name ?? "—" },
+    { label: "Address", width: "minmax(180px,1.4fr)", render: (item) => <span className="text-[#85867c]">{item.address || "—"}</span> },
+    { label: "Contact", width: "minmax(140px,1fr)", render: (item) => <span className="text-[#85867c]">{[item.phone, item.email].filter(Boolean).join(" · ") || "—"}</span> },
+    { label: "Status", width: "90px", render: (item) => <ActiveBadge active={item.is_active} /> },
+  ],
+  fields: [
+    { key: "name", label: "Name", required: true },
+    { key: "zone_id", label: "Zone", type: "select", placeholder: "No zone", loadOptions: zoneOptions },
+    { key: "address", label: "Address" },
+    { key: "phone", label: "Phone" },
+    { key: "email", label: "Email", type: "email" },
+    { key: "map_url", label: "Map link", type: "url", placeholder: "https://maps.google.com/..." },
+    { key: "notes", label: "Notes", type: "textarea" },
+  ],
+  isActive: (item) => item.is_active,
+  searchText: (item) => `${item.name} ${item.address ?? ""} ${item.zone_name ?? ""}`,
+  toDraft: (item) => ({ name: item?.name ?? "", zone_id: item?.zone_id ?? "", address: item?.address ?? "", phone: item?.phone ?? "", email: item?.email ?? "", map_url: item?.map_url ?? "", notes: item?.notes ?? "", is_active: item?.is_active ?? true }),
+  list: () => Promise.all([listHotels(), listZones().catch(() => [])]).then(([hotels, zones]) => hotels.map((hotel) => ({ ...hotel, zone_name: (zones ?? []).find((zone) => zone.id === hotel.zone_id)?.name ?? null })).sort((a, b) => a.name.localeCompare(b.name))),
+  create: (draft) => createHotel(toHotelInput(draft)),
+  update: (item, draft) => updateHotel(item.id, { ...toHotelInput(draft), is_active: draft.is_active === true }),
+  remove: (item) => deleteHotel(item.id),
+  label: (item) => item.name,
+};
+
+export function HotelsScreen() {
+  return <RecordsScreen config={hotelConfig} />;
 }

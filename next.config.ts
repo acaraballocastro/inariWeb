@@ -4,6 +4,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
 
+  // Dev server reached from the phone on the local network (hot reload).
+  allowedDevOrigins: ["192.168.1.57"],
+
   // Mantener el resto de tu configuración actual.
   
   async headers() {

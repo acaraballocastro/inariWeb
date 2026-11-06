@@ -33,8 +33,10 @@
 }
 
 /*
- * Installed app (PWA) on a phone: the browser's page zoom doesn't apply there,
- * so the page is zoomed instead (text, spacing, icons and px sizes together).
+ * Phones (browser tab or installed app): at 100% the layout reads small, so the
+ * page is zoomed (text, spacing, icons and px sizes together, like a browser
+ * zoom). Tablets and desktop are left as they are. Tune --pwa-zoom with the
+ * browser at 100% (Safari "aA", Chrome text zoom) to see what users see.
  * Zoom also scales vh/dvh and the safe-area insets, so those are divided by
  * --pwa-zoom where used (pwa-safe-bottom, pwa-dvh, min-h-dvh) to stay true to
  * the screen.
@@ -43,9 +45,9 @@
   --pwa-zoom: 1;
 }
 
-@media (display-mode: standalone) and (pointer: coarse) {
+@media (pointer: coarse) and (max-width: 767px) {
   :root {
-    --pwa-zoom: 1.50;
+    --pwa-zoom: 1.15;
   }
   html {
     zoom: var(--pwa-zoom);
@@ -77,6 +79,27 @@
 @media (max-width: 1023px) {
   body:has(.mobile-tab-bar) {
     padding-bottom: calc(60px + env(safe-area-inset-bottom) / var(--pwa-zoom));
+  }
+}
+
+/*
+ * Chrome on iOS only (html.crios, set by a script in app/layout.tsx): Chrome
+ * scales the text on its own (its text zoom, which can follow the system text
+ * size) and reports a bottom safe-area inset although its toolbar sits below
+ * the page. Safari and the installed app are left untouched.
+ */
+html.crios {
+  -webkit-text-size-adjust: 85% !important;
+  text-size-adjust: 85% !important;
+}
+
+html.crios .pwa-safe-bottom {
+  padding-bottom: 0;
+}
+
+@media (max-width: 1023px) {
+  html.crios body:has(.mobile-tab-bar) {
+    padding-bottom: 60px;
   }
 }
 
