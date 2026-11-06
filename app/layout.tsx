@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "INARI Tours | Operations",
   description: "Your operations workspace.",
   appleWebApp: { capable: true, title: "INARI", statusBarStyle: "default" },
-  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
+  icons: { icon: [{ url: "/icons/favicon-48.png", sizes: "48x48" }, { url: "/icons/icon-192.png", sizes: "192x192" }], apple: "/icons/apple-touch-icon.png" },
 };
 
 // Edge to edge on phones (the tab bar keeps clear of the home indicator with

@@ -5,6 +5,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { login } from "@/features/auth/api";
 import { ApiError } from "@/lib/api/client";
+import { Logo } from "@/features/brand/Logo";
 
 function loginErrorMessage(requestError: unknown) {
   if (requestError instanceof ApiError) {
@@ -44,17 +45,9 @@ export function LoginPanel() {
   return (
     <section className="flex min-w-0 flex-col px-8 py-10 sm:px-12 sm:py-12 lg:px-[clamp(48px,6vw,96px)]">
       <header>
-        <Link
-          href="/"
-          aria-label="INARI Tours, home"
-          className="font-serif text-[32px] tracking-[0.16em] text-[#282a25]"
-        >
-          INARI
+        <Link href="/" aria-label="INARI Tours, home" className="inline-block">
+          <Logo width={210} />
         </Link>
-
-        <p className="mt-8 text-body tracking-[0.55em] text-[#9b8353]">
-          TOURS
-        </p>
       </header>
 
       <div className="my-auto w-full max-w-[430px] py-12">

@@ -3,11 +3,13 @@
 import { useEffect } from "react";
 import { registration } from "@/features/notifications/push";
 import { rememberInstallPrompt } from "./install";
+import { PushPrompt } from "./PushPrompt";
 
 /**
  * What the installed app needs on every page: the service worker (push,
  * offline page) and Android's install prompt, which the browser only offers
- * once, early, and InstallBanner shows later.
+ * once, early, and InstallBanner shows later. The first time the installed
+ * app opens with a session, it also offers to turn on notifications.
  */
 export function AppRuntime() {
   useEffect(() => {
@@ -16,5 +18,5 @@ export function AppRuntime() {
     window.addEventListener("beforeinstallprompt", onPrompt);
     return () => window.removeEventListener("beforeinstallprompt", onPrompt);
   }, []);
-  return null;
+  return <PushPrompt />;
 }

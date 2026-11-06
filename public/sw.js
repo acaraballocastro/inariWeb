@@ -3,11 +3,11 @@
 // shows an offline page instead of the browser's error. The data always
 // comes from the API: nothing else is cached.
 
-const offlineCache = "inari-offline-v1";
+const offlineCache = "inari-offline-v3";
 const offlinePage = "/offline.html";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(offlineCache).then((cache) => cache.addAll([offlinePage, "/icons/icon-192.png"])));
+  event.waitUntil(caches.open(offlineCache).then((cache) => cache.addAll([offlinePage, "/icons/icon-192.png", "/icons/logo-horizontal.png"])));
   self.skipWaiting();
 });
 

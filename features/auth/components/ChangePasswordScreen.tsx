@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { changePassword, logout } from "@/features/auth/api";
 import { getSession, saveSession } from "@/lib/api/client";
 import { useSession } from "@/lib/api/useSession";
+import { Logo } from "@/features/brand/Logo";
 
 export function ChangePasswordScreen() {
   const router = useRouter();
@@ -63,8 +64,7 @@ export function ChangePasswordScreen() {
   return (
     <main className="flex min-h-dvh items-center justify-center bg-[#f1f0ec] px-5 text-[#292b26]">
       <section className="w-full max-w-[430px] bg-[#f8f7f3] p-7 sm:p-10">
-        <p className="font-serif text-[25px] tracking-[0.16em]">INARI</p>
-        <p className="mt-2 text-label tracking-[0.5em] text-[#9b8353]">TOURS</p>
+        <Logo width={180} />
         <p className="mt-12 text-meta font-semibold tracking-[0.18em] text-[#9b8353]">{isRequired ? "SECURITY / REQUIRED" : "SECURITY / PASSWORD"}</p>
         <h1 className="mt-4 font-serif text-3xl tracking-[-0.04em]">{isRequired ? "Choose a new password" : "Change your password"}</h1>
         <p className="mt-3 text-lead leading-relaxed text-[#85867c]">{isRequired ? "Your account uses a temporary password. Enter the one from your invitation email and choose your own to continue." : "Enter your current password and choose a new one. Your other devices will be signed out."}</p>

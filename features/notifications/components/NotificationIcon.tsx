@@ -15,6 +15,7 @@ const kinds: Record<string, Kind> = {
   PREASSIGNMENT_EXPIRED: "clock",
   PREASSIGNMENT_REMINDER: "clock",
   TOUR_DAY_REMINDER: "clock",
+  GUIDE_NOTES_CHANGED: "day",
 };
 
 const tones: Record<Kind, string> = {

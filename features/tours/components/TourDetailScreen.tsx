@@ -228,7 +228,7 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
                   <div className="space-y-5">
                     {admin ? <AssignmentPanel tourDay={tourDay} guides={context.guides} disabled={isSaving || isFinal} warnings={warnings} onDismissWarnings={() => setWarnings([])} onAssign={handleAssign} onUnassign={(guideId) => { setWarnings([]); runAction(() => unassignGuide([tourDay.id], guideId), "Could not unassign the guide."); }} /> : offered ? <OfferedNote /> : <GuideAssignmentNote tourDay={tourDay} />}
                     {!admin && !offered && <BriefingPanel tourDayId={tourDay.id} />}
-                    <TourResources tourDay={tourDay} canEditNotes={!offered && !isFinal} onNotesSaved={(saved) => setContext((current) => current && { ...current, tourDay: { ...current.tourDay, guide_liability_notes: saved.guide_liability_notes } })} />
+                    <TourResources tourDay={tourDay} showVoucher={admin} canEditNotes={!offered && !isFinal} onNotesSaved={(saved) => setContext((current) => current && { ...current, tourDay: { ...current.tourDay, guide_liability_notes: saved.guide_liability_notes } })} />
                     {admin && <HistoryTimeline load={loadHistory} version={historyVersion} />}
                   </div>
                 </div>
@@ -352,7 +352,8 @@ function ItineraryPanel({ tourDay, places, activities, onPlaceCreated, onActivit
   );
 }
 
-function TourResources({ tourDay, canEditNotes, onNotesSaved }: { tourDay: TourDay; canEditNotes: boolean; onNotesSaved: (tourDay: TourDay) => void }) {
+/** `showVoucher`: payment documents are the office's, not shown to guides. */
+function TourResources({ tourDay, showVoucher, canEditNotes, onNotesSaved }: { tourDay: TourDay; showVoucher: boolean; canEditNotes: boolean; onNotesSaved: (tourDay: TourDay) => void }) {
   const [notes, setNotes] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -372,7 +373,7 @@ function TourResources({ tourDay, canEditNotes, onNotesSaved }: { tourDay: TourD
     <section className="bg-white p-5 sm:p-6">
       <h2 className="font-serif text-xl">Tour resources</h2>
       <div className="mt-5 space-y-4">
-        <Resource label="Voucher" value={formatStatus(tourDay.voucher_status)} />
+        {showVoucher && <Resource label="Voucher" value={formatStatus(tourDay.voucher_status)} />}
         <Resource label="Remuneration" value={tourDay.remuneration == null ? "Not provided" : new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" }).format(tourDay.remuneration)} />
         {notes === null ? (
           <div>

@@ -7,6 +7,7 @@ import { useSession } from "@/lib/api/useSession";
 import { formatClock } from "../api";
 import { useCurrentUser } from "../useCurrentUser";
 import { AccountLinks, NavigationLinks, navigationFor } from "./DashboardSidebar";
+import { Logo } from "@/features/brand/Logo";
 
 export function DashboardHeader({ breadcrumb = "Workspace / Dashboard" }: { breadcrumb?: string }) {
   const user = useCurrentUser();
@@ -50,7 +51,7 @@ function MobileMenu({ onClose }: { onClose: () => void }) {
       <button type="button" aria-label="Close menu" onClick={onClose} className="absolute inset-0 bg-[#292b26]/30" />
       <div className="absolute inset-y-0 left-0 w-[260px] max-w-[85vw] overflow-y-auto bg-[#f5f4f0] px-5 py-7 text-[#292b26]">
         <div className="flex items-start justify-between">
-          <p className="font-serif text-[25px] tracking-[0.16em]">INARI<span className="mt-2 block text-micro tracking-[0.5em] text-[#9b8353]">TOURS</span></p>
+          <Logo width={150} />
           <button type="button" onClick={onClose} aria-label="Close menu" className="h-8 w-8 border border-[#deddd6] text-lead">✕</button>
         </div>
         <NavigationLinks navigation={navigation} sections={sections} onNavigate={onClose} />

@@ -8,6 +8,7 @@ import { getSession, isAdmin, type Session } from "@/lib/api/client";
 import { useSession } from "@/lib/api/useSession";
 import { logout, logoutEverywhere } from "@/features/auth/api";
 import { MobileTabBar } from "./MobileTabBar";
+import { Logo } from "@/features/brand/Logo";
 
 type NavItem = { label: string; href: string };
 type NavSection = { title: string; items: NavItem[] };
@@ -88,9 +89,8 @@ export function DashboardSidebar({ activeItem = "Dashboard" }: { activeItem?: st
     <>
     <MobileTabBar activeItem={activeItem} />
     <aside className="hidden w-[220px] shrink-0 border-r border-[#deddd6] bg-[#f5f4f0] px-5 py-7 lg:block xl:w-[250px] xl:px-7">
-      <Link href="/" className="block font-serif text-[25px] tracking-[0.16em]">
-        INARI
-        <span className="mt-2 block text-micro tracking-[0.5em] text-[#9b8353]">TOURS</span>
+      <Link href="/" aria-label="INARI Tours, home" className="block">
+        <Logo width={168} />
       </Link>
 
       <NavigationLinks navigation={navigation} sections={sections} activeItem={activeItem} />
