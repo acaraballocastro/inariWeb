@@ -55,14 +55,14 @@ export function PushPrompt() {
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="push-prompt-title" className="fixed inset-x-0 top-0 z-50 flex pwa-dvh items-center justify-center bg-black/30 p-4">
       {/* pwa-dvh, not inset-0: the phone zoom (globals.css) makes a full-height layer taller than the screen. */}
-      <div className="max-h-full w-full max-w-[400px] overflow-y-auto bg-white p-5 sm:p-6">
+      <div className="max-h-full w-full max-w-[400px] overflow-y-auto bg-white p-6 sm:p-7">
         <p className="text-label font-semibold tracking-[0.2em] text-[#9b8353]">NOTIFICATIONS</p>
-        <h2 id="push-prompt-title" className="mt-2 font-serif text-xl">Stay up to date</h2>
-        <p className="mt-2 text-body leading-relaxed text-[#5d5e55]">Get notified on this device about new and assigned tours, changes and incidents, even when the app is closed.</p>
+        <h2 id="push-prompt-title" className="mt-3 font-serif text-2xl">Stay up to date</h2>
+        <p className="mt-3 text-lead leading-relaxed text-[#5d5e55]">Get notified on this device about new and assigned tours, changes and incidents, even when the app is closed.</p>
         {error && <p role="alert" className="mt-3 text-meta text-[#9b6f37]">{error}</p>}
-        <div className="mt-5 flex flex-col gap-2 sm:flex-row-reverse">
-          <button type="button" onClick={enable} disabled={isBusy} className="h-11 flex-1 bg-[#292b26] px-4 text-body text-white hover:bg-[#41443b] disabled:opacity-60">{isBusy ? "Turning on…" : "Turn on notifications"}</button>
-          <button type="button" onClick={close} disabled={isBusy} className="h-11 flex-1 border border-[#deddd6] px-4 text-body hover:bg-[#f8f7f3] disabled:opacity-60">Not now</button>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row-reverse">
+          <button type="button" onClick={enable} disabled={isBusy} className="min-h-14 flex-1 bg-[#292b26] px-5 py-3 text-lead font-medium text-white hover:bg-[#41443b] disabled:opacity-60">{isBusy ? "Turning on…" : "Turn on notifications"}</button>
+          <button type="button" onClick={close} disabled={isBusy} className="min-h-14 flex-1 border border-[#deddd6] px-5 py-3 text-lead hover:bg-[#f8f7f3] disabled:opacity-60">Not now</button>
         </div>
       </div>
     </div>
