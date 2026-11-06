@@ -4,6 +4,7 @@
 import { DateInput } from "@/features/dashboard/components/DateInput";
 import { Combobox } from "@/features/dashboard/components/Combobox";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
@@ -75,6 +76,12 @@ type Stats = {
   pending: number;
   voucherPending: number;
 };
+
+/** ReservationsScreen filtered by ?customer_id= (and ?customer=, its name). */
+export function ReservationsFromQuery() {
+  const params = useSearchParams();
+  return <ReservationsScreen customerId={params.get("customer_id") ?? undefined} customerName={params.get("customer") ?? undefined} />;
+}
 
 /** `customerId` (from ?customer_id=) shows that customer's reservations: their history. */
 export function ReservationsScreen({ customerId, customerName }: { customerId?: string; customerName?: string } = {}) {

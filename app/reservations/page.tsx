@@ -1,6 +1,12 @@
-import { ReservationsScreen } from "@/features/reservations/components/ReservationsScreen";
+import { Suspense } from "react";
+import { ReservationsFromQuery, ReservationsScreen } from "@/features/reservations/components/ReservationsScreen";
 
-export default async function ReservationsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
-  const { customer_id: customerId, customer } = await searchParams;
-  return <ReservationsScreen customerId={typeof customerId === "string" ? customerId : undefined} customerName={typeof customer === "string" ? customer : undefined} />;
+// The query (?customer_id=) is read in the browser, inside Suspense, so the
+// page still prerenders; the fallback is the unfiltered list.
+export default function ReservationsPage() {
+  return (
+    <Suspense fallback={<ReservationsScreen />}>
+      <ReservationsFromQuery />
+    </Suspense>
+  );
 }
