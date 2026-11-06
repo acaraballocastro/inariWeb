@@ -89,8 +89,8 @@
  * the page. Safari and the installed app are left untouched.
  */
 html.crios {
-  -webkit-text-size-adjust: 85% !important;
-  text-size-adjust: 85% !important;
+  -webkit-text-size-adjust: 90% !important;
+  text-size-adjust: 90% !important;
 }
 
 html.crios .pwa-safe-bottom {
