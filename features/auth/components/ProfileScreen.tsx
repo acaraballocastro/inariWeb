@@ -169,7 +169,7 @@ function GuideSkills({ guide, onSaved }: { guide: GuideDetail; onSaved: (guide: 
     <div className="mt-3 flex flex-wrap gap-2">
       {items.filter((item) => item.is_active || selected.includes(item.id)).map((item) => {
         const on = selected.includes(item.id);
-        return <button key={item.id} type="button" aria-pressed={on} disabled={isSaving} onClick={() => onToggle(item.id)} className={`h-8 border px-3 text-meta disabled:opacity-50 ${on ? "border-[#292b26] bg-[#292b26] text-white" : "border-[#deddd6] hover:bg-[#f8f7f3]"}`}>{item.name}</button>;
+        return <button key={item.id} type="button" aria-pressed={on} disabled={isSaving} onClick={() => onToggle(item.id)} className={`h-11 border px-4 text-body disabled:opacity-50 sm:h-8 sm:px-3 sm:text-meta ${on ? "border-[#292b26] bg-[#292b26] text-white" : "border-[#deddd6] hover:bg-[#f8f7f3]"}`}>{item.name}</button>;
       })}
     </div>
   );

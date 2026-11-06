@@ -53,8 +53,9 @@ export function PushPrompt() {
 
   if (!open) return null;
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="push-prompt-title" className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 p-4 sm:items-center">
-      <div className="w-full max-w-[400px] bg-white p-5 pwa-safe-bottom sm:p-6">
+    <div role="dialog" aria-modal="true" aria-labelledby="push-prompt-title" className="fixed inset-x-0 top-0 z-50 flex pwa-dvh items-center justify-center bg-black/30 p-4">
+      {/* pwa-dvh, not inset-0: the phone zoom (globals.css) makes a full-height layer taller than the screen. */}
+      <div className="max-h-full w-full max-w-[400px] overflow-y-auto bg-white p-5 sm:p-6">
         <p className="text-label font-semibold tracking-[0.2em] text-[#9b8353]">NOTIFICATIONS</p>
         <h2 id="push-prompt-title" className="mt-2 font-serif text-xl">Stay up to date</h2>
         <p className="mt-2 text-body leading-relaxed text-[#5d5e55]">Get notified on this device about new and assigned tours, changes and incidents, even when the app is closed.</p>

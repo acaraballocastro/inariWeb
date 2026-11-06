@@ -111,7 +111,7 @@ export function TourDayForm({ draft, zones, reservationCode, onChange, onZoneCre
           <div className="mt-2 flex flex-wrap gap-2">
             {languageOptions.map((language) => {
               const selected = draft.required_language_ids.includes(language.id);
-              return <button key={language.id} type="button" aria-pressed={selected} disabled={isSaving} onClick={() => toggleLanguage(language.id)} className={`h-8 border px-3 text-meta disabled:opacity-50 ${selected ? "border-[#292b26] bg-[#292b26] text-white" : "border-[#deddd6] hover:bg-[#f8f7f3]"}`}>{language.name}</button>;
+              return <button key={language.id} type="button" aria-pressed={selected} disabled={isSaving} onClick={() => toggleLanguage(language.id)} className={`h-11 border px-4 text-body disabled:opacity-50 sm:h-8 sm:px-3 sm:text-meta ${selected ? "border-[#292b26] bg-[#292b26] text-white" : "border-[#deddd6] hover:bg-[#f8f7f3]"}`}>{language.name}</button>;
             })}
           </div>
         )}
@@ -130,7 +130,7 @@ export function TourDayForm({ draft, zones, reservationCode, onChange, onZoneCre
           <div className="mt-2 flex flex-wrap gap-2">
             {customers.map((customer) => {
               const selected = draft.customer_ids.includes(customer.id);
-              return <button key={customer.id} type="button" aria-pressed={selected} disabled={isSaving} onClick={() => toggleCustomer(customer.id)} className={`h-8 border px-3 text-meta disabled:opacity-50 ${selected ? "border-[#292b26] bg-[#292b26] text-white" : "border-[#deddd6] hover:bg-[#f8f7f3]"}`}>{customer.full_name}</button>;
+              return <button key={customer.id} type="button" aria-pressed={selected} disabled={isSaving} onClick={() => toggleCustomer(customer.id)} className={`h-11 border px-4 text-body disabled:opacity-50 sm:h-8 sm:px-3 sm:text-meta ${selected ? "border-[#292b26] bg-[#292b26] text-white" : "border-[#deddd6] hover:bg-[#f8f7f3]"}`}>{customer.full_name}</button>;
             })}
           </div>
         </fieldset>

@@ -107,8 +107,8 @@ export function SettingsScreen() {
 
 export function Toggle({ checked, disabled, onChange, label, hint }: { checked: boolean; disabled?: boolean; onChange: (checked: boolean) => void; label: string; hint?: string }) {
   return (
-    <label className="flex cursor-pointer items-start gap-3">
-      <input type="checkbox" checked={checked} disabled={disabled} onChange={(event) => onChange(event.target.checked)} className="mt-1 h-4 w-4 accent-[#292b26]" />
+    <label className="flex min-h-11 cursor-pointer items-start gap-3 py-1">
+      <input type="checkbox" checked={checked} disabled={disabled} onChange={(event) => onChange(event.target.checked)} className="mt-0.5 h-6 w-6 shrink-0 accent-[#292b26] sm:h-4 sm:w-4" />
       <span><span className="block text-body text-[#292b26]">{label}</span>{hint && <span className="mt-1 block text-label text-[#85867c]">{hint}</span>}</span>
     </label>
   );
