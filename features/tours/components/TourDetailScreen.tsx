@@ -12,14 +12,19 @@ import { listZones, type Zone } from "@/features/catalogs/api";
 import { listGuides, type GuideDetail } from "@/features/guides/api";
 import { TourDayIncidents } from "@/features/incidents/components/TourDayIncidents";
 import { getReservationDetail, listReservations, type Reservation } from "@/features/reservations/api";
-import { assignGuide, cancelTourDay, completeTourDay, confirmTourDay, forceMajeureTourDay, getTourDay, getTourDayHistory, listItineraryActivities, listItineraryPlaces, rejectTourDay, unassignGuide, updateTourDay, type ItineraryActivity, type ItineraryPlace, type TourDay } from "@/features/tours/api";
+import { assignGuide, cancelTourDay, checkInTourDay, completeTourDay, confirmTourDay, forceMajeureTourDay, formatAssignmentWarning, getTourDay, getTourDayHistory, isInProgress, listItineraryActivities, listItineraryPlaces, offersCheckIn, rejectTourDay, unassignGuide, undoCheckIn, updateTourDay, type ItineraryActivity, type ItineraryPlace, type TourDay } from "@/features/tours/api";
+import { AssignmentWarnings } from "@/features/tours/components/AssignmentWarnings";
+import { BriefingPanel } from "@/features/tours/components/BriefingPanel";
+import { useTakeTourDay } from "@/features/tours/useTakeTourDay";
 import { HistoryTimeline } from "@/features/tours/components/HistoryTimeline";
 import { ItineraryEditor } from "@/features/tours/components/ItineraryEditor";
+import { ItineraryTemplateBar } from "@/features/tours/components/ItineraryTemplateBar";
 import { TourDayForm, emptyTourDayDraft, toTourDayDraft, toTourDayInput, type TourDayDraft } from "@/features/tours/components/TourDayForm";
 import { ApiError, getSession, isAdmin } from "@/lib/api/client";
 import { useSession } from "@/lib/api/useSession";
 import { formatDuration, formatJst, formatJstClock, toDayKey } from "@/lib/datetime";
 import { withFallback } from "@/lib/missing";
+import { useNow } from "@/lib/useNow";
 import { finalStatuses, formatStatus, paidStatuses } from "@/lib/status";
 
 type TourDayContext = { tourDay: TourDay; reservation: Reservation | null; zones: Zone[]; guides: GuideDetail[]; places: ItineraryPlace[]; activities: ItineraryActivity[]; missing: string[] };
@@ -56,9 +61,13 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
   const session = useSession();
   const admin = isAdmin(session);
   const { confirm, prompt } = useDialogs();
+  const takeDay = useTakeTourDay();
+  const now = useNow();
   const [context, setContext] = useState<TourDayContext | null>(null);
   const [historyVersion, setHistoryVersion] = useState(0);
   const [error, setError] = useState("");
+  // What the last assignment asks to follow up (zone, schedule overlaps).
+  const [warnings, setWarnings] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [draft, setDraft] = useState<TourDayDraft>(emptyTourDayDraft);
@@ -80,7 +89,7 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
       .catch((requestError: unknown) => {
         if (!active) return;
         // A guide opening a notification about a day that is no longer theirs.
-        if (requestError instanceof ApiError && requestError.status === 403 && !isAdmin(getSession())) setError("This tour day is no longer assigned to you.");
+        if (requestError instanceof ApiError && requestError.status === 403 && !isAdmin(getSession())) setError("This tour day is not yours, or it is no longer available.");
         else setError(requestError instanceof Error ? requestError.message : "Could not load the tour day.");
       });
     return () => { active = false; };
@@ -89,6 +98,44 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
   async function runAction(action: () => Promise<void>, fallbackMessage: string) {
     setIsSaving(true); setError("");
     try { await action(); await refresh(); return true; } catch (requestError) { setError(requestError instanceof Error ? requestError.message : fallbackMessage); return false; } finally { setIsSaving(false); }
+  }
+
+  function handleAssign(guideId: string) {
+    if (!context) return;
+    setWarnings([]);
+    runAction(async () => {
+      const result = await assignGuide([context.tourDay.id], guideId);
+      setWarnings(result.warnings.map(formatAssignmentWarning));
+    }, "Could not assign the guide.");
+  }
+
+  // The guide starts the tour; an ADMIN can do it for them (it is recorded as theirs).
+  async function handleCheckIn() {
+    if (!context) return;
+    if (admin && !await confirm({ title: "Check in for the guide?", message: "Records now as the start of the tour, on behalf of its guide. Afterwards the guide cannot change.", confirmLabel: "Check in" })) return;
+    runAction(async () => { await checkInTourDay(context.tourDay.id); }, "Could not check in.");
+  }
+
+  async function handleUndoCheckIn() {
+    if (!context || !await confirm({ title: "Undo the check-in?", message: "Use it only if it was made by mistake: the tour is no longer in progress. The history keeps both.", confirmLabel: "Undo check-in", tone: "danger" })) return;
+    runAction(() => undoCheckIn(context.tourDay.id), "Could not undo the check-in.");
+  }
+
+  // A guide takes the day they are reading; it becomes theirs, preassigned.
+  async function handleTake() {
+    if (!context) return;
+    const zone = context.zones.find((item) => item.id === context.tourDay.zone_id)?.name ?? null;
+    setIsSaving(true); setError("");
+    try {
+      const outcome = await takeDay(context.tourDay, zone);
+      if (!outcome) return;
+      if (!outcome.taken) { setError(outcome.message); return; }
+      await refresh();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not take the tour.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
@@ -127,15 +174,17 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
   const tourDay = context?.tourDay;
   const isFinal = tourDay ? finalStatuses.includes(tourDay.status) : false;
   const isCancelled = tourDay?.status === "CANCELLED" || tourDay?.status === "FORCE_MAJEURE_CANCELLED";
-  const backLink = !admin ? { href: "/dashboard", label: "My tours" } : context?.reservation ? { href: `/reservations/${encodeURIComponent(context.reservation.code ?? context.reservation.id)}`, label: "Back to reservation" } : { href: "/reservations", label: "Reservations" };
+  // A guide reading a day only offered to them, before taking it.
+  const offered = !admin && tourDay !== undefined && tourDay.guide_id === null;
+  const backLink = offered ? { href: "/available", label: "Available tours" } : !admin ? { href: "/my-tours", label: "My tours" } : context?.reservation ? { href: `/reservations/${encodeURIComponent(context.reservation.code ?? context.reservation.id)}`, label: "Back to reservation" } : { href: "/reservations", label: "Reservations" };
 
   return (
     <main className="min-h-dvh bg-[#f1f0ec] text-[#292b26]">
       <div className="mx-auto flex min-h-dvh w-full max-w-[1600px]">
-        <DashboardSidebar activeItem={admin ? "Reservations" : "Dashboard"} />
+        <DashboardSidebar activeItem={admin ? "Reservations" : offered ? "Available tours" : "My tours"} />
 
         <div className="min-w-0 flex-1">
-          <DashboardHeader breadcrumb={admin ? "Workspace / Reservations / Tour day" : "Workspace / My tours / Tour day"} />
+          <DashboardHeader breadcrumb={admin ? "Workspace / Reservations / Tour day" : offered ? "Workspace / Available tours / Tour day" : "Workspace / My tours / Tour day"} />
 
           <div className="px-5 pb-10 sm:px-8 lg:px-10">
             <div className="mx-auto max-w-[1190px]">
@@ -149,11 +198,15 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
                     <div>
                       <p className="text-meta font-semibold uppercase tracking-[0.2em] text-[#9b8353]">TOUR DAY / {formatLongDate(tourDay.start_datetime)}</p>
                       <h1 className="mt-3 font-serif text-3xl tracking-[-0.04em] sm:text-[38px]">{tourDay.title || "Untitled tour day"}</h1>
-                      <p className="mt-2 text-lead text-[#85867c]">{context.reservation?.title ? `Part of ${context.reservation.title}.` : "Operational day linked to a reservation."}</p>
+                      <p className="mt-2 text-lead text-[#85867c]">{offered ? "Available: take it to make it yours." : context.reservation?.title ? `Part of ${context.reservation.title}.` : "Operational day linked to a reservation."}</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-meta">
                       <span className="bg-[#e9e5d7] px-3 py-2 text-[#77786f]">{formatStatus(tourDay.status)}</span>
                       <span className="border border-[#deddd6] px-3 py-2 text-[#85867c]">{tourDay.code || tourDay.id.slice(0, 8)}</span>
+                      {tourDay.checked_in_at && <span className={`px-3 py-2 ${isInProgress(tourDay) ? "bg-[#eef0e9] text-[#68705d]" : "border border-[#deddd6] text-[#85867c]"}`}>{isInProgress(tourDay) ? "In progress" : "Checked in"} since {formatJstClock(tourDay.checked_in_at)}</span>}
+                      {offered && tourDay.status === "PENDING_ASSIGNMENT" && <button type="button" disabled={isSaving} onClick={handleTake} className="h-10 bg-[#292b26] px-5 text-white hover:bg-[#41443b] disabled:opacity-60 sm:h-8 sm:px-3">Take this tour</button>}
+                      {now && offersCheckIn(tourDay, now) && <button type="button" disabled={isSaving} onClick={handleCheckIn} className="h-8 bg-[#292b26] px-3 text-white hover:bg-[#41443b] disabled:opacity-60">{admin ? "Check in for guide" : "Check in"}</button>}
+                      {admin && tourDay.checked_in_at && !isFinal && <button type="button" disabled={isSaving} onClick={handleUndoCheckIn} className="h-8 border border-[#deddd6] px-3 hover:bg-[#f8f7f3] disabled:opacity-60">Undo check-in</button>}
                       {tourDay.status === "GUIDE_PREASSIGNED" && <button type="button" disabled={isSaving} onClick={() => runAction(() => confirmTourDay(tourDay.id), "Could not confirm the tour day.")} className="h-8 bg-[#292b26] px-3 text-white hover:bg-[#41443b] disabled:opacity-60">{admin ? "Confirm guide" : "Accept tour"}</button>}
                       {tourDay.status === "GUIDE_PREASSIGNED" && <button type="button" disabled={isSaving} onClick={handleReject} className="h-8 border border-[#deddd6] px-3 hover:bg-[#f8f7f3] disabled:opacity-60">{admin ? "Reject for guide" : "Decline"}</button>}
                       {admin && tourDay.status === "CONFIRMED" && <button type="button" disabled={isSaving} onClick={handleComplete} className="h-8 border border-[#deddd6] px-3 hover:bg-[#f8f7f3] disabled:opacity-60">Mark completed</button>}
@@ -168,13 +221,14 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]">
                   <div className="space-y-5">
                     <TourOverview context={context} onZoneCreated={(zone) => setContext((current) => current && { ...current, zones: [...current.zones, zone] })} canEdit={admin && !isFinal} isEditing={isEditing} draft={draft} isSaving={isSaving} onEdit={() => setIsEditing(true)} onChange={setDraft} onSave={handleSave} onCancel={() => { setIsEditing(false); setDraft(toTourDayDraft(tourDay)); }} />
-                    <ItineraryPanel tourDay={tourDay} places={context.places} activities={context.activities} onPlaceCreated={(place) => setContext((current) => current && { ...current, places: [...current.places, place] })} onActivityCreated={(activity) => setContext((current) => current && { ...current, activities: [...current.activities, activity] })} readOnly={!admin || isCancelled} />
-                    <TourDayIncidents tourDayId={tourDay.id} canReport={!isCancelled} />
+                    <ItineraryPanel tourDay={tourDay} places={context.places} activities={context.activities} onPlaceCreated={(place) => setContext((current) => current && { ...current, places: [...current.places, place] })} onActivityCreated={(activity) => setContext((current) => current && { ...current, activities: [...current.activities, activity] })} readOnly={!admin || isCancelled} onTemplateApplied={() => setHistoryVersion((current) => current + 1)} />
+                    {!offered && <TourDayIncidents tourDayId={tourDay.id} canReport={!isCancelled} />}
                   </div>
                   <div className="space-y-5">
-                    {admin ? <AssignmentPanel tourDay={tourDay} guides={context.guides} disabled={isSaving || isFinal} onAssign={(guideId) => runAction(() => assignGuide([tourDay.id], guideId), "Could not assign the guide.")} onUnassign={(guideId) => runAction(() => unassignGuide([tourDay.id], guideId), "Could not unassign the guide.")} /> : <GuideAssignmentNote tourDay={tourDay} />}
+                    {admin ? <AssignmentPanel tourDay={tourDay} guides={context.guides} disabled={isSaving || isFinal} warnings={warnings} onDismissWarnings={() => setWarnings([])} onAssign={handleAssign} onUnassign={(guideId) => { setWarnings([]); runAction(() => unassignGuide([tourDay.id], guideId), "Could not unassign the guide."); }} /> : offered ? <OfferedNote /> : <GuideAssignmentNote tourDay={tourDay} />}
+                    {!admin && !offered && <BriefingPanel tourDayId={tourDay.id} />}
                     <TourResources tourDay={tourDay} />
-                    <HistoryTimeline load={loadHistory} version={historyVersion} />
+                    {!offered && <HistoryTimeline load={loadHistory} version={historyVersion} />}
                   </div>
                 </div>
               )}
@@ -216,13 +270,14 @@ function isPaid(status: string) { return paidStatuses.includes(status); }
 function canChangeGuide(status: string) { return status === "GUIDE_PREASSIGNED" || isPaid(status); }
 function canUnassign(status: string) { return ["GUIDE_PREASSIGNED", "GUIDE_CONFIRMED", "PAYMENT_PENDING"].includes(status); }
 
-function AssignmentPanel({ tourDay, guides, disabled, onAssign, onUnassign }: { tourDay: TourDay; guides: GuideDetail[]; disabled: boolean; onAssign: (guideId: string) => void; onUnassign: (guideId: string) => void }) {
+function AssignmentPanel({ tourDay, guides, disabled, warnings, onDismissWarnings, onAssign, onUnassign }: { tourDay: TourDay; guides: GuideDetail[]; disabled: boolean; warnings: string[]; onDismissWarnings: () => void; onAssign: (guideId: string) => void; onUnassign: (guideId: string) => void }) {
   const [selectedGuideId, setSelectedGuideId] = useState("");
   const assigned = guides.find((item) => item.guide.id === tourDay.guide_id);
 
   return (
     <section className="bg-white p-5 sm:p-6">
       <h2 className="font-serif text-xl">Guide assignment</h2>
+      <AssignmentWarnings warnings={warnings} className="mt-4" onDismiss={onDismissWarnings} />
       {tourDay.guide_id ? (
         <>
           <div className="mt-5 flex items-center gap-3 border-b border-[#ecebe5] pb-5">
@@ -230,14 +285,15 @@ function AssignmentPanel({ tourDay, guides, disabled, onAssign, onUnassign }: { 
             <div className="min-w-0"><p className="text-lead">{assigned ? <Link href={`/guides/${assigned.guide.id}`} className="hover:underline">{assigned.guide.name}</Link> : tourDay.guide_id}</p><p className="mt-1 text-meta text-[#85867c]">{assigned ? describeGuide(assigned) : "Guide details unavailable"}</p></div>
           </div>
           <div className="mt-4 flex items-center justify-between text-meta"><span className="text-[#85867c]">Assignment status</span><span className="bg-[#e9e5d7] px-3 py-1 text-[#77786f]">{formatStatus(tourDay.status)}</span></div>
-          {canChangeGuide(tourDay.status) && (
+          {tourDay.checked_in_at && <p className="mt-4 text-label text-[#85867c]">The guide checked in: the guide of this day can no longer change.</p>}
+          {canChangeGuide(tourDay.status) && !tourDay.checked_in_at && (
             <>
               <label className="mt-5 block text-meta">Change guide<Combobox value={selectedGuideId} onChange={setSelectedGuideId} options={guides.filter((item) => item.guide.id !== tourDay.guide_id).map(guideOption)} noun="guide" placeholder="Search another guide..." disabled={disabled} inputClass="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-body outline-none focus:border-[#b5a786]" /></label>
               {isPaid(tourDay.status) && <p className="mt-2 text-label text-[#85867c]">The day is already paid: it keeps its status with the new guide.</p>}
               <button type="button" disabled={disabled || !selectedGuideId} onClick={() => { onAssign(selectedGuideId); setSelectedGuideId(""); }} className="mt-3 h-9 w-full bg-[#292b26] text-meta text-white hover:bg-[#41443b] disabled:opacity-50">Change guide</button>
             </>
           )}
-          {canUnassign(tourDay.status) && <button type="button" disabled={disabled} onClick={() => tourDay.guide_id && onUnassign(tourDay.guide_id)} className="mt-3 h-9 w-full border border-[#deddd6] text-meta hover:bg-[#f8f7f3] disabled:opacity-50">Unassign guide</button>}
+          {canUnassign(tourDay.status) && !tourDay.checked_in_at && <button type="button" disabled={disabled} onClick={() => tourDay.guide_id && onUnassign(tourDay.guide_id)} className="mt-3 h-9 w-full border border-[#deddd6] text-meta hover:bg-[#f8f7f3] disabled:opacity-50">Unassign guide</button>}
         </>
       ) : (
         <>
@@ -251,26 +307,40 @@ function AssignmentPanel({ tourDay, guides, disabled, onAssign, onUnassign }: { 
 }
 
 function GuideAssignmentNote({ tourDay }: { tourDay: TourDay }) {
-  const note = tourDay.status === "GUIDE_PREASSIGNED"
-    ? "You have been preassigned to this tour. Accept or decline it; without an answer within 24 hours it counts as accepted."
+  const note = isInProgress(tourDay)
+    ? `You checked in at ${formatJstClock(tourDay.checked_in_at ?? "")}. Report anything unusual as an incident.`
+    : tourDay.status === "GUIDE_PREASSIGNED"
+    ? "This tour is waiting for your confirmation. Accept or decline it; without an answer within 24 hours it counts as accepted."
     : finalStatuses.includes(tourDay.status)
       ? "This tour is closed."
-      : "You are the guide for this tour. Report anything unusual as an incident.";
+      : "You are the guide for this tour. Check in when it starts (from 2 hours before, on the day) and report anything unusual as an incident.";
   return (
     <section className="bg-[#e9e5d7] p-5 sm:p-6">
       <p className="text-label font-semibold tracking-[0.2em] text-[#9b8353]">YOUR ASSIGNMENT</p>
-      <p className="mt-3 font-serif text-xl">{formatStatus(tourDay.status)}</p>
+      <p className="mt-3 font-serif text-xl">{isInProgress(tourDay) ? "In progress" : formatStatus(tourDay.status)}</p>
       <p className="mt-3 text-body leading-relaxed text-[#5d5e55]">{note}</p>
     </section>
   );
 }
 
-function ItineraryPanel({ tourDay, places, activities, onPlaceCreated, onActivityCreated, readOnly }: { tourDay: TourDay; places: ItineraryPlace[]; activities: ItineraryActivity[]; onPlaceCreated: (place: ItineraryPlace) => void; onActivityCreated: (activity: ItineraryActivity) => void; readOnly: boolean }) {
+function OfferedNote() {
+  return (
+    <section className="bg-[#e9e5d7] p-5 sm:p-6">
+      <p className="text-label font-semibold tracking-[0.2em] text-[#9b8353]">AVAILABLE TOUR</p>
+      <p className="mt-3 text-body leading-relaxed text-[#5d5e55]">This day has no guide yet and is offered to you. Take it to make it yours: it is preassigned to you and you confirm it (without an answer it counts as accepted in 24 hours). The customers&apos; details appear once it is yours.</p>
+    </section>
+  );
+}
+
+function ItineraryPanel({ tourDay, places, activities, onPlaceCreated, onActivityCreated, readOnly, onTemplateApplied }: { tourDay: TourDay; places: ItineraryPlace[]; activities: ItineraryActivity[]; onPlaceCreated: (place: ItineraryPlace) => void; onActivityCreated: (activity: ItineraryActivity) => void; readOnly: boolean; onTemplateApplied: () => void }) {
   const [stopCount, setStopCount] = useState(0);
+  // Bumped when a template is applied, so the editor reloads the stops.
+  const [itineraryVersion, setItineraryVersion] = useState(0);
   return (
     <section className="bg-white p-5 sm:p-6">
       <div className="flex items-start justify-between gap-4"><div><h2 className="font-serif text-xl">Day itinerary</h2><p className="mt-2 text-body text-[#85867c]">A considered route, arranged from morning to afternoon.</p></div><span className="text-meta text-[#9b8353]">{stopCount} STOPS</span></div>
-      <ItineraryEditor tourDay={tourDay} places={places} activities={activities} onCountChange={setStopCount} onPlaceCreated={onPlaceCreated} onActivityCreated={onActivityCreated} readOnly={readOnly} />
+      {!readOnly && <ItineraryTemplateBar tourDay={tourDay} stopCount={stopCount} onApplied={() => { setItineraryVersion((current) => current + 1); onTemplateApplied(); }} />}
+      <ItineraryEditor key={itineraryVersion} tourDay={tourDay} places={places} activities={activities} onCountChange={setStopCount} onPlaceCreated={onPlaceCreated} onActivityCreated={onActivityCreated} readOnly={readOnly} />
     </section>
   );
 }

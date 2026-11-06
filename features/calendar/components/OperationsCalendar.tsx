@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { TourDay } from "@/features/tours/api";
 import { monthCells, shiftMonth, type CalendarMonth } from "@/lib/calendar";
@@ -28,6 +28,12 @@ type CalendarView = "Month" | "Agenda";
 
 export function OperationsCalendar({ month, days, today, guideName, zoneName, onMonthChange }: { month: CalendarMonth; days: TourDay[] | null; today: string; guideName: (id: string | null) => string | null; zoneName: (id: string | null) => string | null; onMonthChange: (month: CalendarMonth) => void }) {
   const [view, setView] = useState<CalendarView>("Month");
+  // A month grid does not fit a phone: start with the agenda there.
+  useEffect(() => {
+    // The screen size is only known in the browser, after hydration.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (window.matchMedia("(max-width: 767px)").matches) setView("Agenda");
+  }, []);
   const [showCancelled, setShowCancelled] = useState(false);
 
   const visible = (days ?? []).filter((day) => showCancelled || toneFor(day.status) !== "muted");

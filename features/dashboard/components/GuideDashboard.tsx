@@ -6,11 +6,13 @@ import { useCallback, useEffect, useState } from "react";
 
 import { listZones, type Zone } from "@/features/catalogs/api";
 import { getGuideByUser } from "@/features/guides/api";
-import { confirmTourDay, listTourDays, listTourDaysAvailableForGuide, rejectTourDay, type TourDay } from "@/features/tours/api";
+import { useTakeTourDay } from "@/features/tours/useTakeTourDay";
+import { checkInTourDay, confirmTourDay, isInProgress, listTourDays, offersCheckIn, listTourDaysAvailableForGuide, rejectTourDay, type TourDay } from "@/features/tours/api";
 import { getSession } from "@/lib/api/client";
 import { formatDuration, toDayKey } from "@/lib/datetime";
 import { withFallback } from "@/lib/missing";
 import { formatStatus, isCancelled } from "@/lib/status";
+import { InstallBanner } from "@/features/pwa/InstallBanner";
 import { MissingDataNotice } from "./MissingDataNotice";
 import { formatClock, formatShortDate } from "../api";
 
@@ -33,8 +35,10 @@ async function loadGuideData(now: Date): Promise<GuideData> {
 
 export function GuideDashboard({ now }: { now: Date | null }) {
   const { confirm } = useDialogs();
+  const takeDay = useTakeTourDay();
   const [data, setData] = useState<GuideData | null>(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
@@ -53,12 +57,39 @@ export function GuideDashboard({ now }: { now: Date | null }) {
 
   async function respond(day: TourDay, accept: boolean) {
     if (!accept && !await confirm({ title: "Decline this tour?", message: "It will be offered to other guides.", confirmLabel: "Decline tour", cancelLabel: "Keep it", tone: "danger" })) return;
-    setBusyId(day.id); setError("");
+    setBusyId(day.id); setError(""); setNotice("");
     try {
       await (accept ? confirmTourDay(day.id) : rejectTourDay(day.id));
       await reload();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Could not send your answer.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function checkIn(day: TourDay) {
+    setBusyId(day.id); setError(""); setNotice("");
+    try {
+      await checkInTourDay(day.id);
+      setNotice(`Checked in: ${day.title || day.code || "the tour"} is in progress. Have a good tour.`);
+      await reload();
+    } catch (requestError) {
+      // e.g. "check-in opens at 07:00 on 1 Dec (Japan time)".
+      setError(requestError instanceof Error ? requestError.message : "Could not check in.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  // Taking a day is a preassignment: it moves to "Awaiting your answer".
+  async function take(day: TourDay) {
+    setBusyId(day.id); setError(""); setNotice("");
+    try {
+      const outcome = await takeDay(day, zoneName(day.zone_id));
+      if (!outcome) return;
+      if (outcome.taken) setNotice(outcome.message); else setError(outcome.message);
+      if (outcome.stale) await reload().catch(() => undefined);
     } finally {
       setBusyId(null);
     }
@@ -73,7 +104,9 @@ export function GuideDashboard({ now }: { now: Date | null }) {
   return (
     <>
       {error && <p role="alert" className="mb-5 bg-[#f4e4df] px-4 py-3 text-body text-[#8a3b2c]">{error}</p>}
+      {notice && <p role="status" className="mb-5 bg-[#eef0e9] px-4 py-3 text-body text-[#68705d]">{notice}<button type="button" onClick={() => setNotice("")} className="ml-3 underline">Dismiss</button></p>}
       <MissingDataNotice missing={data?.missing ?? []} className="mb-5" />
+      <InstallBanner className="mb-5" />
 
       <div className="grid grid-cols-3 gap-3">
         {[["Today", todayCount], ["Awaiting your answer", pending?.length], ["Upcoming", upcoming?.length]].map(([label, value]) => (
@@ -106,24 +139,30 @@ export function GuideDashboard({ now }: { now: Date | null }) {
           {upcoming?.length === 0 && <p className="mt-4 text-body text-[#85867c]">No upcoming tours.</p>}
           <div className="mt-4 divide-y divide-[#f0efe9]">
             {upcoming?.map((day) => (
-              <Link key={day.id} href={`/tours/${day.id}`} className="flex items-center justify-between gap-3 py-3 hover:bg-[#faf9f6]">
-                <div className="min-w-0"><p className="text-body">{day.title || day.code || "Tour day"}</p><p className="mt-1 text-label text-[#a2a299]">{describe(day, zoneName(day.zone_id))}</p></div>
-                <span className="shrink-0 bg-[#ebe7da] px-2 py-1 text-label text-[#77786f]">{formatStatus(day.status)}</span>
-              </Link>
+              <div key={day.id} className="flex items-center justify-between gap-3 py-3 hover:bg-[#faf9f6]">
+                <Link href={`/tours/${day.id}`} className="min-w-0 flex-1"><p className="text-body hover:underline">{day.title || day.code || "Tour day"}</p><p className="mt-1 text-label text-[#a2a299]">{describe(day, zoneName(day.zone_id))}</p></Link>
+                {now && offersCheckIn(day, now)
+                  ? <button type="button" disabled={busyId !== null} onClick={() => checkIn(day)} className="h-8 shrink-0 bg-[#292b26] px-3 text-meta text-white hover:bg-[#41443b] disabled:opacity-60">{busyId === day.id ? "Checking in…" : "Check in"}</button>
+                  : <span className={`shrink-0 px-2 py-1 text-label ${isInProgress(day) ? "bg-[#eef0e9] text-[#68705d]" : "bg-[#ebe7da] text-[#77786f]"}`}>{isInProgress(day) ? "In progress" : formatStatus(day.status)}</span>}
+              </div>
             ))}
           </div>
         </section>
 
         <section className="bg-white p-5 sm:p-6">
           <h2 className="font-serif text-xl">Open tour days</h2>
-          <p className="mt-2 text-body text-[#85867c]">Days without a guide that fit your availability. Tell operations if you want one.</p>
+          <p className="mt-2 text-body text-[#85867c]">Days without a guide in your zones, or without a zone. Take one and confirm it.</p>
           {data === null && <p className="mt-4 text-body text-[#85867c]">Loading…</p>}
           {data?.open.length === 0 && <p className="mt-4 text-body text-[#85867c]">No open days right now.</p>}
           <div className="mt-4 divide-y divide-[#f0efe9]">
-            {data?.open.slice(0, 12).map((day) => (
-              <div key={day.id} className="py-3"><p className="text-body">{day.title || day.code || "Tour day"}</p><p className="mt-1 text-label text-[#a2a299]">{describe(day, zoneName(day.zone_id))}</p></div>
+            {data?.open.slice(0, 5).map((day) => (
+              <div key={day.id} className="flex items-center justify-between gap-3 py-3">
+                <Link href={`/tours/${day.id}`} className="min-w-0 flex-1"><p className="text-body hover:underline">{day.title || day.code || "Tour day"}</p><p className="mt-1 text-label text-[#a2a299]">{describe(day, zoneName(day.zone_id))}</p></Link>
+                <button type="button" disabled={busyId !== null} onClick={() => take(day)} className="h-8 shrink-0 border border-[#deddd6] px-3 text-meta hover:bg-[#f8f7f3] disabled:opacity-60">{busyId === day.id ? "Taking…" : "Take"}</button>
+              </div>
             ))}
           </div>
+          {data && data.open.length > 0 && <Link href="/available" className="mt-3 inline-block text-meta underline underline-offset-2">{data.open.length > 5 ? `See all ${data.open.length} available tours` : "See available tours"}</Link>}
         </section>
       </div>
     </>

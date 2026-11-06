@@ -9,7 +9,8 @@ import { DashboardSidebar } from "@/features/dashboard/components/DashboardSideb
 import { MissingDataNotice, useMissingData } from "@/features/dashboard/components/MissingDataNotice";
 import { listZones, type Zone } from "@/features/catalogs/api";
 import { listGuides, type GuideDetail } from "@/features/guides/api";
-import { assignGuide, listTourDays, type TourDay } from "@/features/tours/api";
+import { assignGuide, formatAssignmentWarning, listTourDays, type TourDay } from "@/features/tours/api";
+import { AssignmentWarnings } from "@/features/tours/components/AssignmentWarnings";
 import { formatDuration, formatJst, formatJstClock, toDayKey } from "@/lib/datetime";
 import { withFallback } from "@/lib/missing";
 import { formatStatus } from "@/lib/status";
@@ -30,6 +31,8 @@ export function AssignmentsScreen() {
   const [guideId, setGuideId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  // What the last assignment asks to follow up: zone and schedule overlaps.
+  const [warnings, setWarnings] = useState<string[]>([]);
   const { missing, report } = useMissingData();
   const [isSaving, setIsSaving] = useState(false);
 
@@ -75,10 +78,12 @@ export function AssignmentsScreen() {
 
   async function handleAssign() {
     if (!guideId || selectedDays.length === 0) return;
-    setIsSaving(true); setError(""); setNotice("");
+    setIsSaving(true); setError(""); setNotice(""); setWarnings([]);
     try {
-      await assignGuide(selectedDays.map((day) => day.id), guideId);
+      const result = await assignGuide(selectedDays.map((day) => day.id), guideId);
       setNotice(`${selectedDays.length} day${selectedDays.length === 1 ? "" : "s"} assigned to ${guideName(guideId)}.`);
+      const dayLabel = (id: string) => { const day = selectedDays.find((item) => item.id === id); return day?.code || day?.title || "Tour day"; };
+      setWarnings(result.warnings.map((warning) => `${dayLabel(warning.tour_day_id)}: ${formatAssignmentWarning(warning)}`));
       setSelected(new Set()); setGuideId("");
       setDays(await loadDays());
     } catch (requestError) {
@@ -118,6 +123,7 @@ export function AssignmentsScreen() {
                 {error && <p role="alert" className="mt-4 border border-[#eadbc7] bg-[#fbf6ef] p-3 text-body text-[#9b6f37]">{error}</p>}
                 <MissingDataNotice missing={missing} className="mt-4" />
                 {notice && <p className="mt-4 bg-[#eef0e9] p-3 text-body text-[#68705d]">{notice}</p>}
+                <AssignmentWarnings warnings={warnings} className="mt-3" onDismiss={() => setWarnings([])} />
                 {!days && !error && <p className="mt-5 text-body text-[#85867c]">Loading tour days...</p>}
                 {days && groups.length === 0 && <p className="mt-5 text-body text-[#85867c]">{view === "unassigned" ? "Every upcoming day has a guide." : "No preassignments waiting for an answer."}</p>}
 
@@ -147,7 +153,7 @@ export function AssignmentsScreen() {
                 <label className="mt-4 block text-meta">Guide<Combobox value={guideId} onChange={setGuideId} options={sortedGuides.map((item) => ({ id: item.guide.id, label: item.guide.name, detail: item.zones.map((zone) => zone.name).join(", ") || null }))} noun="guide" placeholder="Search a guide..." disabled={isSaving} inputClass="mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-body outline-none focus:border-[#b5a786]" /></label>
                 <button type="button" disabled={isSaving || !guideId || selectedDays.length === 0} onClick={handleAssign} className="mt-3 h-9 w-full bg-[#292b26] text-meta text-white hover:bg-[#41443b] disabled:opacity-50">{isSaving ? "Assigning..." : "Assign guide"}</button>
                 {selectedDays.length > 0 && <button type="button" onClick={() => setSelected(new Set())} className="mt-2 text-meta underline underline-offset-2">Clear selection</button>}
-                <p className="mt-4 text-label leading-relaxed text-[#85867c]">Pending days become preassigned and the guide has 24 hours to answer. Paid days keep their status with the new guide.</p>
+                <p className="mt-4 text-label leading-relaxed text-[#85867c]">Pending days become preassigned and the guide has 24 hours to answer. Paid days keep their status with the new guide. A day outside the guide&apos;s zones or overlapping another of their days is still assigned, with a warning kept in its history.</p>
               </aside>
             </div>
           </div></div>

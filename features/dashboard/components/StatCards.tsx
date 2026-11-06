@@ -3,6 +3,7 @@ import type { DashboardData } from "../api";
 export function StatCards({ stats }: { stats: DashboardData["stats"] | null }) {
   const cards = [
     ["Upcoming tours", stats?.upcomingWeek, "Next 7 days"],
+    ["In progress", stats?.inProgress, "Guide checked in"],
     ["Tours today", stats?.today, stats ? (stats.today ? `Across ${stats.todayZones} ${stats.todayZones === 1 ? "zone" : "zones"}` : "Nothing scheduled") : ""],
     ["Unassigned tours", stats?.unassigned, "Guide needed"],
     ["Pending confirmations", stats?.awaitingAcceptance, "Awaiting acceptance"],
@@ -11,7 +12,7 @@ export function StatCards({ stats }: { stats: DashboardData["stats"] | null }) {
   ] as const;
 
   return (
-    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
       {cards.map(([label, value, note]) => (
         <article key={label} className="min-h-[100px] bg-white p-4">
           <p className="text-meta text-[#8b8c82]">{label}</p>

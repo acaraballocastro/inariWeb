@@ -56,6 +56,9 @@ function describe(entry: HistoryEntry) {
   if (entry.type === "TOUR_DAY_ASSIGNMENT") {
     const guide = entry.guide_name ?? "guide";
     if (entry.action === "ASSIGNED") return `Assigned to ${guide}`;
+    if (entry.action === "TAKEN") return `Taken by ${guide}`;
+    if (entry.action === "CHECKED_IN") return `${guide} checked in: tour started`;
+    if (entry.action === "CHECK_IN_UNDONE") return `Check-in of ${guide} undone`;
     if (entry.action === "UNASSIGNED") return `${guide} unassigned`;
     if (entry.action === "REJECTED") return `Rejected by ${guide}`;
     return `${formatLabel(entry.action ?? "Assignment")} · ${guide}`;

@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { getSession, isAdmin, type Session } from "@/lib/api/client";
 import { useSession } from "@/lib/api/useSession";
 import { logout, logoutEverywhere } from "@/features/auth/api";
+import { MobileTabBar } from "./MobileTabBar";
 
 type NavItem = { label: string; href: string };
 type NavSection = { title: string; items: NavItem[] };
@@ -21,19 +22,22 @@ const adminNavigation: NavItem[] = [
 ];
 
 const adminSections: NavSection[] = [
-  { title: "Content", items: [{ label: "Activities", href: "/activities" }, { label: "Places", href: "/places" }, { label: "Languages", href: "/languages" }, { label: "Zones", href: "/zones" }] },
+  { title: "Content", items: [{ label: "Activities", href: "/activities" }, { label: "Places", href: "/places" }, { label: "Itinerary templates", href: "/itinerary-templates" }, { label: "Languages", href: "/languages" }, { label: "Zones", href: "/zones" }] },
   { title: "Management", items: [{ label: "Guides", href: "/guides" }, { label: "Users", href: "/users" }, { label: "Agencies", href: "/agencies" }, { label: "Customers", href: "/customers" }, { label: "Audit log", href: "/audit" }, { label: "System", href: "/system" }] },
 ];
 
 const guideNavigation: NavItem[] = [
   { label: "Dashboard", href: "/dashboard" },
+  { label: "My tours", href: "/my-tours" },
+  { label: "Available tours", href: "/available" },
   { label: "Availability", href: "/availability" },
+  { label: "Profile", href: "/profile" },
   { label: "Incidents", href: "/incidents" },
   { label: "Notifications", href: "/notifications" },
 ];
 
 // A guide only reaches their own days, incidents and availability; the rest of the API answers 403.
-const guidePaths = ["/dashboard", "/tours/", "/incidents", "/availability", "/notifications"];
+const guidePaths = ["/dashboard", "/my-tours", "/available", "/tours/", "/incidents", "/availability", "/notifications", "/profile"];
 
 export function navigationFor(session: Session | null): { navigation: NavItem[]; sections: NavSection[] } {
   if (!session) return { navigation: [], sections: [] };
@@ -81,6 +85,8 @@ export function DashboardSidebar({ activeItem = "Dashboard" }: { activeItem?: st
   const { navigation, sections } = navigationFor(session);
 
   return (
+    <>
+    <MobileTabBar activeItem={activeItem} />
     <aside className="hidden w-[220px] shrink-0 border-r border-[#deddd6] bg-[#f5f4f0] px-5 py-7 lg:block xl:w-[250px] xl:px-7">
       <Link href="/" className="block font-serif text-[25px] tracking-[0.16em]">
         INARI
@@ -95,6 +101,7 @@ export function DashboardSidebar({ activeItem = "Dashboard" }: { activeItem?: st
         <AccountLinks className="mt-4 space-y-2 text-meta" />
       </div>
     </aside>
+    </>
   );
 }
 
@@ -104,6 +111,7 @@ export function AccountLinks({ className, onNavigate }: { className: string; onN
   const linkClass = "block text-[#77786f] underline underline-offset-4 hover:text-[#292b26]";
   return (
     <div className={className}>
+      <Link href="/profile" onClick={onNavigate} className={linkClass}>My profile</Link>
       <Link href="/change-password" onClick={onNavigate} className={linkClass}>Change password</Link>
       <button type="button" onClick={signOut} className={linkClass}>Sign out</button>
       <button type="button" onClick={signOutEverywhere} className={linkClass}>Sign out on all devices</button>

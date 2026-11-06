@@ -1,33 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getUnreadCount, listNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification } from "@/features/notifications/api";
+import { listNotifications, markAllNotificationsRead, markNotificationRead, type AppNotification } from "@/features/notifications/api";
+import { NotificationIcon } from "./NotificationIcon";
+import { setUnreadCount, useUnreadCount } from "../useUnreadCount";
 import { PushToggle } from "./PushToggle";
 import { formatNotificationTime } from "./time";
-
-const refreshEveryMs = 60_000;
 
 /** The bell of the header: unread count and the latest notifications. */
 export function NotificationBell() {
   const router = useRouter();
-  const [unread, setUnread] = useState(0);
+  const unread = useUnreadCount();
   const [isOpen, setIsOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
-
-  const refreshCount = useCallback(() => {
-    getUnreadCount().then(setUnread).catch(() => undefined);
-  }, []);
-
-  useEffect(() => {
-    refreshCount();
-    const timer = window.setInterval(refreshCount, refreshEveryMs);
-    window.addEventListener("focus", refreshCount);
-    return () => { window.clearInterval(timer); window.removeEventListener("focus", refreshCount); };
-  }, [refreshCount]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -40,7 +29,7 @@ export function NotificationBell() {
   async function open(item: AppNotification) {
     if (!item.is_read) {
       await markNotificationRead(item.id).catch(() => undefined);
-      setUnread((count) => Math.max(0, count - 1));
+      setUnreadCount((count) => count - 1);
     }
     setIsOpen(false);
     router.push(item.url || "/notifications");
@@ -48,7 +37,7 @@ export function NotificationBell() {
 
   async function readAll() {
     await markAllNotificationsRead().catch(() => undefined);
-    setUnread(0);
+    setUnreadCount(() => 0);
     setItems((current) => current?.map((item) => ({ ...item, is_read: true })) ?? null);
   }
 
@@ -71,9 +60,9 @@ export function NotificationBell() {
             {items?.map((item) => (
               <button key={item.id} type="button" onClick={() => open(item)} className={`block w-full border-b border-[#f0efe9] px-4 py-3 text-left hover:bg-[#fbfaf7] ${item.is_read ? "" : "bg-[#fbf8f1]"}`}>
                 <span className="flex items-start gap-2">
-                  {!item.is_read && <span aria-hidden="true" className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#9b6f37]" />}
-                  <span className="min-w-0">
-                    <span className="block text-body font-medium text-[#292b26]">{item.title}</span>
+                  <NotificationIcon type={item.type} size="sm" />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-start justify-between gap-2"><span className="text-body font-medium text-[#292b26]">{item.title}</span>{!item.is_read && <span aria-label="Unread" className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#9b6f37]" />}</span>
                     {item.message && <span className="mt-1 block text-meta leading-relaxed text-[#77786f]">{item.message}</span>}
                     <span className="mt-1 block text-label text-[#aaa99f]">{formatNotificationTime(item.created_at)}</span>
                   </span>
