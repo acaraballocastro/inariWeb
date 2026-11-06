@@ -45,7 +45,7 @@
 
 @media (display-mode: standalone) and (pointer: coarse) {
   :root {
-    --pwa-zoom: 1.15;
+    --pwa-zoom: 1.50;
   }
   html {
     zoom: var(--pwa-zoom);
