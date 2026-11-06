@@ -114,6 +114,12 @@ body {
   margin: 0;
 }
 
+/* No double-tap zoom (and no tap delay) anywhere; pinch zoom is only blocked
+   in the installed app (AppRuntime). */
+html {
+  touch-action: manipulation;
+}
+
 body {
   min-height: calc(100vh / var(--pwa-zoom));
   background: #f6f4f0;
