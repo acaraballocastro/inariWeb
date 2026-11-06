@@ -167,7 +167,7 @@ export function CreateReservationModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-reservation-title"
-        className={`h-dvh w-full overflow-y-auto bg-white pb-[env(safe-area-inset-bottom)] shadow-xl sm:my-auto sm:h-auto sm:max-h-[90dvh] ${step === 3 ? "sm:max-w-3xl" : "sm:max-w-2xl"}`}
+        className={`pwa-dvh w-full overflow-y-auto bg-white pwa-safe-bottom shadow-xl sm:my-auto sm:h-auto sm:max-h-[90dvh] ${step === 3 ? "sm:max-w-3xl" : "sm:max-w-2xl"}`}
       >
         <header className="flex items-start justify-between border-b border-[#ecebe5] px-6 py-5 sm:px-8">
           <div>

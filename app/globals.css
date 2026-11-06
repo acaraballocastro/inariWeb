@@ -32,6 +32,38 @@
   }
 }
 
+/*
+ * Installed app (PWA) on a phone: the browser's page zoom doesn't apply there,
+ * so the page is zoomed instead (text, spacing, icons and px sizes together).
+ * Zoom also scales vh/dvh and the safe-area insets, so those are divided by
+ * --pwa-zoom where used (pwa-safe-bottom, pwa-dvh, min-h-dvh) to stay true to
+ * the screen.
+ */
+:root {
+  --pwa-zoom: 1;
+}
+
+@media (display-mode: standalone) and (pointer: coarse) {
+  :root {
+    --pwa-zoom: 1.15;
+  }
+  html {
+    zoom: var(--pwa-zoom);
+  }
+  /* Every screen's wrapper uses min-h-dvh: keep it one screen tall. */
+  .min-h-dvh {
+    min-height: calc(100dvh / var(--pwa-zoom));
+  }
+}
+
+@utility pwa-safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) / var(--pwa-zoom));
+}
+
+@utility pwa-dvh {
+  height: calc(100dvh / var(--pwa-zoom));
+}
+
 /* iOS zooms into fields under 16px when they get the focus. */
 @media (pointer: coarse) {
   input,
@@ -44,7 +76,7 @@
 /* Room for the mobile tab bar (MobileTabBar), above the home indicator. */
 @media (max-width: 1023px) {
   body:has(.mobile-tab-bar) {
-    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+    padding-bottom: calc(60px + env(safe-area-inset-bottom) / var(--pwa-zoom));
   }
 }
 
@@ -60,7 +92,7 @@ body {
 }
 
 body {
-  min-height: 100vh;
+  min-height: calc(100vh / var(--pwa-zoom));
   background: #f6f4f0;
   color: #252821;
   font-family: "Segoe UI", Arial, Helvetica, sans-serif;
