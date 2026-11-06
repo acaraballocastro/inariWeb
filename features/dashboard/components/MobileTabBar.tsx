@@ -47,7 +47,7 @@ export function MobileTabBar({ activeItem }: { activeItem: string }) {
   const tabs = isAdmin(session) ? adminTabs : guideTabs;
 
   return (
-    <nav aria-label="Main" className="mobile-tab-bar fixed inset-x-0 bottom-0 z-40 border-t border-[#deddd6] bg-[#f5f4f0]/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+    <nav aria-label="Main" className="mobile-tab-bar fixed inset-x-0 bottom-0 z-40 border-t border-[#deddd6] bg-[#f5f4f0]/95 pwa-safe-bottom backdrop-blur lg:hidden">
       <ul className="mx-auto grid h-[60px] max-w-[560px] grid-cols-5">
         {tabs.map((tab) => {
           const active = tab.matches.includes(activeItem);
