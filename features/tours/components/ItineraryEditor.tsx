@@ -31,7 +31,7 @@ export function ItineraryEditor({ tourDay, places: givenPlaces, activities: give
 
   // A new place goes in the day's zone.
   async function addPlace(name: string) {
-    const created = await createPlace({ name, description: null, zone_id: tourDay.zone_id, is_active: true });
+    const created = await createPlace({ name, description: null, address: null, latitude: null, longitude: null, zone_id: tourDay.zone_id, is_active: true });
     const place: ItineraryPlace = { id: created.id, name: created.name, zone_id: created.zone_id, zone_name: null };
     setCreatedPlaces((current) => [...current, place]);
     onPlaceCreated?.(place);
@@ -153,7 +153,7 @@ export function ItineraryEditor({ tourDay, places: givenPlaces, activities: give
           <article key={item.id} className="grid gap-3 py-4 sm:grid-cols-[72px_20px_minmax(0,1fr)_auto]">
             <span className="text-body text-[#9b8353]">{formatClock(item.start_time)}{item.end_time ? ` – ${formatClock(item.end_time)}` : ""}</span>
             <span className="relative mt-1 flex h-3 w-3 items-center justify-center rounded-full border border-[#b5a786]" aria-hidden="true" />
-            <div className="min-w-0"><h3 className="text-lead">{describeStop(item)}</h3><p className="mt-1 text-meta text-[#9b8353]">{item.type ? formatType(item.type) : "Stop"}</p>{item.notes && <p className="mt-2 text-body leading-relaxed text-[#85867c]">{item.notes}</p>}</div>
+            <div className="min-w-0"><h3 className="text-lead">{describeStop(item)}</h3><p className="mt-1 text-meta text-[#9b8353]">{item.type ? formatType(item.type) : "Stop"}</p>{item.notes && <p className="mt-2 text-body leading-relaxed text-[#85867c]">{item.notes}</p>}<MapLink url={item.type === "PLACE" ? places.find((entry) => entry.id === item.place_id)?.map_url : null} /></div>
             {!readOnly && <div className="flex items-start gap-1 text-meta">
               <button type="button" aria-label="Move up" disabled={isSaving || editingId !== null || index === 0} onClick={() => handleMove(index, -1)} className="h-8 w-8 border border-[#deddd6] hover:bg-[#f8f7f3] disabled:opacity-40">↑</button>
               <button type="button" aria-label="Move down" disabled={isSaving || editingId !== null || index === items.length - 1} onClick={() => handleMove(index, 1)} className="h-8 w-8 border border-[#deddd6] hover:bg-[#f8f7f3] disabled:opacity-40">↓</button>
@@ -185,4 +185,10 @@ function formatType(value: string) { return value.charAt(0) + value.slice(1).toL
 function withCreated<T extends { id: string }>(given: T[], created: T[]) {
   const known = new Set(given.map((item) => item.id));
   return [...given, ...created.filter((item) => !known.has(item.id))];
+}
+
+/** "Open in the map" for a place with an address or coordinates. */
+function MapLink({ url }: { url: string | null | undefined }) {
+  if (!url) return null;
+  return <a href={url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-8 items-center text-meta text-[#6f6a5b] underline underline-offset-2 hover:text-[#292b26]">Open in map ↗</a>;
 }

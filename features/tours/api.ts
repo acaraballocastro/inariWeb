@@ -2,6 +2,7 @@ import { listAllActivities } from "@/features/catalogs/api";
 import { listPlacesWithZone } from "@/features/places/api";
 import { request, requestPage } from "@/lib/api/client";
 import { toDayKey } from "@/lib/datetime";
+import { mapUrl } from "@/lib/maps";
 import { checkInStatuses, isFinal } from "@/lib/status";
 
 export type TourDay = {
@@ -349,12 +350,12 @@ export function applyItineraryTemplate(id: string, tourDayIds: string[], mode: A
   return request<{ tour_days: { tour_day_id: string; items_added: number }[] }>(`/itinerary-templates/${encodeURIComponent(id)}/apply`, { method: "POST", body: JSON.stringify({ tour_day_ids: tourDayIds, mode }) });
 }
 
-export type ItineraryPlace = { id: string; name: string; zone_id: string | null; zone_name: string | null };
+export type ItineraryPlace = { id: string; name: string; zone_id: string | null; zone_name: string | null; map_url?: string | null };
 export type ItineraryActivity = { id: string; name: string };
 
 /** Active places, as the itinerary offers them. */
 export function listItineraryPlaces() {
-  return listPlacesWithZone().then((items) => items.filter((item) => item.place.is_active).map((item): ItineraryPlace => ({ id: item.place.id, name: item.place.name, zone_id: item.place.zone_id, zone_name: item.zone?.name ?? null })));
+  return listPlacesWithZone().then((items) => items.filter((item) => item.place.is_active).map((item): ItineraryPlace => ({ id: item.place.id, name: item.place.name, zone_id: item.place.zone_id, zone_name: item.zone?.name ?? null, map_url: mapUrl(item.place, item.place.name) })));
 }
 
 /** Active activities, as the itinerary offers them. */

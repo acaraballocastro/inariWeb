@@ -1,4 +1,4 @@
-import { request, requestPage } from "@/lib/api/client";
+import { request, requestBlob, upload, requestPage } from "@/lib/api/client";
 
 export type IncidentStatus = "OPEN" | "IN_REVIEW" | "RESOLVED" | "CLOSED";
 
@@ -24,7 +24,10 @@ export type IncidentStatusChange = {
   created_at: string;
 };
 
-export type IncidentDetail = Incident & { history: IncidentStatusChange[] | null };
+/** An attachment (photo or PDF). */
+export type IncidentFile = { id: string; name: string; mime_type: string; size: number; uploaded_by: string | null; created_at: string };
+
+export type IncidentDetail = Incident & { history: IncidentStatusChange[] | null; files: IncidentFile[] | null };
 
 export const incidentStatuses: IncidentStatus[] = ["OPEN", "IN_REVIEW", "RESOLVED", "CLOSED"];
 
@@ -95,4 +98,20 @@ export function incidentStatusClass(status: string) {
   if (status === "IN_REVIEW") return "bg-[#f2e8d8] text-[#9b6f37]";
   if (status === "RESOLVED") return "bg-[#eef0e9] text-[#68705d]";
   return "bg-[#ecebe5] text-[#77786f]";
+}
+
+/** Attaches a photo or PDF (10 MB max by default); the server checks the type. */
+export function uploadIncidentFile(incidentId: string, file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  return upload<IncidentFile>(`/incidents/${encodeURIComponent(incidentId)}/files`, form);
+}
+
+export function downloadIncidentFile(incidentId: string, fileId: string) {
+  return requestBlob(`/incidents/${encodeURIComponent(incidentId)}/files/${encodeURIComponent(fileId)}`);
+}
+
+/** The uploader or an admin, until the incident is closed. */
+export function deleteIncidentFile(incidentId: string, fileId: string) {
+  return request<void>(`/incidents/${encodeURIComponent(incidentId)}/files/${encodeURIComponent(fileId)}`, { method: "DELETE" });
 }

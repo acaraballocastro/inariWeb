@@ -78,9 +78,29 @@ export async function requestPage<T>(path: string, page: { limit: number; offset
   return { items, total: total === null ? page.offset + items.length : Number(total) };
 }
 
+/** Uploads a FormData (multipart; the browser sets its boundary). */
+export async function upload<T>(path: string, form: FormData): Promise<T> {
+  return (await send<T>(path, { method: "POST", body: form })).data;
+}
+
+/** Downloads a file with the session (images and PDFs of the API). */
+export async function requestBlob(path: string): Promise<Blob> {
+  let response: Response;
+  try {
+    response = await fetch(`${apiUrl}${path}`, { credentials: "include" });
+  } catch {
+    throw new ApiError("Could not connect to the server.", 0);
+  }
+  if (!response.ok) {
+    if (response.status === 401 && typeof window !== "undefined") clearSession();
+    throw new ApiError(response.status === 404 ? "The file is no longer available." : "Could not download the file.", response.status);
+  }
+  return response.blob();
+}
+
 async function send<T>(path: string, options: RequestInit): Promise<{ data: T; response: Response }> {
   const headers = new Headers(options.headers);
-  headers.set("Content-Type", "application/json");
+  if (!(options.body instanceof FormData)) headers.set("Content-Type", "application/json");
 
   let response: Response;
   try {

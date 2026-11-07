@@ -88,3 +88,28 @@ export function updateGuideAvailability(guideId: string, availabilityId: string,
 export function deleteGuideAvailability(guideId: string, availabilityId: string) {
   return request<void>(`/guides/${guideId}/availabilities/${availabilityId}`, { method: "DELETE" });
 }
+
+/** A guide's blocked dates with the guide's name (every guide, ADMIN only). */
+export type GuideTimeOff = GuideAvailability & { guide_name: string };
+
+/** Every active guide's blocked dates touching [from, to] (YYYY-MM-DD, inclusive). */
+export function listAllAvailabilities(from: string, to: string) {
+  return request<GuideTimeOff[] | null>(`/availabilities?from=${from}&to=${to}`).then((items) => items ?? []);
+}
+
+/** The guides off on each day key of [from, to], by name. */
+export function timeOffByDay(blocks: GuideTimeOff[], from: string, to: string) {
+  const byDay = new Map<string, string[]>();
+  for (const block of blocks) {
+    if (!block.start_date || !block.end_date) continue;
+    let key = block.start_date.slice(0, 10) < from ? from : block.start_date.slice(0, 10);
+    const end = block.end_date.slice(0, 10) > to ? to : block.end_date.slice(0, 10);
+    while (key <= end) {
+      byDay.set(key, [...(byDay.get(key) ?? []), block.guide_name || "Guide"]);
+      const next = new Date(`${key}T00:00:00Z`);
+      next.setUTCDate(next.getUTCDate() + 1);
+      key = next.toISOString().slice(0, 10);
+    }
+  }
+  return byDay;
+}

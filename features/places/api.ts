@@ -5,6 +5,9 @@ export type Place = {
   name: string;
   description: string | null;
   zone_id: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   is_active: boolean;
   created_at: string;
   updated_at: string | null;
@@ -14,6 +17,9 @@ export type PlaceInput = {
   name: string;
   description: string | null;
   zone_id: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   is_active: boolean;
 };
 
@@ -32,7 +38,7 @@ export function createPlace(input: PlaceInput) {
   return request<Place>("/places", { method: "POST", body: JSON.stringify(input) });
 }
 
-// PATCH changes only the fields sent; zone_id: null removes the zone.
+// PATCH changes only the fields sent; null removes the zone, address or coordinates.
 export function updatePlace(id: string, input: PlaceInput) {
   return request<void>(`/places/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) });
 }

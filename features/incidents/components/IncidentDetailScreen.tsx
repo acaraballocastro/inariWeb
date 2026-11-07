@@ -12,6 +12,7 @@ import { listUsers, type User } from "@/features/users/api";
 import { isAdmin } from "@/lib/api/client";
 import { useSession } from "@/lib/api/useSession";
 import { formatJst } from "@/lib/datetime";
+import { IncidentAttachments } from "@/features/incidents/components/IncidentAttachments";
 
 export function IncidentDetailScreen({ incidentId }: { incidentId: string }) {
   const session = useSession();
@@ -116,6 +117,7 @@ export function IncidentDetailScreen({ incidentId }: { incidentId: string }) {
                       </form>
                     ) : <p className="mt-4 whitespace-pre-line text-lead leading-relaxed text-[#55574f]">{incident.description || "No description provided."}</p>}
                   </section>
+                  <IncidentAttachments incidentId={incident.id} files={incident.files ?? []} canEdit={incident.status !== "CLOSED"} userId={session?.userId ?? null} admin={admin} onChanged={async () => setIncident(await getIncident(incident.id))} />
                   <section className="bg-white p-5 sm:p-6">
                     <h2 className="font-serif text-xl">Status history</h2>
                     {incident.history?.length ? (

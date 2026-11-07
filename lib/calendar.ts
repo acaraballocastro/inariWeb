@@ -56,3 +56,43 @@ export function monthOf(dayKey: string): CalendarMonth {
 export function isWithin(dayKey: string, min?: string, max?: string) {
   return (!min || dayKey >= min) && (!max || dayKey <= max);
 }
+
+export type CalendarView = "Month" | "Week" | "Day" | "Agenda";
+
+/** The Monday of the week a day key falls in. */
+export function weekStart(dayKey: string) {
+  const day = new Date(`${dayKey}T00:00:00Z`).getUTCDay();
+  return addDays(dayKey, -((day + 6) % 7));
+}
+
+/**
+ * The days a view shows around `anchor`, inclusive: the whole weeks of its
+ * month (Month), its month (Agenda), its Monday-to-Sunday week (Week) or the
+ * day itself (Day).
+ */
+export function viewDays(view: CalendarView, anchor: string): { first: string; last: string } {
+  if (view === "Day") return { first: anchor, last: anchor };
+  if (view === "Week") {
+    const first = weekStart(anchor);
+    return { first, last: addDays(first, 6) };
+  }
+  const month = monthOf(anchor);
+  if (view === "Month") {
+    const cells = monthCells(month);
+    return { first: cells[0], last: cells[cells.length - 1] };
+  }
+  const first = `${month.year}-${pad(month.month)}-01`;
+  return { first, last: addDays(addMonths(first, 1), -1) };
+}
+
+/** The JST instants [from, to) of an inclusive range of day keys, for the API. */
+export function dayRange(first: string, last: string) {
+  return { from: startOfJstDay(first).toISOString(), to: startOfJstDay(addDays(last, 1)).toISOString() };
+}
+
+/** The anchor one step before or after: a month, a week or a day. */
+export function stepAnchor(view: CalendarView, anchor: string, delta: number) {
+  if (view === "Day") return addDays(anchor, delta);
+  if (view === "Week") return addDays(anchor, 7 * delta);
+  return addMonths(anchor, delta);
+}

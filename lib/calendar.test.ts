@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { addDays, addMonths, isWithin, monthCells, monthOf, monthRange, shiftMonth } from "./calendar.ts";
+import { addDays, addMonths, dayRange, isWithin, monthCells, monthOf, monthRange, shiftMonth, stepAnchor, viewDays, weekStart } from "./calendar.ts";
 
 describe("monthRange", () => {
   it("bounds the month in JST, end exclusive", () => {
@@ -56,4 +56,20 @@ describe("day arithmetic", () => {
     assert.ok(!isWithin("2026-11-03", "2026-11-04"));
     assert.ok(isWithin("2026-11-03"));
   });
+});
+
+describe("views", () => {
+  it("cover the right days", () => {
+  assert.equal(weekStart("2026-11-06"), "2026-11-02"); // Friday → Monday
+  assert.equal(weekStart("2026-11-02"), "2026-11-02");
+  assert.equal(weekStart("2026-11-08"), "2026-11-02"); // Sunday
+  assert.deepEqual(viewDays("Day", "2026-11-06"), { first: "2026-11-06", last: "2026-11-06" });
+  assert.deepEqual(viewDays("Week", "2026-11-06"), { first: "2026-11-02", last: "2026-11-08" });
+  assert.deepEqual(viewDays("Agenda", "2026-02-10"), { first: "2026-02-01", last: "2026-02-28" });
+  assert.deepEqual(viewDays("Month", "2026-11-06"), { first: "2026-10-26", last: "2026-12-06" });
+  assert.equal(stepAnchor("Week", "2026-11-06", 1), "2026-11-13");
+  assert.equal(stepAnchor("Day", "2026-11-30", 1), "2026-12-01");
+  assert.equal(stepAnchor("Month", "2026-01-31", 1), "2026-02-28");
+  assert.deepEqual(dayRange("2026-11-02", "2026-11-08"), { from: "2026-11-01T15:00:00.000Z", to: "2026-11-08T15:00:00.000Z" });
+});
 });

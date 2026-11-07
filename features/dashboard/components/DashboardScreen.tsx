@@ -17,6 +17,7 @@ import { RecentActivity } from "./RecentActivity";
 import { SchedulePanel } from "./SchedulePanel";
 import { StatCards } from "./StatCards";
 import { UpcomingTours } from "./UpcomingTours";
+import { GuidesOffToday } from "@/features/dashboard/components/GuidesOffToday";
 
 export function DashboardScreen() {
   const user = useCurrentUser();
@@ -86,6 +87,7 @@ export function DashboardScreen() {
                 </div>
                 <aside className="space-y-5">
                   <AttentionPanel attention={data?.attention ?? null} />
+                  <GuidesOffToday now={now} />
                 </aside>
               </div>
               </>}
