@@ -14,6 +14,7 @@ import { listGuides, type GuideDetail } from "@/features/guides/api";
 import { TourDayIncidents } from "@/features/incidents/components/TourDayIncidents";
 import { getReservationDetail, listReservations, type Reservation } from "@/features/reservations/api";
 import { assignGuide, cancelTourDay, checkInTourDay, completeTourDay, confirmTourDay, forceMajeureTourDay, formatAssignmentWarning, getTourDay, getTourDayHistory, isInProgress, listItineraryActivities, listItineraryPlaces, offersCheckIn, rejectTourDay, unassignGuide, undoCheckIn, updateTourDay, type ItineraryActivity, type ItineraryPlace, type TourDay, updateGuideNotes } from "@/features/tours/api";
+import { DayVoucher, DayVoucherPanel } from "@/features/tours/components/DayVoucher";
 import { AssignmentWarnings } from "@/features/tours/components/AssignmentWarnings";
 import { BriefingPanel } from "@/features/tours/components/BriefingPanel";
 import { useTakeTourDay } from "@/features/tours/useTakeTourDay";
@@ -228,7 +229,9 @@ export function TourDetailScreen({ tourDayId }: { tourDayId: string }) {
                   <div className="space-y-5">
                     {admin ? <AssignmentPanel tourDay={tourDay} guides={context.guides} disabled={isSaving || isFinal} warnings={warnings} onDismissWarnings={() => setWarnings([])} onAssign={handleAssign} onUnassign={(guideId) => { setWarnings([]); runAction(() => unassignGuide([tourDay.id], guideId), "Could not unassign the guide."); }} /> : offered ? <OfferedNote /> : <GuideAssignmentNote tourDay={tourDay} />}
                     {!admin && !offered && <BriefingPanel tourDayId={tourDay.id} />}
+                    {!admin && !offered && <DayVoucher tourDayId={tourDay.id} />}
                     <TourResources tourDay={tourDay} showVoucher={admin} canEditNotes={!offered && !isFinal} onNotesSaved={(saved) => setContext((current) => current && { ...current, tourDay: { ...current.tourDay, guide_liability_notes: saved.guide_liability_notes } })} />
+                    {admin && !isCancelled && <DayVoucherPanel tourDay={tourDay} disabled={isSaving} />}
                     {admin && <HistoryTimeline load={loadHistory} version={historyVersion} />}
                   </div>
                 </div>

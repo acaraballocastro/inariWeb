@@ -1,6 +1,6 @@
 import { listAllActivities } from "@/features/catalogs/api";
 import { listPlacesWithZone } from "@/features/places/api";
-import { request, requestPage } from "@/lib/api/client";
+import { ApiError, request, requestBlob, requestPage } from "@/lib/api/client";
 import { toDayKey } from "@/lib/datetime";
 import { mapUrl } from "@/lib/maps";
 import { checkInStatuses, isFinal } from "@/lib/status";
@@ -361,4 +361,14 @@ export function listItineraryPlaces() {
 /** Active activities, as the itinerary offers them. */
 export function listItineraryActivities() {
   return listAllActivities().then((items) => items.filter((item) => item.is_active).map((item): ItineraryActivity => ({ id: item.id, name: item.name })));
+}
+
+/** The newest guide's voucher of the day, for its guide; null when there is none yet. */
+export function getDayVoucher(tourDayId: string) {
+  return request<{ id: string; version: number; language: string; file_name: string; created_at: string }>(`/tour-days/${encodeURIComponent(tourDayId)}/voucher`)
+    .catch((error) => { if (error instanceof ApiError && error.code === "VOUCHER_NOT_FOUND") return null; throw error; });
+}
+
+export function downloadDayVoucher(tourDayId: string) {
+  return requestBlob(`/tour-days/${encodeURIComponent(tourDayId)}/voucher/file`);
 }

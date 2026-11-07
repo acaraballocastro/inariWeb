@@ -5,14 +5,15 @@ import { DateInput } from "@/features/dashboard/components/DateInput";
 import { Select } from "@/features/dashboard/components/Select";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { VoucherPanel } from "@/features/reservations/components/VoucherPanel";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { DashboardSidebar } from "@/features/dashboard/components/DashboardSidebar";
 import { MissingDataNotice, useMissingData } from "@/features/dashboard/components/MissingDataNotice";
 import { listZones, type Zone } from "@/features/catalogs/api";
 import { listGuides, type GuideDetail } from "@/features/guides/api";
 import { formatIncidentStatus, incidentStatusClass, listIncidents, type Incident } from "@/features/incidents/api";
-import { agencyOption, cancelReservation, confirmReservationPayment, createAgencyNamed, deleteReservationPermanently, getReservationDetail, getReservationHistory, signatureStatuses, updateSignatureStatus, updateVoucherStatus, listAgencies, updateReservation, voucherStatuses, type Agency, type ReservationCustomerInput, type ReservationDetail, type ReservationTourDay } from "@/features/reservations/api";
+import { agencyOption, cancelReservation, confirmReservationPayment, createAgencyNamed, deleteReservationPermanently, getReservationDetail, getReservationHistory, signatureStatuses, updateSignatureStatus, updateVoucherStatus, listAgencies, reservationVoucherSource, updateReservation, voucherStatuses, type Agency, type ReservationCustomerInput, type ReservationDetail, type ReservationTourDay } from "@/features/reservations/api";
 import { Combobox } from "@/features/dashboard/components/Combobox";
 import { CustomerPicker, toCustomerInputs } from "@/features/reservations/components/CustomerPicker";
 import { createTourDay } from "@/features/tours/api";
@@ -34,6 +35,7 @@ export function ReservationDetailScreen({ code }: { code: string }) {
   const router = useRouter();
   const { confirm, prompt } = useDialogs();
   const [detail, setDetail] = useState<ReservationDetail | null>(null);
+  const voucherSource = useMemo(() => reservationVoucherSource(code), [code]);
   const [historyVersion, setHistoryVersion] = useState(0);
   const loadHistory = useCallback(() => getReservationHistory(code), [code]);
   const [error, setError] = useState("");
@@ -101,7 +103,7 @@ export function ReservationDetailScreen({ code }: { code: string }) {
             {!detail && !error && <p className="mt-6 text-body text-[#85867c]">Loading reservation...</p>}
             {detail && <>
               <header className="border-b border-[#deddd6] pb-6 pt-6"><p className="text-meta font-semibold tracking-[0.2em] text-[#9b8353]">RESERVATION / DETAILS</p><h1 className="mt-3 font-serif text-3xl tracking-[-0.04em] sm:text-[36px]">{detail.reservation.title ?? "Untitled reservation"}</h1><div className="mt-4 flex flex-wrap items-center gap-3 text-meta text-[#98978c]"><span>{detail.reservation.code ?? detail.reservation.id}</span><span className="bg-[#e9e5d7] px-3 py-1 text-[#77786f]">{formatStatus(detail.reservation.status)}</span>{nextStep && <button type="button" disabled={isSaving} onClick={handleNextStep} className="h-8 bg-[#292b26] px-3 text-white hover:bg-[#41443b] disabled:opacity-60">{isSaving ? "Saving..." : nextStep.label}</button>}{!isClosed && <button type="button" disabled={isSaving} onClick={handleCancelReservation} className="h-8 border border-[#deddd6] px-3 text-[#9b6f37] hover:bg-[#fbf6ef] disabled:opacity-60">Cancel reservation</button>}<button type="button" disabled={isSaving} onClick={handleDeletePermanently} className="h-8 px-3 text-[#9b6f37] underline underline-offset-2 disabled:opacity-60">Delete permanently</button></div></header>
-              <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.72fr)]"><div className="space-y-5"><ReservationInformation detail={detail} agencies={agencies} onAgencyCreated={(agency) => setAgencies((current) => [...current, agency])} draftCustomers={draftCustomers} onCustomersChange={setDraftCustomers} isEditing={isEditing} draft={draft} onEdit={() => setIsEditing(true)} onChange={setDraft} onSave={handleSave} onCancel={() => { setIsEditing(false); setDraftCustomers(toCustomerInputs(detail.customers)); }} isSaving={isSaving} /><RelatedTourDays detail={detail} onCreated={() => getReservationDetail(code).then(setDetail)} /><ReservationIncidents reservationId={detail.reservation.id} /></div><div className="space-y-5"><DocumentsPanel reservation={detail.reservation} disabled={isSaving || isClosed} onVoucherChange={(status) => runAction(() => updateVoucherStatus(code, status), "Could not update the voucher.")} onSignatureChange={(status) => runAction(() => updateSignatureStatus(code, status), "Could not update the signature.")} /><ClientReferences reservation={detail.reservation} /><CustomersPanel customers={detail.customers ?? []} /><HistoryTimeline load={loadHistory} version={historyVersion} showTourDay /></div></div>
+              <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(260px,0.72fr)]"><div className="space-y-5"><ReservationInformation detail={detail} agencies={agencies} onAgencyCreated={(agency) => setAgencies((current) => [...current, agency])} draftCustomers={draftCustomers} onCustomersChange={setDraftCustomers} isEditing={isEditing} draft={draft} onEdit={() => setIsEditing(true)} onChange={setDraft} onSave={handleSave} onCancel={() => { setIsEditing(false); setDraftCustomers(toCustomerInputs(detail.customers)); }} isSaving={isSaving} /><RelatedTourDays detail={detail} onCreated={() => getReservationDetail(code).then(setDetail)} /><ReservationIncidents reservationId={detail.reservation.id} /></div><div className="space-y-5"><DocumentsPanel reservation={detail.reservation} disabled={isSaving || isClosed} onVoucherChange={(status) => runAction(() => updateVoucherStatus(code, status), "Could not update the voucher.")} onSignatureChange={(status) => runAction(() => updateSignatureStatus(code, status), "Could not update the signature.")} /><VoucherPanel source={voucherSource} title="Customer voucher" description="The whole reservation, for the customers. Generated with the guides' vouchers when the payment is confirmed; generate again after changes (each time a new version). Each tour day has its guide's voucher." refreshKey={`${detail.reservation.voucher_status}:${detail.tour_days.map((day) => day.status).join(",")}`} disabled={isSaving || isClosed} onGenerated={async () => { setDetail(await getReservationDetail(code)); setHistoryVersion((current) => current + 1); }} /><ClientReferences reservation={detail.reservation} /><CustomersPanel customers={detail.customers ?? []} /><HistoryTimeline load={loadHistory} version={historyVersion} showTourDay /></div></div>
             </>}
           </div></div>
         </div>
@@ -120,7 +122,7 @@ function ReservationInformation({ detail, agencies, onAgencyCreated, draftCustom
 
 function DetailItem({ label, value }: { label: string; value: string }) { return <div><p className="text-label font-semibold uppercase tracking-[0.18em] text-[#9b8353]">{label}</p><p className="mt-2 break-words text-lead text-[#55574f]">{value}</p></div>; }
 
-// Voucher and signature are set by hand until documents exist. Lowering them moves
+// Voucher and signature statuses; generating the voucher PDF sets it to GENERATED. Lowering them moves
 // the confirmed days back to the pending step; raising them advances the days.
 function DocumentsPanel({ reservation, disabled, onVoucherChange, onSignatureChange }: { reservation: ReservationDetail["reservation"]; disabled: boolean; onVoucherChange: (status: string) => void; onSignatureChange: (status: string) => void }) {
   const selectClass = "mt-2 h-9 w-full border border-[#e3e1da] bg-[#f8f7f3] px-3 text-body font-normal normal-case tracking-normal text-[#292b26] outline-none focus:border-[#b5a786] disabled:opacity-60";

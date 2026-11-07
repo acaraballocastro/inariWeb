@@ -1,4 +1,4 @@
-import { request, requestPage } from "@/lib/api/client";
+import { request, requestBlob, requestPage } from "@/lib/api/client";
 import type { HistoryEntry } from "@/features/tours/api";
 
 export type Reservation = {
@@ -184,3 +184,58 @@ export const signatureStatuses = ["NOT_SENT", "SENT", "SIGNED", "REJECTED"];
 export type ReservationCustomer = { id: string; full_name: string; document_number: string; phone: string; email: string; age: number | null };
 export type ReservationTourDay = { id: string; code: string | null; title: string | null; start_datetime: string; duration: number | null; zone_id: string | null; guide_id: string | null; status: string; people_count: number | null; meeting_point: string | null; voucher_status: string };
 export type ReservationDetail = { reservation: Reservation; customers: ReservationCustomer[]; tour_days: ReservationTourDay[] };
+
+/** A generated version of the reservation's voucher (PDF). */
+export type Voucher = { id: string; version: number; language: "es" | "en"; file_name: string; size: number; created_at: string; created_by: string | null };
+
+export const voucherLanguages = [{ value: "es", label: "Español" }, { value: "en", label: "English" }] as const;
+
+const vouchersPath = (code: string) => `/reservations/${encodeURIComponent(code)}/vouchers`;
+
+/** Every version, newest first. */
+export function listVouchers(code: string) {
+  return request<Voucher[] | null>(vouchersPath(code)).then((items) => items ?? []);
+}
+
+/** Generates a new version (it is also generated when the payment is confirmed). */
+export function generateVoucher(code: string, language: string) {
+  return request<Voucher>(vouchersPath(code), { method: "POST", body: JSON.stringify({ language }) });
+}
+
+/** The voucher as HTML, not saved. */
+export function previewVoucher(code: string, language: string) {
+  return requestBlob(`${vouchersPath(code)}/preview?language=${encodeURIComponent(language)}`);
+}
+
+export function downloadVoucher(code: string, id: string) {
+  return requestBlob(`${vouchersPath(code)}/${encodeURIComponent(id)}`);
+}
+
+/**
+ * Where a voucher panel reads and writes: the reservation's (customers')
+ * voucher or a tour day's (its guide's). `label` names it in the preview.
+ */
+export type VoucherSource = {
+  label: string;
+  list: () => Promise<Voucher[]>;
+  generate: (language: string) => Promise<Voucher>;
+  preview: (language: string) => Promise<Blob>;
+  download: (id: string) => Promise<Blob>;
+};
+
+export function reservationVoucherSource(code: string): VoucherSource {
+  return { label: code, list: () => listVouchers(code), generate: (language) => generateVoucher(code, language), preview: (language) => previewVoucher(code, language), download: (id) => downloadVoucher(code, id) };
+}
+
+const dayVouchersPath = (tourDayId: string) => `/tour-days/${encodeURIComponent(tourDayId)}/vouchers`;
+
+/** The guide's voucher of a tour day (that day only). */
+export function dayVoucherSource(tourDayId: string, label: string): VoucherSource {
+  return {
+    label,
+    list: () => request<Voucher[] | null>(dayVouchersPath(tourDayId)).then((items) => items ?? []),
+    generate: (language) => request<Voucher>(dayVouchersPath(tourDayId), { method: "POST", body: JSON.stringify({ language }) }),
+    preview: (language) => requestBlob(`${dayVouchersPath(tourDayId)}/preview?language=${encodeURIComponent(language)}`),
+    download: (id) => requestBlob(`${dayVouchersPath(tourDayId)}/${encodeURIComponent(id)}`),
+  };
+}

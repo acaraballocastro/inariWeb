@@ -1,4 +1,4 @@
-import { request } from "@/lib/api/client";
+import { request, requestBlob, upload } from "@/lib/api/client";
 
 export type Place = {
   id: string;
@@ -8,6 +8,8 @@ export type Place = {
   address: string | null;
   latitude: number | null;
   longitude: number | null;
+  /** Printed in the vouchers; changed with uploadPlacePhoto. */
+  photo_file_id: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string | null;
@@ -45,4 +47,21 @@ export function updatePlace(id: string, input: PlaceInput) {
 
 export function deletePlace(id: string) {
   return request<void>(`/places/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
+const photoPath = (id: string) => `/places/${encodeURIComponent(id)}/photo`;
+
+export function getPlacePhoto(id: string) {
+  return requestBlob(photoPath(id));
+}
+
+/** Replaces the place's photo; answers the place. */
+export function uploadPlacePhoto(id: string, file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  return upload<Place>(photoPath(id), form);
+}
+
+export function removePlacePhoto(id: string) {
+  return request<void>(photoPath(id), { method: "DELETE" });
 }

@@ -11,7 +11,19 @@ export class ApiError extends Error {
   }
 }
 
-const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:9142/api/v1").replace(/\/$/, "");
+/**
+ * The API address. "{host}" in NEXT_PUBLIC_API_URL becomes the host the web is
+ * opened with (e.g. http://{host}:9142/api/v1), so the same build works from
+ * localhost and from the LAN IP: the API must be on the same host as the page
+ * for the session cookie to travel.
+ */
+function resolveApiUrl() {
+  const configured = (process.env.NEXT_PUBLIC_API_URL ?? "http://{host}:9142/api/v1").replace(/\/$/, "");
+  const host = typeof window === "undefined" ? "localhost" : window.location.hostname;
+  return configured.replace("{host}", host);
+}
+
+const apiUrl = resolveApiUrl();
 const sessionStorageKey = "inari.session";
 
 type ApiEnvelope<T> = {
